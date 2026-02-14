@@ -1,0 +1,124 @@
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.periodSelector {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: var(--surface);
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+}
+
+.navButton {
+    background: transparent;
+    border: none;
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0 0.5rem;
+    color: var(--text-secondary);
+}
+
+.navButton:hover {
+    color: var(--primary-color);
+}
+
+.currentPeriod {
+    font-weight: 600;
+    min-width: 150px;
+    text-align: center;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+.table th,
+.table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.table th {
+    background-color: var(--surface-hover);
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.table tr:last-child td {
+    border-bottom: none;
+}
+
+.statusPaid {
+    color: var(--success);
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.statusPending {
+    color: var(--warning);
+    font-weight: 600;
+}
+
+.statusUnpaid {
+    color: var(--text-muted);
+}
+
+.actionButton {
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.paidButton {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.paidButton:hover {
+    background-color: var(--primary-hover);
+}
+
+.reminderButton {
+    background-color: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    margin-left: 0.5rem;
+}
+
+.reminderButton:hover {
+    border-color: var(--warning);
+    color: var(--warning);
+}

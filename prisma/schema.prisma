@@ -1,0 +1,78 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Apartment {
+  id          String   @id @default(uuid())
+  name        String?
+  address     String
+  complement  String?
+  city        String
+  zipCode     String
+  rent        Float
+  charges     Float
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  leases      Lease[]
+}
+
+model Tenant {
+  id           String           @id @default(uuid())
+  firstName    String
+  lastName     String
+  email        String           @unique
+  phone        String?
+  coTenantFirstName String?
+  coTenantLastName  String?
+  coTenantEmail     String?
+  coTenantPhone     String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  leases       Lease[]
+  documents    TenantDocument[]
+}
+
+model TenantDocument {
+  id        String   @id @default(uuid())
+  name      String
+  url       String
+  type      String
+  size      Int
+  createdAt DateTime @default(now())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+model Lease {
+  id            String        @id @default(uuid())
+  apartmentId   String
+  tenantId      String
+  startDate     DateTime
+  endDate       DateTime?
+  rentAmount    Float
+  chargesAmount Float
+  isActive      Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  apartment     Apartment     @relation(fields: [apartmentId], references: [id])
+  tenant        Tenant        @relation(fields: [tenantId], references: [id])
+  payments      RentPayment[]
+}
+
+model RentPayment {
+  id        String   @id @default(uuid())
+  leaseId   String
+  period    DateTime // Represents the month being paid (e.g. 2023-10-01)
+  amount    Float
+  status    String   // PAID, PENDING, LATE
+  paidAt    DateTime?
+  sentAt    DateTime? // Email sent date
+  createdAt DateTime @default(now())
+  lease     Lease    @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+}
