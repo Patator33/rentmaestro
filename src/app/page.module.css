@@ -1,68 +1,70 @@
 .container {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 3rem 2rem;
+  padding: 2rem;
+  animation: fadeIn 0.8s ease-out;
 }
 
 .header {
-  margin-bottom: 4rem;
+  margin-bottom: 5rem;
   text-align: center;
+  position: relative;
 }
 
 .logoContainer {
   display: flex;
   justify-content: center;
   margin-bottom: 2rem;
-  animation: float 4s ease-in-out infinite;
-}
-
-@keyframes float {
-
-  0%,
-  100% {
-    transform: translateY(0px);
-  }
-
-  50% {
-    transform: translateY(-15px);
-  }
+  animation: float 6s ease-in-out infinite;
+  filter: drop-shadow(0 0 30px rgba(6, 182, 212, 0.2));
 }
 
 .title {
-  font-size: 3.5rem;
+  font-size: 4rem;
   font-weight: 900;
   margin-bottom: 1rem;
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color), var(--accent-color));
+  background: linear-gradient(to right, #f8fafc, #94a3b8);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   letter-spacing: -0.04em;
+  text-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
 .subtitle {
   font-size: 1.25rem;
-  color: var(--text-secondary);
+  color: var(--primary-color);
   font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  opacity: 0.9;
 }
 
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 2rem;
-  margin-bottom: 4rem;
+  margin-bottom: 5rem;
+  animation: slideInUp 0.8s ease-out 0.2s backwards;
 }
 
 .card {
-  background: rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 2px solid rgba(255, 255, 255, 0.4);
+  background: var(--surface);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-xl);
-  padding: 2rem;
-  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.12);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 2.5rem;
   position: relative;
   overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card:hover {
+  transform: translateY(-10px);
+  background: var(--surface-hover);
+  border-color: rgba(6, 182, 212, 0.3);
+  box-shadow: var(--shadow-glow);
 }
 
 .card::before {
@@ -70,15 +72,15 @@
   position: absolute;
   top: 0;
   left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color), var(--accent-color));
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--primary-color), transparent);
+  opacity: 0;
+  transition: opacity 0.4s;
 }
 
-.card:hover {
-  transform: translateY(-8px) scale(1.03);
-  box-shadow: 0 20px 60px rgba(99, 102, 241, 0.25);
-  border-color: rgba(99, 102, 241, 0.3);
+.card:hover::before {
+  opacity: 1;
 }
 
 .cardHeader {
@@ -86,83 +88,64 @@
 }
 
 .cardTitle {
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   font-weight: 700;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.15em;
+  margin-bottom: 0.5rem;
 }
 
 .cardValue {
   font-size: 3.5rem;
-  font-weight: 900;
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  font-weight: 800;
+  color: var(--text-main);
   line-height: 1;
+  text-shadow: 0 0 20px rgba(6, 182, 212, 0.1);
 }
 
 .cardSubtext {
   font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.7);
-  margin-top: 0.75rem;
-  font-weight: 600;
+  color: var(--primary-color);
+  margin-top: 1rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .actions {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 1.5rem;
+  animation: slideInUp 0.8s ease-out 0.4s backwards;
 }
 
 .actionCard {
-  background: rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border: 2px solid transparent;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: var(--radius-xl);
   padding: 2rem;
   text-align: center;
   cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.4s ease;
   position: relative;
-  overflow: hidden;
-}
-
-.actionCard::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  padding: 2px;
-  border-radius: var(--radius-xl);
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color), var(--pink), var(--accent-color));
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  opacity: 0;
-  transition: opacity 0.4s;
-}
-
-.actionCard:hover::before {
-  opacity: 1;
 }
 
 .actionCard:hover {
-  transform: translateY(-6px) scale(1.05);
-  box-shadow: 0 16px 48px rgba(99, 102, 241, 0.2);
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(6, 182, 212, 0.05);
+  border-color: var(--primary-color);
+  transform: scale(1.02);
+  box-shadow: 0 0 30px rgba(6, 182, 212, 0.1);
 }
 
 .actionCard h3 {
-  font-size: 1.35rem;
+  font-size: 1.25rem;
   margin-bottom: 0.75rem;
   color: var(--text-main);
-  font-weight: 700;
 }
 
 .actionCard p {
   color: var(--text-secondary);
-  font-size: 0.95rem;
-  font-weight: 500;
+  font-size: 0.9rem;
 }

@@ -5,6 +5,9 @@
 }
 
 .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
     margin-bottom: 2rem;
 }
 
@@ -13,6 +16,26 @@
     font-weight: 700;
     color: var(--text-main);
     margin-bottom: 0.5rem;
+}
+
+.editButton {
+    margin-left: auto;
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    color: var(--text-main);
+    font-size: 0.9rem;
+    border: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+}
+
+.editButton:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: var(--text-secondary);
 }
 
 .subtitle {

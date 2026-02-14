@@ -61,7 +61,9 @@ export default async function TenantsPage() {
                                     )}
                                     {activeLease && (
                                         <div className={styles.occupiedBadge}>
-                                            🏠 {activeLease.apartment.name || activeLease.apartment.address}
+                                            <Link href={`/apartments/${activeLease.apartment.id}`} className="hover:underline" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'inherit', textDecoration: 'none' }}>
+                                                🏠 {activeLease.apartment.name || activeLease.apartment.address}
+                                            </Link>
                                         </div>
                                     )}
                                 </div>

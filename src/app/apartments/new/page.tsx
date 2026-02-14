@@ -53,6 +53,11 @@ export default function NewApartmentPage() {
                     <textarea id="description" name="description" className={styles.textarea} placeholder="T2 lumineux..." />
                 </div>
 
+                <div className={styles.formGroup}>
+                    <label htmlFor="comment" className={styles.label}>Commentaire interne (Privé)</label>
+                    <textarea id="comment" name="comment" className={styles.textarea} placeholder="Notes sur le propriétaire, code d'entrée..." />
+                </div>
+
                 <button type="submit" className={styles.submitButton}>Enregistrer</button>
             </form>
         </div>

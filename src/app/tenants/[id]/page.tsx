@@ -34,8 +34,13 @@ export default async function TenantDetailsPage({ params }: { params: Promise<{ 
             </Link>
 
             <header className={styles.header}>
-                <h1 className={styles.title}>{tenant.firstName} {tenant.lastName}</h1>
-                <p className={styles.subtitle}>Créé le {tenant.createdAt.toLocaleDateString()}</p>
+                <div>
+                    <h1 className={styles.title}>{tenant.firstName} {tenant.lastName}</h1>
+                    <p className={styles.subtitle}>Créé le {tenant.createdAt.toLocaleDateString()}</p>
+                </div>
+                <Link href={`/tenants/${tenant.id}/edit`} className={styles.editButton}>
+                    ✏️ Modifier
+                </Link>
             </header>
 
             <div className={styles.grid}>

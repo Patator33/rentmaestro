@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import styles from "./page.module.css";
-import { deleteApartment } from "@/actions/apartments";
+// import { deleteApartment } from "@/actions/apartments"; // Removed as now handled by client component
+import DeleteApartmentButton from "@/components/DeleteApartmentButton";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +10,7 @@ export default async function ApartmentsPage() {
     const apartments = await prisma.apartment.findMany({
         include: {
             leases: {
-                where: { isActive: true },
+                orderBy: { endDate: 'desc' },
                 include: { tenant: true }
             }
         },
@@ -32,7 +33,8 @@ export default async function ApartmentsPage() {
             ) : (
                 <div className={styles.grid}>
                     {apartments.map((apt) => {
-                        const activeLease = apt.leases[0];
+                        const activeLease = apt.leases.find(l => l.isActive);
+                        const lastLease = apt.leases[0];
                         const isVacant = !activeLease;
 
                         return (
@@ -65,17 +67,29 @@ export default async function ApartmentsPage() {
                                     {isVacant ? (
                                         <div className={styles.vacantBadge}>
                                             🔓 Vacant
+                                            {lastLease?.endDate && (
+                                                <span style={{ fontSize: '0.8em', opacity: 0.8, fontWeight: 400 }}>
+                                                    depuis le {lastLease.endDate.toLocaleDateString()}
+                                                </span>
+                                            )}
                                         </div>
                                     ) : (
                                         <div className={styles.tenantBadge}>
-                                            👤 {activeLease.tenant.firstName} {activeLease.tenant.lastName}
+                                            👤
+                                            <Link href={`/tenants/${activeLease?.tenant.id}`} className="hover:underline">
+                                                {activeLease?.tenant.firstName} {activeLease?.tenant.lastName}
+                                            </Link>
+                                            {activeLease && (
+                                                <span style={{ fontSize: '0.8em', opacity: 0.8, fontWeight: 400, marginLeft: 'auto' }}>
+                                                    Du {activeLease.startDate.toLocaleDateString()}
+                                                    {activeLease.endDate ? ` au ${activeLease.endDate.toLocaleDateString()}` : ' (En cours)'}
+                                                </span>
+                                            )}
                                         </div>
                                     )}
                                 </div>
                                 <div className={styles.cardFooter}>
-                                    <form action={deleteApartment.bind(null, apt.id)}>
-                                        <button type="submit" className={styles.deleteButton}>Supprimer</button>
-                                    </form>
+                                    <DeleteApartmentButton id={apt.id} />
                                 </div>
                             </div>
                         );

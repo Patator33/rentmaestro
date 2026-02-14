@@ -39,8 +39,24 @@ export async function createLease(formData: FormData) {
     });
 
     revalidatePath("/leases");
-    revalidatePath("/apartments"); // Update apartment status if needed
+    revalidatePath("/apartments");
     redirect("/leases");
+}
+
+export async function terminateLease(id: string, endDateStr?: string) {
+    const endDate = endDateStr ? new Date(endDateStr) : new Date();
+
+    await prisma.lease.update({
+        where: { id },
+        data: {
+            // We don't set isActive: false anymore, status is derived from dates
+            isActive: true,
+            endDate: endDate,
+        },
+    });
+    revalidatePath("/apartments");
+    revalidatePath(`/apartments`); // Force update all apartments lists
+    revalidatePath("/leases");
 }
 
 export async function deleteLease(id: string) {
@@ -48,4 +64,5 @@ export async function deleteLease(id: string) {
         where: { id },
     });
     revalidatePath("/leases");
+    revalidatePath("/apartments");
 }

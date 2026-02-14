@@ -103,3 +103,49 @@
     color: white;
     border-color: var(--error);
 }
+
+.sectionTitle {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 3rem 0 1.5rem;
+    color: var(--text-main);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.5rem;
+}
+
+.historyCard {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    opacity: 0.8;
+}
+
+.historyCard .cardTitle {
+    color: var(--text-secondary);
+}
+
+.historyCard .rent {
+    color: var(--text-muted);
+}
+
+.statusBadge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.statusActive {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: var(--success);
+}
+
+.statusInactive {
+    background-color: rgba(107, 114, 128, 0.1);
+    color: var(--text-muted);
+}
