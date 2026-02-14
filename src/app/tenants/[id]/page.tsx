@@ -55,6 +55,10 @@ export default async function TenantDetailsPage({ params }: { params: Promise<{ 
                             <span className={styles.label}>Téléphone</span>
                             <span className={styles.value}>{tenant.phone || '-'}</span>
                         </div>
+                        <div className={styles.infoItem}>
+                            <span className={styles.label}>Paiement habituel</span>
+                            <span className={styles.value}>Le {tenant.paymentDay || 5} du mois</span>
+                        </div>
                     </div>
                 </section>
 

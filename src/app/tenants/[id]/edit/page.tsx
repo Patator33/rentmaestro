@@ -46,6 +46,23 @@ export default async function EditTenantPage({ params }: { params: Promise<{ id:
                         <label htmlFor="phone" className={styles.label}>Téléphone</label>
                         <input type="tel" id="phone" name="phone" defaultValue={tenant.phone || ''} className={styles.input} />
                     </div>
+
+                    <div className={styles.formGroup}>
+                        <label htmlFor="paymentDay" className={styles.label}>Jour de paiement habituel</label>
+                        <input
+                            type="number"
+                            id="paymentDay"
+                            name="paymentDay"
+                            defaultValue={tenant.paymentDay || 5}
+                            className={styles.input}
+                            min="1"
+                            max="31"
+                            style={{ maxWidth: '100px' }}
+                        />
+                        <small style={{ color: 'var(--text-muted)', display: 'block', marginTop: '0.25rem' }}>
+                            Le retard est calculé après ce jour du mois.
+                        </small>
+                    </div>
                 </div>
 
                 <div className={styles.section}>

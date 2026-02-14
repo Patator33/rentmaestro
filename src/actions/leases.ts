@@ -43,8 +43,17 @@ export async function createLease(formData: FormData) {
     redirect("/leases");
 }
 
-export async function terminateLease(id: string, endDateStr?: string) {
-    const endDate = endDateStr ? new Date(endDateStr) : new Date();
+export async function terminateLease(id: string, endDateStr?: string | null) {
+    // If endDateStr is explicitly null, we mean "cancel termination", so endDate becomes null.
+    // If undefined, default to now.
+    // If string, parse it.
+    let endDate: Date | null = new Date();
+
+    if (endDateStr === null) {
+        endDate = null;
+    } else if (endDateStr) {
+        endDate = new Date(endDateStr);
+    }
 
     await prisma.lease.update({
         where: { id },

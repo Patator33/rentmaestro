@@ -35,6 +35,7 @@ model Tenant {
   coTenantPhone     String?
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
+  paymentDay   Int?             @default(5) // Preferred payment day of month (1-31)
   leases       Lease[]
   documents    TenantDocument[]
 }

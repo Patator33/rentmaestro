@@ -32,6 +32,24 @@ export default function NewTenantPage() {
                     <input type="tel" id="phone" name="phone" className={styles.input} placeholder="06 12 34 56 78" />
                 </div>
 
+                <div className={styles.formGroup}>
+                    <label htmlFor="paymentDay" className={styles.label}>Jour de paiement habituel (du mois)</label>
+                    <input
+                        type="number"
+                        id="paymentDay"
+                        name="paymentDay"
+                        className={styles.input}
+                        placeholder="Ex: 5"
+                        min="1"
+                        max="31"
+                        defaultValue="5"
+                        style={{ maxWidth: '100px' }}
+                    />
+                    <small style={{ color: 'var(--text-muted)', display: 'block', marginTop: '0.25rem' }}>
+                        Utilisé pour calculer les retards de paiement.
+                    </small>
+                </div>
+
                 <div className={styles.sectionSeparator} style={{ margin: '2rem 0', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
                     <h2 className={styles.subtitle} style={{ fontSize: '1.1rem', marginBottom: '1rem', color: 'var(--text-main)' }}>Colocataire (Optionnel)</h2>
                 </div>

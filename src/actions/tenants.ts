@@ -13,6 +13,8 @@ export async function createTenant(formData: FormData) {
     const coTenantLastName = formData.get("coTenantLastName") as string;
     const coTenantEmail = formData.get("coTenantEmail") as string;
     const coTenantPhone = formData.get("coTenantPhone") as string;
+    const paymentDayStr = formData.get("paymentDay") as string;
+    const paymentDay = paymentDayStr ? parseInt(paymentDayStr) : 5;
 
     await prisma.tenant.create({
         data: {
@@ -24,6 +26,7 @@ export async function createTenant(formData: FormData) {
             coTenantLastName,
             coTenantEmail,
             coTenantPhone,
+            paymentDay,
         },
     });
 
@@ -52,6 +55,8 @@ export async function updateTenant(id: string, formData: FormData) {
     const coTenantLastName = formData.get("coTenantLastName") as string;
     const coTenantEmail = formData.get("coTenantEmail") as string;
     const coTenantPhone = formData.get("coTenantPhone") as string;
+    const paymentDayStr = formData.get("paymentDay") as string;
+    const paymentDay = paymentDayStr ? parseInt(paymentDayStr) : 5;
 
     await prisma.tenant.update({
         where: { id },
@@ -64,6 +69,7 @@ export async function updateTenant(id: string, formData: FormData) {
             coTenantLastName,
             coTenantEmail,
             coTenantPhone,
+            paymentDay,
         },
     });
 

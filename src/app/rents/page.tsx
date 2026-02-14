@@ -95,7 +95,14 @@ export default async function RentsPage({
                                         {isPaid ? (
                                             <span className={styles.statusPaid}>✓ Payé {payment.paidAt?.toLocaleDateString()}</span>
                                         ) : payment ? (
-                                            <span className={styles.statusPending}>⚠ En attente {payment.sentAt ? '(Relancé)' : ''}</span>
+                                            <span className={styles.statusPending}>
+                                                ⚠ En attente
+                                                {payment.sentAt && (
+                                                    <span style={{ display: 'block', fontSize: '0.8em', fontWeight: 'normal', color: 'var(--warning)' }}>
+                                                        (Relancé le {payment.sentAt.toLocaleDateString()})
+                                                    </span>
+                                                )}
+                                            </span>
                                         ) : (
                                             <span className={styles.statusUnpaid}>À régler</span>
                                         )}
