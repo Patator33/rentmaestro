@@ -1,17 +1,13 @@
 services:
   rentmaestro:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/patator33/rentmaestro:latest
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=production
       - DATABASE_URL=file:/app/data/rentmaestro.db
     volumes:
-      # Persist database
       - rentmaestro-data:/app/data
-      # Persist uploaded documents
       - rentmaestro-uploads:/app/public/uploads
     restart: unless-stopped
     healthcheck:
