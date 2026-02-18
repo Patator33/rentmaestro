@@ -94,13 +94,13 @@
     padding: 1rem;
     background: rgba(255, 255, 255, 0.5);
     border-radius: var(--radius-lg);
-    border: 2px solid rgba(99, 102, 241, 0.2);
+    border: 2px solid rgba(91, 95, 199, 0.2);
     transition: all 0.3s ease;
 }
 
 .leaseItem:hover {
     background: rgba(255, 255, 255, 0.8);
-    border-color: rgba(99, 102, 241, 0.4);
+    border-color: rgba(91, 95, 199, 0.4);
     transform: translateX(4px);
 }
 
@@ -124,9 +124,9 @@
 
 .leaseAmount {
     padding: 0.5rem 1.2rem;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(6, 182, 212, 0.15));
+    background: linear-gradient(135deg, rgba(91, 95, 199, 0.15), rgba(43, 140, 238, 0.15));
     border-radius: var(--radius-full);
-    border: 1px solid rgba(99, 102, 241, 0.3);
+    border: 1px solid rgba(91, 95, 199, 0.3);
     font-weight: 700;
     color: var(--primary-color);
     white-space: nowrap;

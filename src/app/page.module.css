@@ -16,7 +16,7 @@
   justify-content: center;
   margin-bottom: 2rem;
   animation: float 6s ease-in-out infinite;
-  filter: drop-shadow(0 0 30px rgba(6, 182, 212, 0.2));
+  filter: drop-shadow(0 0 30px rgba(43, 140, 238, 0.2));
 }
 
 .title {
@@ -63,7 +63,7 @@
 .card:hover {
   transform: translateY(-10px);
   background: var(--surface-hover);
-  border-color: rgba(6, 182, 212, 0.3);
+  border-color: rgba(43, 140, 238, 0.3);
   box-shadow: var(--shadow-glow);
 }
 
@@ -101,7 +101,7 @@
   font-weight: 800;
   color: var(--text-main);
   line-height: 1;
-  text-shadow: 0 0 20px rgba(6, 182, 212, 0.1);
+  text-shadow: 0 0 20px rgba(43, 140, 238, 0.1);
 }
 
 .cardSubtext {
@@ -133,10 +133,10 @@
 }
 
 .actionCard:hover {
-  background: rgba(6, 182, 212, 0.05);
+  background: rgba(43, 140, 238, 0.05);
   border-color: var(--primary-color);
   transform: scale(1.02);
-  box-shadow: 0 0 30px rgba(6, 182, 212, 0.1);
+  box-shadow: 0 0 30px rgba(43, 140, 238, 0.1);
 }
 
 .actionCard h3 {

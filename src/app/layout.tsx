@@ -1,13 +1,13 @@
 'use client';
 
-import { Inter } from "next/font/google";
+import { Manrope } from "next/font/google";
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import { useState } from "react";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
+const manrope = Manrope({
+  variable: "--font-manrope",
   subsets: ["latin"],
 });
 
@@ -20,7 +20,7 @@ export default function RootLayout({
 
   return (
     <html lang="fr">
-      <body className={`${inter.variable}`}>
+      <body className={`${manrope.variable}`}>
         <nav className="main-nav">
           <div className="nav-content">
             <Link href="/" className="nav-home-link">
