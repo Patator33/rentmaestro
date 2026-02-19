@@ -20,7 +20,7 @@ export default async function TenantsPage() {
         <div className={styles.container}>
             <header className={styles.header}>
                 <h1 className={styles.title}>Mes Locataires</h1>
-                <Link href="/tenants/new" className={styles.addButton}>
+                <Link href="/tenants/new" className="std-add-button">
                     + Nouveau Locataire
                 </Link>
             </header>

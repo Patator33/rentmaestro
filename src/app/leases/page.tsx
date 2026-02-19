@@ -33,7 +33,7 @@ export default async function LeasesPage() {
         <div className={styles.container}>
             <header className={styles.header}>
                 <h1 className={styles.title}>Contrats de Location</h1>
-                <Link href="/leases/new" className={styles.addButton}>
+                <Link href="/leases/new" className="std-add-button">
                     + Nouveau Contrat
                 </Link>
             </header>

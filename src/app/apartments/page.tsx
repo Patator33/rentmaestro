@@ -21,7 +21,7 @@ export default async function ApartmentsPage() {
         <div className={styles.container}>
             <header className={styles.header}>
                 <h1 className={styles.title}>Mes Appartements</h1>
-                <Link href="/apartments/new" className={styles.addButton}>
+                <Link href="/apartments/new" className="std-add-button">
                     + Ajouter un bien
                 </Link>
             </header>
