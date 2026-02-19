@@ -50,37 +50,65 @@ export default async function LeasesPage() {
                         <>
                             <h2 className={styles.sectionTitle} style={{ color: 'var(--accent-color)' }}>À Venir ({futureLeases.length})</h2>
                             <div className={styles.grid}>
-                                {futureLeases.map((lease) => (
-                                    <div key={lease.id} className={styles.card} style={{ borderColor: 'var(--accent-color)', background: 'rgba(255, 165, 0, 0.05)' }}>
-                                        <div className={styles.cardHeader}>
-                                            <span className={styles.statusBadge} style={{ background: 'rgba(255, 165, 0, 0.15)', color: 'var(--accent-color)' }}>À VENIR</span>
-                                            <h3 className={styles.cardTitle}>{lease.apartment.address}</h3>
-                                            <p className={styles.cardSubtitle}>
-                                                Locataire : <Link href={`/tenants/${lease.tenant.id}`} className="hover:underline">{lease.tenant.firstName} {lease.tenant.lastName}</Link>
-                                            </p>
+                                {futureLeases.map((lease) => {
+                                    const start = new Date(lease.startDate);
+                                    let rentDisplay = (
+                                        <div className={styles.rent}>
+                                            {(lease.rentAmount + lease.chargesAmount).toFixed(2)} € <span style={{ fontSize: '0.8em', fontWeight: 'normal' }}>/ mois CC</span>
                                         </div>
-                                        <div className={styles.info}>
-                                            <div className={styles.rent}>
-                                                {(lease.rentAmount + lease.chargesAmount).toFixed(2)} € <span style={{ fontSize: '0.8em', fontWeight: 'normal' }}>/ mois CC</span>
+                                    );
+
+                                    // Check for start prorata (if not 1st of month)
+                                    if (start.getDate() > 1) {
+                                        const daysInMonth = new Date(start.getFullYear(), start.getMonth() + 1, 0).getDate();
+                                        const daysRemaining = daysInMonth - start.getDate() + 1;
+                                        const totalRent = lease.rentAmount + lease.chargesAmount;
+                                        const prorata = (totalRent / daysInMonth) * daysRemaining;
+
+                                        rentDisplay = (
+                                            <div className={styles.rent} style={{
+                                                border: '1px solid #f9a8d4',
+                                                background: 'rgba(236, 72, 153, 0.1)',
+                                                color: '#db2777',
+                                                padding: '0.5rem',
+                                                borderRadius: '0.5rem',
+                                                fontSize: '1.2rem'
+                                            }}>
+                                                {prorata.toFixed(2)} € <span style={{ fontSize: '0.6em', fontWeight: 'normal', display: 'block' }}>Prorata 1er mois ({daysRemaining}j)</span>
                                             </div>
-                                            <span className={styles.date}>Début : {formatDate(lease.startDate)}</span>
-                                            {lease.endDate && (
-                                                <span className={styles.date} style={{ opacity: 0.8 }}>Fin : {formatDate(lease.endDate)}</span>
-                                            )}
+                                        );
+                                    }
+
+                                    return (
+                                        <div key={lease.id} className={styles.card} style={{ borderColor: 'var(--accent-color)', background: 'rgba(255, 165, 0, 0.05)' }}>
+                                            <div className={styles.cardHeader}>
+                                                <span className={styles.statusBadge} style={{ background: 'rgba(255, 165, 0, 0.15)', color: 'var(--accent-color)' }}>À VENIR</span>
+                                                <h3 className={styles.cardTitle}>{lease.apartment.address}</h3>
+                                                <p className={styles.cardSubtitle}>
+                                                    Locataire : <Link href={`/tenants/${lease.tenant.id}`} className="hover:underline">{lease.tenant.firstName} {lease.tenant.lastName}</Link>
+                                                </p>
+                                            </div>
+                                            <div className={styles.info}>
+                                                {rentDisplay}
+                                                <span className={styles.date}>Début : {formatDate(lease.startDate)}</span>
+                                                {lease.endDate && (
+                                                    <span className={styles.date} style={{ opacity: 0.8 }}>Fin : {formatDate(lease.endDate)}</span>
+                                                )}
+                                            </div>
+                                            <div className={styles.cardFooter}>
+                                                <TerminateLeaseButton
+                                                    leaseId={lease.id}
+                                                    currentEndDate={lease.endDate ? lease.endDate.toISOString().split('T')[0] : undefined}
+                                                    label="Modifier dates"
+                                                    style={{ marginRight: 'auto', background: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border-color)' }}
+                                                />
+                                                <form action={deleteLease.bind(null, lease.id)}>
+                                                    <button type="submit" className={styles.deleteButton} title="Supprimer">Supprimer</button>
+                                                </form>
+                                            </div>
                                         </div>
-                                        <div className={styles.cardFooter}>
-                                            <TerminateLeaseButton
-                                                leaseId={lease.id}
-                                                currentEndDate={lease.endDate ? lease.endDate.toISOString().split('T')[0] : undefined}
-                                                label="Modifier dates"
-                                                style={{ marginRight: 'auto', background: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border-color)' }}
-                                            />
-                                            <form action={deleteLease.bind(null, lease.id)}>
-                                                <button type="submit" className={styles.deleteButton} title="Supprimer">Supprimer</button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         </>
                     )}
@@ -91,50 +119,100 @@ export default async function LeasesPage() {
                         <p style={{ color: 'var(--text-secondary)', fontStyle: 'italic', marginBottom: '2rem' }}>Aucun bail actif aujourd'hui.</p>
                     ) : (
                         <div className={styles.grid}>
-                            {activeLeases.map((lease) => (
-                                <div key={lease.id} className={styles.card}>
-                                    <div className={styles.cardHeader}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                            <span className={`${styles.statusBadge} ${styles.statusActive}`}>ACTIF</span>
-                                            {lease.endDate && (
-                                                <span style={{ fontSize: '0.75rem', color: 'var(--warning)', fontWeight: 600, background: 'rgba(255, 165, 0, 0.1)', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
-                                                    Fin le {formatDate(lease.endDate)}
-                                                </span>
-                                            )}
-                                        </div>
-                                        <h3 className={styles.cardTitle} style={{ marginTop: '0.5rem' }}>{lease.apartment.address}</h3>
-                                        <p className={styles.cardSubtitle}>
-                                            <Link href={`/tenants/${lease.tenant.id}`} className="hover:underline">
-                                                {lease.tenant.firstName} {lease.tenant.lastName}
-                                            </Link>
-                                        </p>
-                                    </div>
+                            {activeLeases.map((lease) => {
+                                const start = new Date(lease.startDate);
+                                const end = lease.endDate ? new Date(lease.endDate) : null;
+                                const today = new Date();
+                                const totalRent = lease.rentAmount + lease.chargesAmount;
 
-                                    <div className={styles.info}>
-                                        <div className={styles.rent}>
-                                            {(lease.rentAmount + lease.chargesAmount).toFixed(2)} € <span style={{ fontSize: '0.8em', fontWeight: 'normal' }}>/ mois CC</span>
-                                        </div>
-                                        <span className={styles.date}>Début: {formatDate(lease.startDate)}</span>
+                                let rentDisplay = (
+                                    <div className={styles.rent}>
+                                        {totalRent.toFixed(2)} € <span style={{ fontSize: '0.8em', fontWeight: 'normal' }}>/ mois CC</span>
                                     </div>
+                                );
 
-                                    <div className={styles.cardFooter}>
-                                        <TerminateLeaseButton
-                                            leaseId={lease.id}
-                                            currentEndDate={lease.endDate ? lease.endDate.toISOString().split('T')[0] : undefined}
-                                            style={{
-                                                background: 'transparent',
-                                                color: lease.endDate ? 'var(--text-main)' : 'var(--error)',
-                                                border: '1px solid var(--border-color)',
-                                                padding: '0.5rem 1rem',
-                                                borderRadius: 'var(--radius-sm)',
-                                                fontSize: '0.875rem',
-                                                cursor: 'pointer'
-                                            }}
-                                            label={lease.endDate ? "Modifier fin" : "Terminer"}
-                                        />
+                                // Check for Start Prorata (Current month is start month AND start > 1st)
+                                if (today.getMonth() === start.getMonth() && today.getFullYear() === start.getFullYear() && start.getDate() > 1) {
+                                    const daysInMonth = new Date(start.getFullYear(), start.getMonth() + 1, 0).getDate();
+                                    const daysRemaining = daysInMonth - start.getDate() + 1;
+                                    const prorata = (totalRent / daysInMonth) * daysRemaining;
+
+                                    rentDisplay = (
+                                        <div className={styles.rent} style={{
+                                            border: '1px solid #f9a8d4',
+                                            background: 'rgba(236, 72, 153, 0.1)',
+                                            color: '#db2777',
+                                            padding: '0.5rem',
+                                            borderRadius: '0.5rem',
+                                            fontSize: '1.2rem'
+                                        }}>
+                                            {prorata.toFixed(2)} € <span style={{ fontSize: '0.6em', fontWeight: 'normal', display: 'block' }}>Prorata début ({daysRemaining}j)</span>
+                                        </div>
+                                    );
+                                }
+                                // Check for End Prorata (Current month is end month)
+                                else if (end && today.getMonth() === end.getMonth() && today.getFullYear() === end.getFullYear()) {
+                                    const daysInMonth = new Date(end.getFullYear(), end.getMonth() + 1, 0).getDate();
+                                    const daysPresent = end.getDate();
+                                    const prorata = (totalRent / daysInMonth) * daysPresent;
+
+                                    rentDisplay = (
+                                        <div className={styles.rent} style={{
+                                            border: '1px solid #f9a8d4',
+                                            background: 'rgba(236, 72, 153, 0.1)',
+                                            color: '#db2777',
+                                            padding: '0.5rem',
+                                            borderRadius: '0.5rem',
+                                            fontSize: '1.2rem'
+                                        }}>
+                                            {prorata.toFixed(2)} € <span style={{ fontSize: '0.6em', fontWeight: 'normal', display: 'block' }}>Prorata fin ({daysPresent}j)</span>
+                                        </div>
+                                    );
+                                }
+
+                                return (
+                                    <div key={lease.id} className={styles.card}>
+                                        <div className={styles.cardHeader}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                <span className={`${styles.statusBadge} ${styles.statusActive}`}>ACTIF</span>
+                                                {lease.endDate && (
+                                                    <span style={{ fontSize: '0.75rem', color: 'var(--warning)', fontWeight: 600, background: 'rgba(255, 165, 0, 0.1)', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
+                                                        Fin le {formatDate(lease.endDate)}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <h3 className={styles.cardTitle} style={{ marginTop: '0.5rem' }}>{lease.apartment.address}</h3>
+                                            <p className={styles.cardSubtitle}>
+                                                <Link href={`/tenants/${lease.tenant.id}`} className="hover:underline">
+                                                    {lease.tenant.firstName} {lease.tenant.lastName}
+                                                </Link>
+                                            </p>
+                                        </div>
+
+                                        <div className={styles.info}>
+                                            {rentDisplay}
+                                            <span className={styles.date}>Début: {formatDate(lease.startDate)}</span>
+                                        </div>
+
+                                        <div className={styles.cardFooter}>
+                                            <TerminateLeaseButton
+                                                leaseId={lease.id}
+                                                currentEndDate={lease.endDate ? lease.endDate.toISOString().split('T')[0] : undefined}
+                                                style={{
+                                                    background: 'transparent',
+                                                    color: lease.endDate ? 'var(--text-main)' : 'var(--error)',
+                                                    border: '1px solid var(--border-color)',
+                                                    padding: '0.5rem 1rem',
+                                                    borderRadius: 'var(--radius-sm)',
+                                                    fontSize: '0.875rem',
+                                                    cursor: 'pointer'
+                                                }}
+                                                label={lease.endDate ? "Modifier fin" : "Terminer"}
+                                            />
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
 

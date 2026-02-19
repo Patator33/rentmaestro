@@ -3,6 +3,7 @@ import Logo from "@/components/Logo";
 import UnpaidRents from "@/components/UnpaidRents";
 import styles from "./page.module.css";
 import { prisma } from "@/lib/prisma";
+import { formatDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -55,6 +56,20 @@ async function getStats() {
 export default async function Home() {
   const stats = await getStats();
 
+  // Rent Review Alerts Logic
+  const activeLeases = await prisma.lease.findMany({
+    where: { isActive: true },
+    include: { tenant: true, apartment: true }
+  });
+
+  const now = new Date();
+  const rentReviews = activeLeases.filter(lease => {
+    const start = new Date(lease.startDate);
+    const monthsDiff = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+    // Check if tenure is 10 months, 22 months, 34 months... (10 months + N years)
+    return monthsDiff >= 10 && monthsDiff % 12 === 10;
+  });
+
   return (
     <div className={styles.container}>
       <header className={styles.header}>
@@ -64,6 +79,34 @@ export default async function Home() {
         <h1 className={styles.title}>Rentmaestro</h1>
         <p className={styles.subtitle}>Gérez vos investissements locatifs avec élégance.</p>
       </header>
+
+      {/* Rent Review Alert Section */}
+      {rentReviews.length > 0 && (
+        <section style={{
+          marginBottom: '3rem',
+          padding: '1.5rem',
+          background: 'rgba(34, 197, 94, 0.1)',
+          border: '1px solid rgba(34, 197, 94, 0.3)',
+          borderRadius: '1rem',
+          animation: 'fadeIn 0.8s ease-out'
+        }}>
+          <h2 style={{ color: '#22c55e', fontSize: '1.25rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            📈 Révisions de Loyer à prévoir
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {rentReviews.map(lease => (
+              <div key={lease.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#dcfce7' }}>
+                <span>
+                  <strong>{lease.tenant.firstName} {lease.tenant.lastName}</strong> ({lease.apartment.address})
+                </span>
+                <span style={{ fontSize: '0.9rem', opacity: 0.8 }}>
+                  En place depuis le {formatDate(lease.startDate)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className={styles.grid}>
         <Link href="/rents" className={styles.card}>
@@ -100,8 +143,6 @@ export default async function Home() {
       </section>
 
       <UnpaidRents />
-
-
     </div>
   );
 }
