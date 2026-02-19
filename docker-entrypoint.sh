@@ -1,8 +1,12 @@
 #!/bin/sh
 set -e
 
-# Run Prisma migrations
-npx prisma migrate deploy || npx prisma db push --accept-data-loss || true
+# Ensure data directory exists
+mkdir -p /app/data
+
+# Run migration explicitly
+echo "Running database migrations..."
+npx prisma migrate deploy || echo "Migrate deploy failed, trying db push..." && npx prisma db push --accept-data-loss
 
 # Seed if database is empty
 npx prisma db seed || true
