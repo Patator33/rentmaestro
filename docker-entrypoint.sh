@@ -9,7 +9,7 @@ echo "Running database migrations..."
 prisma migrate deploy || echo "Migrate deploy failed, trying db push..." && prisma db push --accept-data-loss --skip-generate
 
 # Seed if database is empty
-./node_modules/.bin/ts-node --compiler-options '{"module":"CommonJS","esModuleInterop":true}' prisma/seed.ts || true
+./node_modules/.bin/ts-node --project prisma/tsconfig.seed.json prisma/seed.ts || true
 
 # Start the application
 exec node server.js
