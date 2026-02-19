@@ -2,7 +2,7 @@ services:
   rentmaestro:
     image: ghcr.io/patator33/rentmaestro:latest
     ports:
-      - "3000:3000"
+      - "3008:3000"
     environment:
       - NODE_ENV=production
       - DATABASE_URL=file:/app/data/rentmaestro.db
