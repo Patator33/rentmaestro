@@ -19,7 +19,7 @@ fi
 
 # Seed
 echo "🌱 Running seed script..."
-ts-node --project prisma/tsconfig.seed.json prisma/seed.ts
+node prisma/seed.js
 
 # Start the application
 exec node server.js
