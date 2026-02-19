@@ -17,9 +17,6 @@ else
     prisma db push --accept-data-loss --skip-generate
 fi
 
-# Seed
-echo "🌱 Running seed script..."
-ts-node --compiler-options '{"module":"CommonJS"}' prisma/seed.ts
 
 # Start the application
 exec node server.js
