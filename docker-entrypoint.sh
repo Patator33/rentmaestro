@@ -2,10 +2,10 @@
 set -e
 
 # Run Prisma migrations
-npx prisma migrate deploy 2>/dev/null || npx prisma db push --accept-data-loss 2>/dev/null || true
+npx prisma migrate deploy || npx prisma db push --accept-data-loss || true
 
 # Seed if database is empty
-npx prisma db seed 2>/dev/null || true
+npx prisma db seed || true
 
 # Start the application
 exec node server.js
