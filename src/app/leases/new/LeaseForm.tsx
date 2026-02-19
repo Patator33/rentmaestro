@@ -45,6 +45,48 @@ export default function LeaseForm({ apartments, tenants }: LeaseFormProps) {
         }
     };
 
+    const [startDate, setStartDate] = useState('');
+
+    // Calculate prorata if start date is not the 1st of the month
+    let prorataDisplay = null;
+    if (startDate && rent && charges) {
+        // Parse the date string "YYYY-MM-DD" to ensure local time interpretation
+        const [y, m, d] = startDate.split('-').map(Number);
+
+        if (d > 1) {
+            // Get number of days in the specific month
+            // new Date(y, m, 0) gives the last day of the month 'm' (1-indexed in Date constructor for day 0?) 
+            // Actually: new Date(year, monthIndex + 1, 0) gives the last day of the monthIndex.
+            // m is 1-indexed from split. So m is correct for monthIndex + 1? 
+            // Example: 2024-02-15. m=2. new Date(2024, 2, 0) -> last day of Feb 2024 (29). Correct.
+            const daysInMonth = new Date(y, m, 0).getDate();
+            const daysRemaining = daysInMonth - d + 1; // Inclusive of start date
+
+            const totalMonthly = Number(rent) + Number(charges);
+            const prorataAmount = (totalMonthly / daysInMonth) * daysRemaining;
+
+            prorataDisplay = (
+                <div style={{
+                    marginTop: '1rem',
+                    padding: '1rem',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    border: '1px solid rgba(59, 130, 246, 0.3)',
+                    borderRadius: '0.5rem',
+                    color: 'var(--text-main)',
+                    fontSize: '0.95rem'
+                }}>
+                    <p style={{ margin: 0, fontWeight: 500 }}>
+                        📅 Prorata du premier mois ({daysRemaining} jours sur {daysInMonth})
+                    </p>
+                    <p style={{ margin: '0.25rem 0 0 0', fontSize: '1.1rem', fontWeight: 700, color: 'var(--primary-color)' }}>
+                        {prorataAmount.toFixed(2)} €
+                        <span style={{ fontSize: '0.8em', fontWeight: 400, color: 'var(--text-secondary)' }}> (Loyer + Charges)</span>
+                    </p>
+                </div>
+            );
+        }
+    }
+
     return (
         <div className={styles.container}>
             <Link href="/leases" className={styles.backLink}>
@@ -114,7 +156,15 @@ export default function LeaseForm({ apartments, tenants }: LeaseFormProps) {
 
                 <div className={styles.formGroup}>
                     <label htmlFor="startDate" className={styles.label}>Date de début *</label>
-                    <input type="date" id="startDate" name="startDate" required className={styles.input} />
+                    <input
+                        type="date"
+                        id="startDate"
+                        name="startDate"
+                        required
+                        className={styles.input}
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                    />
                 </div>
 
                 <div className={styles.row}>
@@ -147,6 +197,8 @@ export default function LeaseForm({ apartments, tenants }: LeaseFormProps) {
                         />
                     </div>
                 </div>
+
+                {prorataDisplay}
 
                 <button type="submit" className={styles.submitButton}>Créer le contrat</button>
             </form>
