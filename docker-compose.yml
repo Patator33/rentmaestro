@@ -1,6 +1,6 @@
 services:
   rentmaestro:
-    build: . 
+    build: .
     image: ghcr.io/patator33/rentmaestro:latest
     ports:
       - "3000:3000"
