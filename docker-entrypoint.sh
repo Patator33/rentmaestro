@@ -19,7 +19,7 @@ fi
 
 # Seed
 echo "🌱 Running seed script..."
-node prisma/seed.js
+ts-node --compiler-options '{"module":"CommonJS"}' prisma/seed.ts
 
 # Start the application
 exec node server.js
