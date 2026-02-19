@@ -4,6 +4,7 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 async function main() {
+    /*
     const tenantsData = [
         { firstName: 'Jean', lastName: 'Dupont', email: 'jean.dupont@example.com', phone: '0601020304' },
         { firstName: 'Marie', lastName: 'Martin', email: 'marie.martin@example.com', phone: '0612345678' },
@@ -57,6 +58,8 @@ async function main() {
     }
 
     console.log('Seeding finished.')
+    */
+    console.log('Seeding explicitly disabled.')
 }
 
 main()
