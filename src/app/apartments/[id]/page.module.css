@@ -38,6 +38,25 @@
     border-color: var(--text-secondary);
 }
 
+.tableEditButton {
+    padding: 0.35rem 0.75rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    color: var(--text-main);
+    font-size: 0.8rem;
+    border: 1px solid var(--border-color);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.tableEditButton:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: var(--text-secondary);
+}
+
 .subtitle {
     font-size: 1.1rem;
     color: var(--text-secondary);
@@ -127,8 +146,4 @@
     background: var(--surface);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
-}
-
-.table {
-    min-width: 600px;
 }

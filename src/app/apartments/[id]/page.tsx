@@ -135,10 +135,8 @@ export default async function ApartmentDetailsPage({ params }: { params: Promise
                                                         leaseId={lease.id}
                                                         currentEndDate={lease.endDate ? lease.endDate.toISOString().split('T')[0] : undefined}
                                                         label={lease.endDate ? "Modifier" : "Terminer"}
-                                                        style={{
-                                                            padding: '0.2rem 0.5rem',
-                                                            fontSize: '0.75rem'
-                                                        }}
+                                                        className={lease.endDate ? styles.tableEditButton : undefined}
+                                                        style={lease.endDate ? {} : undefined}
                                                     />
                                                 )}
                                             </div>
