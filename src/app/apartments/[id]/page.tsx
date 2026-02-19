@@ -73,80 +73,82 @@ export default async function ApartmentDetailsPage({ params }: { params: Promise
 
             <h2 className={styles.sectionTitle}>Historique des Locataires</h2>
 
-            <table className={styles.table}>
-                <thead>
-                    <tr>
-                        <th>Locataire</th>
-                        <th>Début du bail</th>
-                        <th>Fin du bail</th>
-                        <th>Loyer (CC)</th>
-                        <th>Perçu</th>
-                        <th>Statut</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {apartment.leases.length === 0 ? (
+            <div className={styles.tableWrapper}>
+                <table className={styles.table}>
+                    <thead>
                         <tr>
-                            <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
-                                Aucun locataire enregistré pour cet appartement.
-                            </td>
+                            <th>Locataire</th>
+                            <th>Début du bail</th>
+                            <th>Fin du bail</th>
+                            <th>Loyer (CC)</th>
+                            <th>Perçu</th>
+                            <th>Statut</th>
                         </tr>
-                    ) : (
-                        apartment.leases.map(lease => {
-                            const start = new Date(lease.startDate);
-                            const end = lease.endDate ? new Date(lease.endDate) : null;
-                            let status: 'FUTURE' | 'ACTIVE' | 'PAST' = 'PAST';
+                    </thead>
+                    <tbody>
+                        {apartment.leases.length === 0 ? (
+                            <tr>
+                                <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+                                    Aucun locataire enregistré pour cet appartement.
+                                </td>
+                            </tr>
+                        ) : (
+                            apartment.leases.map(lease => {
+                                const start = new Date(lease.startDate);
+                                const end = lease.endDate ? new Date(lease.endDate) : null;
+                                let status: 'FUTURE' | 'ACTIVE' | 'PAST' = 'PAST';
 
-                            if (start > today) status = 'FUTURE';
-                            else if (!end || end >= today) status = 'ACTIVE';
+                                if (start > today) status = 'FUTURE';
+                                else if (!end || end >= today) status = 'ACTIVE';
 
-                            return (
-                                <tr key={lease.id}>
-                                    <td style={{ fontWeight: 500 }}>
-                                        <Link href={`/tenants/${lease.tenant.id}`} className="hover:underline hover:text-primary">
-                                            {lease.tenant.firstName} {lease.tenant.lastName}
-                                        </Link>
-                                    </td>
-                                    <td>{lease.startDate.toLocaleDateString()}</td>
-                                    <td>{lease.endDate ? lease.endDate.toLocaleDateString() : '-'}</td>
-                                    <td>{(lease.rentAmount + lease.chargesAmount).toFixed(2)} €</td>
-                                    <td style={{ color: '#15803d', fontWeight: 600 }}>
-                                        {lease.payments
-                                            .filter((p) => p.status === 'PAID')
-                                            .reduce((acc, curr) => acc + curr.amount, 0)
-                                            .toFixed(2)} €
-                                    </td>
-                                    <td>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            {status === 'FUTURE' && (
-                                                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--accent-color)', background: 'rgba(255, 165, 0, 0.15)', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>À VENIR</span>
-                                            )}
-                                            {status === 'ACTIVE' && (
-                                                <span className={styles.activeStatus} style={{ color: 'var(--success)' }}>EN COURS</span>
-                                            )}
-                                            {status === 'PAST' && (
-                                                <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600 }}>TERMINÉ</span>
-                                            )}
+                                return (
+                                    <tr key={lease.id}>
+                                        <td style={{ fontWeight: 500 }}>
+                                            <Link href={`/tenants/${lease.tenant.id}`} className="hover:underline hover:text-primary">
+                                                {lease.tenant.firstName} {lease.tenant.lastName}
+                                            </Link>
+                                        </td>
+                                        <td>{lease.startDate.toLocaleDateString()}</td>
+                                        <td>{lease.endDate ? lease.endDate.toLocaleDateString() : '-'}</td>
+                                        <td>{(lease.rentAmount + lease.chargesAmount).toFixed(2)} €</td>
+                                        <td style={{ color: '#15803d', fontWeight: 600 }}>
+                                            {lease.payments
+                                                .filter((p) => p.status === 'PAID')
+                                                .reduce((acc, curr) => acc + curr.amount, 0)
+                                                .toFixed(2)} €
+                                        </td>
+                                        <td>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                {status === 'FUTURE' && (
+                                                    <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--accent-color)', background: 'rgba(255, 165, 0, 0.15)', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>À VENIR</span>
+                                                )}
+                                                {status === 'ACTIVE' && (
+                                                    <span className={styles.activeStatus} style={{ color: 'var(--success)' }}>EN COURS</span>
+                                                )}
+                                                {status === 'PAST' && (
+                                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600 }}>TERMINÉ</span>
+                                                )}
 
-                                            {status !== 'PAST' && (
-                                                <TerminateLeaseButton
-                                                    leaseId={lease.id}
-                                                    currentEndDate={lease.endDate ? lease.endDate.toISOString().split('T')[0] : undefined}
-                                                    label={lease.endDate ? "Modifier" : "Terminer"}
-                                                    style={{
-                                                        padding: '0.2rem 0.5rem',
-                                                        fontSize: '0.75rem'
-                                                    }}
-                                                />
-                                            )}
-                                        </div>
-                                    </td>
-                                </tr>
-                            );
-                        })
-                    )}
-                </tbody>
-            </table>
+                                                {status !== 'PAST' && (
+                                                    <TerminateLeaseButton
+                                                        leaseId={lease.id}
+                                                        currentEndDate={lease.endDate ? lease.endDate.toISOString().split('T')[0] : undefined}
+                                                        label={lease.endDate ? "Modifier" : "Terminer"}
+                                                        style={{
+                                                            padding: '0.2rem 0.5rem',
+                                                            fontSize: '0.75rem'
+                                                        }}
+                                                    />
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })
+                        )}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 }

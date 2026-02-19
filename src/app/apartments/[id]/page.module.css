@@ -119,11 +119,19 @@
     color: var(--primary-color);
 }
 
-.activeStatus {
-    background-color: rgba(16, 185, 129, 0.1);
-    color: var(--success);
-    padding: 0.25rem 0.5rem;
-    border-radius: 9999px;
-    font-size: 0.75rem;
-    font-weight: 600;
+font-weight: 600;
+}
+
+.tableWrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-top: 1rem;
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.table {
+    min-width: 600px;
 }
