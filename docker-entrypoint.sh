@@ -13,8 +13,8 @@ echo "Starting deployment logic..."
 if prisma migrate deploy; then
     echo "✅ Migrations applied successfully."
 else
-    echo "⚠️ Migrations failed, attempting db push..."
-    prisma db push --accept-data-loss --skip-generate
+    echo "❌ Migrations failed. Check logs."
+    exit 1
 fi
 
 

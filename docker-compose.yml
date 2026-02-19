@@ -7,8 +7,8 @@ services:
       - NODE_ENV=production
       - DATABASE_URL=file:/app/data/rentmaestro.db
     volumes:
-      - /data/rentmaestro-data:/app/data
-      - /data/rentmaestro-uploads:/app/public/uploads
+      - ./data:/app/data
+      - ./public/uploads:/app/public/uploads
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000" ]
@@ -16,7 +16,3 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-
-volumes:
-  rentmaestro-data:
-  rentmaestro-uploads:

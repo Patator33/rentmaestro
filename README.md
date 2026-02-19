@@ -1,5 +1,10 @@
 # Rentmaestro 🏠
 
+## Data Persistence
+Le fichier de base de données est stocké dans `./data/rentmaestro.db`.
+**Assurez-vous de sauvegarder ce dossier `./data` régulièrement.**
+Lors du déploiement de nouvelles versions avec `docker-compose`, ce dossier est monté pour préserver vos données (locataires, baux, etc.).
+
 Application de gestion locative moderne construite avec Next.js 16, Prisma et SQLite.
 
 ## ✨ Fonctionnalités
