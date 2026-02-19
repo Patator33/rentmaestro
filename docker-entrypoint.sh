@@ -1,15 +1,24 @@
 #!/bin/sh
 set -e
 
+# Suppress Prisma update check
+export PRISMA_HIDE_UPDATE_MESSAGE=true
+
 # Ensure data directory exists
 mkdir -p /app/data
 
-# Run migration explicitly
-echo "Running database migrations..."
-prisma migrate deploy || echo "Migrate deploy failed, trying db push..." && prisma db push --accept-data-loss --skip-generate
+echo "Starting deployment logic..."
 
-# Seed if database is empty
-echo "Running seed..."
+# Run migrations
+if prisma migrate deploy; then
+    echo "✅ Migrations applied successfully."
+else
+    echo "⚠️ Migrations failed, attempting db push..."
+    prisma db push --accept-data-loss --skip-generate
+fi
+
+# Seed
+echo "🌱 Running seed script..."
 ts-node --project prisma/tsconfig.seed.json prisma/seed.ts
 
 # Start the application
