@@ -65,73 +65,75 @@ export default async function RentsPage({
                 </div>
             </header>
 
-            <table className={styles.table}>
-                <thead>
-                    <tr>
-                        <th>Appartement</th>
-                        <th>Locataire</th>
-                        <th>Montant</th>
-                        <th>Statut</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {leases.length === 0 ? (
+            <div className={styles.tableWrapper}>
+                <table className={styles.table}>
+                    <thead>
                         <tr>
-                            <td colSpan={5} style={{ textAlign: 'center', padding: '2rem' }}>Aucun contrat actif pour cette période.</td>
+                            <th>Appartement</th>
+                            <th>Locataire</th>
+                            <th>Montant</th>
+                            <th>Statut</th>
+                            <th>Actions</th>
                         </tr>
-                    ) : (
-                        leases.map(lease => {
-                            const payment = lease.payments[0];
-                            const isPaid = payment?.status === 'PAID';
-                            const totalAmount = lease.rentAmount + lease.chargesAmount;
+                    </thead>
+                    <tbody>
+                        {leases.length === 0 ? (
+                            <tr>
+                                <td colSpan={5} style={{ textAlign: 'center', padding: '2rem' }}>Aucun contrat actif pour cette période.</td>
+                            </tr>
+                        ) : (
+                            leases.map(lease => {
+                                const payment = lease.payments[0];
+                                const isPaid = payment?.status === 'PAID';
+                                const totalAmount = lease.rentAmount + lease.chargesAmount;
 
-                            return (
-                                <tr key={lease.id}>
-                                    <td>{lease.apartment.address}</td>
-                                    <td>{lease.tenant.firstName} {lease.tenant.lastName}</td>
-                                    <td>{totalAmount.toFixed(2)} €</td>
-                                    <td>
-                                        {isPaid ? (
-                                            <span className={styles.statusPaid}>✓ Payé {payment.paidAt?.toLocaleDateString()}</span>
-                                        ) : payment ? (
-                                            <span className={styles.statusPending}>
-                                                ⚠ En attente
-                                                {payment.sentAt && (
-                                                    <span style={{ display: 'block', fontSize: '0.8em', fontWeight: 'normal', color: 'var(--warning)' }}>
-                                                        (Relancé le {payment.sentAt.toLocaleDateString()})
-                                                    </span>
+                                return (
+                                    <tr key={lease.id}>
+                                        <td>{lease.apartment.address}</td>
+                                        <td>{lease.tenant.firstName} {lease.tenant.lastName}</td>
+                                        <td>{totalAmount.toFixed(2)} €</td>
+                                        <td>
+                                            {isPaid ? (
+                                                <span className={styles.statusPaid}>✓ Payé {payment.paidAt?.toLocaleDateString()}</span>
+                                            ) : payment ? (
+                                                <span className={styles.statusPending}>
+                                                    ⚠ En attente
+                                                    {payment.sentAt && (
+                                                        <span style={{ display: 'block', fontSize: '0.8em', fontWeight: 'normal', color: 'var(--warning)' }}>
+                                                            (Relancé le {payment.sentAt.toLocaleDateString()})
+                                                        </span>
+                                                    )}
+                                                </span>
+                                            ) : (
+                                                <span className={styles.statusUnpaid}>À régler</span>
+                                            )}
+                                        </td>
+                                        <td>
+                                            <div style={{ display: 'flex', alignItems: 'center' }}>
+                                                {!isPaid && (
+                                                    <form action={markRentAsPaid.bind(null, lease.id, currentMonthStr, totalAmount)}>
+                                                        <button type="submit" className={`${styles.actionButton} ${styles.paidButton}`}>
+                                                            Marquer Payé
+                                                        </button>
+                                                    </form>
                                                 )}
-                                            </span>
-                                        ) : (
-                                            <span className={styles.statusUnpaid}>À régler</span>
-                                        )}
-                                    </td>
-                                    <td>
-                                        <div style={{ display: 'flex', alignItems: 'center' }}>
-                                            {!isPaid && (
-                                                <form action={markRentAsPaid.bind(null, lease.id, currentMonthStr, totalAmount)}>
-                                                    <button type="submit" className={`${styles.actionButton} ${styles.paidButton}`}>
-                                                        Marquer Payé
-                                                    </button>
-                                                </form>
-                                            )}
 
-                                            {!isPaid && (
-                                                <form action={sendRentReminder.bind(null, lease.id, currentMonthStr)}>
-                                                    <button type="submit" className={`${styles.actionButton} ${styles.reminderButton}`}>
-                                                        Relancer
-                                                    </button>
-                                                </form>
-                                            )}
-                                        </div>
-                                    </td>
-                                </tr>
-                            );
-                        })
-                    )}
-                </tbody>
-            </table>
+                                                {!isPaid && (
+                                                    <form action={sendRentReminder.bind(null, lease.id, currentMonthStr)}>
+                                                        <button type="submit" className={`${styles.actionButton} ${styles.reminderButton}`}>
+                                                            Relancer
+                                                        </button>
+                                                    </form>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })
+                        )}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 }

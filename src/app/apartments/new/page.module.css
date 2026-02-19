@@ -64,6 +64,25 @@
     gap: 1rem;
 }
 
+@media (max-width: 768px) {
+    .container {
+        padding: 1rem;
+    }
+
+    .form {
+        padding: 1.5rem;
+    }
+
+    .row {
+        grid-template-columns: 1fr;
+    }
+
+    .submitButton {
+        width: 100%;
+        margin-top: 1.5rem;
+    }
+}
+
 .submitButton {
     background-color: var(--primary-color);
     color: white;
