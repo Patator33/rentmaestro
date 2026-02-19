@@ -42,7 +42,17 @@ export default async function EditApartmentPage({ params }: { params: Promise<{ 
                 <div className={styles.row}>
                     <div className={styles.formGroup}>
                         <label htmlFor="zipCode" className={styles.label}>Code Postal *</label>
-                        <input type="text" id="zipCode" name="zipCode" defaultValue={apartment.zipCode} required className={styles.input} placeholder="75000" />
+                        <input
+                            type="text"
+                            id="zipCode"
+                            name="zipCode"
+                            defaultValue={apartment.zipCode}
+                            required
+                            className={styles.input}
+                            placeholder="75000"
+                            pattern="^\d{5}$"
+                            title="Le code postal doit contenir exactement 5 chiffres"
+                        />
                     </div>
                     <div className={styles.formGroup}>
                         <label htmlFor="city" className={styles.label}>Ville *</label>

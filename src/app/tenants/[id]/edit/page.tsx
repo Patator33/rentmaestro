@@ -44,7 +44,15 @@ export default async function EditTenantPage({ params }: { params: Promise<{ id:
 
                     <div className={styles.formGroup}>
                         <label htmlFor="phone" className={styles.label}>Téléphone</label>
-                        <input type="tel" id="phone" name="phone" defaultValue={tenant.phone || ''} className={styles.input} />
+                        <input
+                            type="tel"
+                            id="phone"
+                            name="phone"
+                            defaultValue={tenant.phone || ''}
+                            className={styles.input}
+                            pattern="^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$"
+                            title="Format attendu : 06 12 34 56 78 ou +33 6 12 34 56 78"
+                        />
                     </div>
 
                     <div className={styles.formGroup}>
@@ -85,7 +93,15 @@ export default async function EditTenantPage({ params }: { params: Promise<{ id:
 
                     <div className={styles.formGroup}>
                         <label htmlFor="coTenantPhone" className={styles.label}>Téléphone</label>
-                        <input type="tel" id="coTenantPhone" name="coTenantPhone" defaultValue={tenant.coTenantPhone || ''} className={styles.input} />
+                        <input
+                            type="tel"
+                            id="coTenantPhone"
+                            name="coTenantPhone"
+                            defaultValue={tenant.coTenantPhone || ''}
+                            className={styles.input}
+                            pattern="^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$"
+                            title="Format attendu : 06 12 34 56 78 ou +33 6 12 34 56 78"
+                        />
                     </div>
                 </div>
 
