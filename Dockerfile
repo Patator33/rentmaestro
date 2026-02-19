@@ -1,13 +1,12 @@
-FROM node:20-slim AS base
+FROM node:20-alpine AS base
 
 # Install dependencies only when needed
 FROM base AS deps
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Install OpenSSL for Prisma
-RUN apt-get update -y && apt-get install -y openssl
-
-COPY package.json package-lock.json* ./
+# Install dependencies
+COPY package*.json ./
 RUN npm ci
 
 # Rebuild the source code only when needed
@@ -16,13 +15,14 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Prisma needs DATABASE_URL at build time
+# Prisma needs DATABASE_URL at build time for generate
 ENV DATABASE_URL="file:./dev.db"
+
+# Generate Prisma Client
 RUN npx prisma generate
 
 # Build Next.js
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV NODE_OPTIONS="--max-old-space-size=4096"
 RUN npm run build
 
 # Production image, copy all the files and run next
@@ -32,20 +32,21 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Install runtime dependencies
-RUN apt-get update -y && apt-get install -y dos2unix openssl
+RUN apk add --no-cache dos2unix
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 # Copy built application
 COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-# Copy necessary prisma artifacts if they are not in standalone
-COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
-# Copy and fix entrypoint
+# Copy and fix entrypoint (handle CRLF from Windows)
 COPY docker-entrypoint.sh ./
 RUN dos2unix docker-entrypoint.sh && chmod +x docker-entrypoint.sh
 
@@ -55,6 +56,7 @@ RUN mkdir -p /app/data /app/public/uploads && chown -R nextjs:nodejs /app/data /
 USER nextjs
 
 EXPOSE 3000
+
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
