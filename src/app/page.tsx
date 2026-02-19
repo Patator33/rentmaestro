@@ -66,63 +66,42 @@ export default async function Home() {
       </header>
 
       <section className={styles.grid}>
-        <div className={styles.card}>
+        <Link href="/rents" className={styles.card}>
           <div className={styles.cardHeader}>
             <span className={styles.cardTitle}>💰 Loyers reçus ce mois</span>
           </div>
           <div className={styles.cardValue}>{stats.paymentRate}%</div>
           <div className={styles.cardSubtext}>{stats.totalRevenue.toFixed(0)} € / {stats.expectedRevenue.toFixed(0)} €</div>
-        </div>
-        <div className={styles.card}>
+        </Link>
+        <Link href="/apartments" className={styles.card}>
           <div className={styles.cardHeader}>
             <span className={styles.cardTitle}>Appartements</span>
           </div>
           <div className={styles.cardValue}>{stats.apartmentCount}</div>
-        </div>
-        <div className={styles.card}>
+        </Link>
+        <Link href="/tenants" className={styles.card}>
           <div className={styles.cardHeader}>
             <span className={styles.cardTitle}>Locataires Actifs</span>
           </div>
           <div className={styles.cardValue}>{stats.tenantCount}</div>
-        </div>
-        <div className={styles.card}>
+        </Link>
+        <Link href="/stats" className={styles.card}>
           <div className={styles.cardHeader}>
             <span className={styles.cardTitle}>Taux d'occupation</span>
           </div>
           <div className={styles.cardValue}>{stats.occupancyRate}%</div>
-        </div>
-        <div className={styles.card}>
+        </Link>
+        <Link href="/rents" className={styles.card}>
           <div className={styles.cardHeader}>
             <span className={styles.cardTitle}>⚠️ Retards de paiement</span>
           </div>
           <div className={styles.cardValue}>{stats.latePayments}</div>
-        </div>
+        </Link>
       </section>
 
       <UnpaidRents />
 
-      <section className={styles.actions}>
-        <Link href="/apartments" className={styles.actionCard}>
-          <h3>🏢 Gestion Appartements</h3>
-          <p>Ajouter ou modifier vos biens</p>
-        </Link>
-        <Link href="/tenants" className={styles.actionCard}>
-          <h3>👥 Gestion Locataires</h3>
-          <p>Gérer les locataires</p>
-        </Link>
-        <Link href="/leases" className={styles.actionCard}>
-          <h3>📜 Contrats</h3>
-          <p>Lier logements et locataires</p>
-        </Link>
-        <Link href="/rents" className={styles.actionCard}>
-          <h3>💰 Suivi des Loyers</h3>
-          <p>Vérifier les paiements et relancer</p>
-        </Link>
-        <Link href="/stats" className={styles.actionCard}>
-          <h3>📈 Statistiques</h3>
-          <p>Voir l'évolution des revenus</p>
-        </Link>
-      </section>
+
     </div>
   );
 }
