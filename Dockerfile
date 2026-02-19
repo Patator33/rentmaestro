@@ -32,7 +32,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN apk add --no-cache dos2unix openssl
+RUN apk add --no-cache dos2unix openssl curl
 
 # Install Prisma CLI globally for migrations
 RUN npm install -g prisma@5.10.0 ts-node typescript

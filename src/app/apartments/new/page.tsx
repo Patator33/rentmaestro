@@ -26,15 +26,22 @@ export default function NewApartmentPage() {
                     <input type="text" id="complement" name="complement" className={styles.input} placeholder="Etage, Batiment..." />
                 </div>
 
-                <div className={styles.row}>
-                    <div className={styles.formGroup}>
-                        <label htmlFor="zipCode" className={styles.label}>Code Postal *</label>
-                        <input type="text" id="zipCode" name="zipCode" required className={styles.input} placeholder="75000" />
-                    </div>
-                    <div className={styles.formGroup}>
-                        <label htmlFor="city" className={styles.label}>Ville *</label>
-                        <input type="text" id="city" name="city" required className={styles.input} placeholder="Paris" />
-                    </div>
+                <div className={styles.formGroup}>
+                    <label htmlFor="zipCode" className={styles.label}>Code Postal *</label>
+                    <input
+                        type="text"
+                        id="zipCode"
+                        name="zipCode"
+                        required
+                        className={styles.input}
+                        placeholder="75000"
+                        pattern="^\d{5}$"
+                        title="Le code postal doit contenir exactement 5 chiffres"
+                    />
+                </div>
+                <div className={styles.formGroup}>
+                    <label htmlFor="city" className={styles.label}>Ville *</label>
+                    <input type="text" id="city" name="city" required className={styles.input} placeholder="Paris" />
                 </div>
 
                 <div className={styles.row}>

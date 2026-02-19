@@ -29,7 +29,15 @@ export default function NewTenantPage() {
 
                 <div className={styles.formGroup}>
                     <label htmlFor="phone" className={styles.label}>Téléphone</label>
-                    <input type="tel" id="phone" name="phone" className={styles.input} placeholder="06 12 34 56 78" />
+                    <input
+                        type="tel"
+                        id="phone"
+                        name="phone"
+                        className={styles.input}
+                        placeholder="06 12 34 56 78"
+                        pattern="^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$"
+                        title="Format attendu : 06 12 34 56 78 ou +33 6 12 34 56 78"
+                    />
                 </div>
 
                 <div className={styles.formGroup}>
@@ -72,7 +80,15 @@ export default function NewTenantPage() {
 
                 <div className={styles.formGroup}>
                     <label htmlFor="coTenantPhone" className={styles.label}>Téléphone</label>
-                    <input type="tel" id="coTenantPhone" name="coTenantPhone" className={styles.input} placeholder="06 98 76 54 32" />
+                    <input
+                        type="tel"
+                        id="coTenantPhone"
+                        name="coTenantPhone"
+                        className={styles.input}
+                        placeholder="06 98 76 54 32"
+                        pattern="^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$"
+                        title="Format attendu : 06 12 34 56 78 ou +33 6 12 34 56 78"
+                    />
                 </div>
 
                 <button type="submit" className={styles.submitButton}>Enregistrer</button>
