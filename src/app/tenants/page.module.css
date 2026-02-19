@@ -94,6 +94,25 @@
     text-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
 }
 
+.cardLink::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+}
+
+/* Ensure interactive elements stay on top */
+.badge,
+.occupiedBadge,
+.cardFooter,
+.deleteButton {
+    position: relative;
+    z-index: 2;
+}
+
 .cardSubtitle {
     color: var(--text-secondary);
     font-size: 0.9rem;
