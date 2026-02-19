@@ -4,6 +4,7 @@ import UnpaidRents from "@/components/UnpaidRents";
 import styles from "./page.module.css";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/utils";
+import { markRentReviewAsSent } from "@/actions/leases";
 
 export const dynamic = "force-dynamic";
 
@@ -63,12 +64,56 @@ export default async function Home() {
   });
 
   const now = new Date();
+
   const rentReviews = activeLeases.filter(lease => {
     const start = new Date(lease.startDate);
     const monthsDiff = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
-    // Check if tenure is 10 months, 22 months, 34 months... (10 months + N years)
-    return monthsDiff >= 10 && monthsDiff % 12 === 10;
+
+    // Check if tenure is 10 months, 22 months, 34 months...
+    const isTimeForReview = monthsDiff >= 10 && monthsDiff % 12 === 10;
+
+    // Check if NOT already sent recently (in the last 6 months)
+    const lastReview = lease.lastRentReviewDate ? new Date(lease.lastRentReviewDate) : null;
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+    const wasSentRecently = lastReview && lastReview > sixMonthsAgo;
+
+    return isTimeForReview && !wasSentRecently;
   });
+
+  // ... (render loop)
+
+  {
+    rentReviews.map(lease => (
+      <div key={lease.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#dcfce7', flexWrap: 'wrap', gap: '0.5rem' }}>
+        <span>
+          <strong>{lease.tenant.firstName} {lease.tenant.lastName}</strong> ({lease.apartment.address})
+          <span style={{ fontSize: '0.9rem', opacity: 0.8, display: 'block' }}>
+            En place depuis le {formatDate(lease.startDate)}
+          </span>
+        </span>
+        <form action={markRentReviewAsSent.bind(null, lease.id)}>
+          <button
+            type="submit"
+            style={{
+              background: 'rgba(255, 255, 255, 0.2)',
+              border: 'none',
+              color: 'white',
+              padding: '0.25rem 0.75rem',
+              borderRadius: '0.25rem',
+              cursor: 'pointer',
+              fontSize: '0.8rem',
+              fontWeight: 500,
+              transition: 'background 0.2s'
+            }}
+          >
+            Marquer comme envoyé
+          </button>
+        </form>
+      </div>
+    ))
+  }
 
   return (
     <div className={styles.container}>
@@ -95,13 +140,32 @@ export default async function Home() {
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {rentReviews.map(lease => (
-              <div key={lease.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#dcfce7' }}>
+              <div key={lease.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#dcfce7', flexWrap: 'wrap', gap: '0.5rem' }}>
                 <span>
                   <strong>{lease.tenant.firstName} {lease.tenant.lastName}</strong> ({lease.apartment.address})
+                  <span style={{ fontSize: '0.9rem', opacity: 0.8, display: 'block' }}>
+                    En place depuis le {formatDate(lease.startDate)}
+                  </span>
                 </span>
-                <span style={{ fontSize: '0.9rem', opacity: 0.8 }}>
-                  En place depuis le {formatDate(lease.startDate)}
-                </span>
+                <form action={markRentReviewAsSent.bind(null, lease.id)}>
+                  <button
+                    type="submit"
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.2)',
+                      border: 'none',
+                      color: 'white',
+                      padding: '0.25rem 0.75rem',
+                      borderRadius: '0.25rem',
+                      cursor: 'pointer',
+                      fontSize: '0.8rem',
+                      fontWeight: 500,
+                      transition: 'background 0.2s'
+                    }}
+                    title="Cliquez pour faire disparaître l'alerte"
+                  >
+                    Marquer comme envoyé
+                  </button>
+                </form>
               </div>
             ))}
           </div>

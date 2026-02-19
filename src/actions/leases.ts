@@ -75,3 +75,11 @@ export async function deleteLease(id: string) {
     revalidatePath("/leases");
     revalidatePath("/apartments");
 }
+
+export async function markRentReviewAsSent(leaseId: string) {
+    await prisma.lease.update({
+        where: { id: leaseId },
+        data: { lastRentReviewDate: new Date() }
+    });
+    revalidatePath("/");
+}
