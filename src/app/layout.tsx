@@ -18,6 +18,15 @@ export default function RootLayout({
 }>) {
   const [menuOpen, setMenuOpen] = useState(false);
 
+  const NAV_ITEMS = [
+    { href: "/", label: "🏠 Accueil" },
+    { href: "/apartments", label: "🏢 Appartements" },
+    { href: "/tenants", label: "👥 Locataires" },
+    { href: "/leases", label: "📜 Baux" },
+    { href: "/rents", label: "💰 Loyers" },
+    { href: "/stats", label: "📈 Stats" },
+  ];
+
   return (
     <html lang="fr">
       <body className={`${manrope.variable}`}>
@@ -27,6 +36,16 @@ export default function RootLayout({
               <Logo size={32} />
               <span>Rentmaestro</span>
             </Link>
+
+            {/* Desktop Navigation */}
+            <div className="desktop-nav">
+              {NAV_ITEMS.map((item) => (
+                <Link key={item.href} href={item.href} className="nav-link">
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+
             <button
               className="nav-toggle"
               onClick={() => setMenuOpen(!menuOpen)}
@@ -34,17 +53,23 @@ export default function RootLayout({
             >
               {menuOpen ? '✕' : '☰'}
             </button>
-            <div className={`nav-links ${menuOpen ? 'nav-links-open' : ''}`}>
-              <Link href="/" className="nav-link" onClick={() => setMenuOpen(false)}>🏠 Accueil</Link>
-              <Link href="/apartments" className="nav-link" onClick={() => setMenuOpen(false)}>🏢 Appartements</Link>
-              <Link href="/tenants" className="nav-link" onClick={() => setMenuOpen(false)}>👥 Locataires</Link>
-              <Link href="/leases" className="nav-link" onClick={() => setMenuOpen(false)}>📜 Baux</Link>
-              <Link href="/rents" className="nav-link" onClick={() => setMenuOpen(false)}>💰 Loyers</Link>
-              <Link href="/stats" className="nav-link" onClick={() => setMenuOpen(false)}>📈 Stats</Link>
-            </div>
           </div>
         </nav>
-        {menuOpen && <div className="nav-overlay" onClick={() => setMenuOpen(false)}></div>}
+
+        {/* Mobile Navigation Overlay & Menu */}
+        <div className={`mobile-nav-overlay ${menuOpen ? 'open' : ''}`} onClick={() => setMenuOpen(false)}></div>
+        <div className={`mobile-nav-menu ${menuOpen ? 'open' : ''}`}>
+          {NAV_ITEMS.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="mobile-nav-link"
+              onClick={() => setMenuOpen(false)}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </div>
         <main>
           {children}
         </main>
