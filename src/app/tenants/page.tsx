@@ -40,7 +40,7 @@ export default async function TenantsPage() {
                             <div key={tenant.id} className={styles.card}>
                                 <div className={styles.cardHeader}>
                                     <h2 className={styles.cardTitle}>
-                                        <Link href={`/tenants/${tenant.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                                        <Link href={`/tenants/${tenant.id}`} className={styles.cardLink} style={{ textDecoration: 'none', color: 'inherit' }}>
                                             {tenant.firstName} {tenant.lastName} →
                                         </Link>
                                     </h2>

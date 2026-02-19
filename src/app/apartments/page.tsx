@@ -42,7 +42,7 @@ export default async function ApartmentsPage() {
                             <div key={apt.id} className={styles.card}>
                                 <div className={styles.cardHeader}>
                                     <h2 className={styles.cardTitle}>
-                                        <Link href={`/apartments/${apt.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                                        <Link href={`/apartments/${apt.id}`} className={styles.cardLink} style={{ textDecoration: 'none', color: 'inherit' }}>
                                             {apt.name || apt.address} &rarr;
                                         </Link>
                                     </h2>
