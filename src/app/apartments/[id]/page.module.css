@@ -119,9 +119,6 @@
     color: var(--primary-color);
 }
 
-font-weight: 600;
-}
-
 .tableWrapper {
     width: 100%;
     overflow-x: auto;
