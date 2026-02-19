@@ -1,6 +1,8 @@
+
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import styles from "./page.module.css";
+import { formatDate } from "@/lib/utils";
 import { markRentAsPaid, sendRentReminder } from "@/actions/rents";
 
 export const dynamic = "force-dynamic";
@@ -94,13 +96,13 @@ export default async function RentsPage({
                                         <td>{totalAmount.toFixed(2)} €</td>
                                         <td>
                                             {isPaid ? (
-                                                <span className={styles.statusPaid}>✓ Payé {payment.paidAt?.toLocaleDateString()}</span>
+                                                <span className={styles.statusPaid}>✓ Payé {formatDate(payment.paidAt)}</span>
                                             ) : payment ? (
                                                 <span className={styles.statusPending}>
                                                     ⚠ En attente
                                                     {payment.sentAt && (
                                                         <span style={{ display: 'block', fontSize: '0.8em', fontWeight: 'normal', color: 'var(--warning)' }}>
-                                                            (Relancé le {payment.sentAt.toLocaleDateString()})
+                                                            (Relancé le {formatDate(payment.sentAt)})
                                                         </span>
                                                     )}
                                                 </span>

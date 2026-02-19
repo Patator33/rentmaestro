@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import styles from "./page.module.css";
 import TerminateLeaseButton from "@/components/TerminateLeaseButton";
+import { formatDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -108,8 +109,8 @@ export default async function ApartmentDetailsPage({ params }: { params: Promise
                                                 {lease.tenant.firstName} {lease.tenant.lastName}
                                             </Link>
                                         </td>
-                                        <td>{lease.startDate.toLocaleDateString()}</td>
-                                        <td>{lease.endDate ? lease.endDate.toLocaleDateString() : '-'}</td>
+                                        <td>{formatDate(lease.startDate)}</td>
+                                        <td>{lease.endDate ? formatDate(lease.endDate) : '-'}</td>
                                         <td>{(lease.rentAmount + lease.chargesAmount).toFixed(2)} €</td>
                                         <td style={{ color: '#15803d', fontWeight: 600 }}>
                                             {lease.payments

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import styles from "./page.module.css";
 import { deleteLease } from "@/actions/leases";
 import TerminateLeaseButton from "@/components/TerminateLeaseButton";
+import { formatDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -62,9 +63,9 @@ export default async function LeasesPage() {
                                             <div className={styles.rent}>
                                                 {(lease.rentAmount + lease.chargesAmount).toFixed(2)} € <span style={{ fontSize: '0.8em', fontWeight: 'normal' }}>/ mois CC</span>
                                             </div>
-                                            <span className={styles.date}>Début : {lease.startDate.toLocaleDateString()}</span>
+                                            <span className={styles.date}>Début : {formatDate(lease.startDate)}</span>
                                             {lease.endDate && (
-                                                <span className={styles.date} style={{ opacity: 0.8 }}>Fin : {lease.endDate.toLocaleDateString()}</span>
+                                                <span className={styles.date} style={{ opacity: 0.8 }}>Fin : {formatDate(lease.endDate)}</span>
                                             )}
                                         </div>
                                         <div className={styles.cardFooter}>
@@ -97,7 +98,7 @@ export default async function LeasesPage() {
                                             <span className={`${styles.statusBadge} ${styles.statusActive}`}>ACTIF</span>
                                             {lease.endDate && (
                                                 <span style={{ fontSize: '0.75rem', color: 'var(--warning)', fontWeight: 600, background: 'rgba(255, 165, 0, 0.1)', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
-                                                    Fin le {lease.endDate.toLocaleDateString()}
+                                                    Fin le {formatDate(lease.endDate)}
                                                 </span>
                                             )}
                                         </div>
@@ -113,7 +114,7 @@ export default async function LeasesPage() {
                                         <div className={styles.rent}>
                                             {(lease.rentAmount + lease.chargesAmount).toFixed(2)} € <span style={{ fontSize: '0.8em', fontWeight: 'normal' }}>/ mois CC</span>
                                         </div>
-                                        <span className={styles.date}>Début: {lease.startDate.toLocaleDateString()}</span>
+                                        <span className={styles.date}>Début: {formatDate(lease.startDate)}</span>
                                     </div>
 
                                     <div className={styles.cardFooter}>
@@ -157,7 +158,7 @@ export default async function LeasesPage() {
                                                 {(lease.rentAmount + lease.chargesAmount).toFixed(2)} € <span style={{ fontSize: '0.8em', fontWeight: 'normal' }}>/ mois CC</span>
                                             </div>
                                             <span className={styles.date}>
-                                                Du {lease.startDate.toLocaleDateString()} au {lease.endDate ? lease.endDate.toLocaleDateString() : '?'}
+                                                Du {formatDate(lease.startDate)} au {lease.endDate ? formatDate(lease.endDate) : '?'}
                                             </span>
                                         </div>
 

@@ -2,6 +2,7 @@
 
 import { terminateLease } from "@/actions/leases";
 import { useState } from "react";
+import { formatDate } from "@/lib/utils";
 
 export default function TerminateLeaseButton({
     leaseId,
@@ -34,7 +35,7 @@ export default function TerminateLeaseButton({
             return;
         }
 
-        if (window.confirm(`Confirmer la fin du bail au ${new Date(endDate).toLocaleDateString()} ?`)) {
+        if (window.confirm(`Confirmer la fin du bail au ${formatDate(endDate)} ?`)) {
             setIsLoading(true);
             try {
                 await terminateLease(leaseId, endDate);
@@ -158,7 +159,7 @@ export default function TerminateLeaseButton({
             <button
                 onClick={handleInitialClick}
                 className={className}
-                title={`Fin prévue le ${new Date(currentEndDate).toLocaleDateString()}`}
+                title={`Fin prévue le ${formatDate(currentEndDate)}`}
                 style={style || {
                     background: 'transparent', // Ensure transparent background
                     color: 'var(--text-main)',

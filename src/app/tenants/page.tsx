@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import styles from "./page.module.css";
-import { deleteTenant } from "@/actions/tenants";
+import DeleteTenantButton from "@/components/DeleteTenantButton";
+import { formatDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -43,7 +44,7 @@ export default async function TenantsPage() {
                                             {tenant.firstName} {tenant.lastName} →
                                         </Link>
                                     </h2>
-                                    <p className={styles.cardSubtitle}>Ajouté le {tenant.createdAt.toLocaleDateString()}</p>
+                                    <p className={styles.cardSubtitle}>Ajouté le {formatDate(tenant.createdAt)}</p>
                                 </div>
                                 <div className={styles.cardBody}>
                                     <div className={styles.infoRow}>
@@ -68,9 +69,7 @@ export default async function TenantsPage() {
                                     )}
                                 </div>
                                 <div className={styles.cardFooter}>
-                                    <form action={deleteTenant.bind(null, tenant.id)}>
-                                        <button type="submit" className={styles.deleteButton}>Supprimer</button>
-                                    </form>
+                                    <DeleteTenantButton id={tenant.id} />
                                 </div>
                             </div>
                         );

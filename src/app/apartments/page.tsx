@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { formatDate } from "@/lib/utils";
 import styles from "./page.module.css";
 // import { deleteApartment } from "@/actions/apartments"; // Removed as now handled by client component
 import DeleteApartmentButton from "@/components/DeleteApartmentButton";
@@ -69,7 +70,7 @@ export default async function ApartmentsPage() {
                                             🔓 Vacant
                                             {lastLease?.endDate && (
                                                 <span style={{ fontSize: '0.8em', opacity: 0.8, fontWeight: 400 }}>
-                                                    depuis le {lastLease.endDate.toLocaleDateString()}
+                                                    depuis le {formatDate(lastLease.endDate)}
                                                 </span>
                                             )}
                                         </div>
@@ -81,8 +82,8 @@ export default async function ApartmentsPage() {
                                             </Link>
                                             {activeLease && (
                                                 <span style={{ fontSize: '0.8em', opacity: 0.8, fontWeight: 400, marginLeft: 'auto' }}>
-                                                    Du {activeLease.startDate.toLocaleDateString()}
-                                                    {activeLease.endDate ? ` au ${activeLease.endDate.toLocaleDateString()}` : ' (En cours)'}
+                                                    Du {formatDate(activeLease.startDate)}
+                                                    {activeLease.endDate ? ` au ${formatDate(activeLease.endDate)}` : ' (En cours)'}
                                                 </span>
                                             )}
                                         </div>

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { uploadDocument, deleteDocument } from "@/actions/documents";
 import styles from "./page.module.css";
+import { formatDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +37,7 @@ export default async function TenantDetailsPage({ params }: { params: Promise<{ 
             <header className={styles.header}>
                 <div>
                     <h1 className={styles.title}>{tenant.firstName} {tenant.lastName}</h1>
-                    <p className={styles.subtitle}>Créé le {tenant.createdAt.toLocaleDateString()}</p>
+                    <p className={styles.subtitle}>Créé le {formatDate(tenant.createdAt)}</p>
                 </div>
                 <Link href={`/tenants/${tenant.id}/edit`} className={styles.editButton}>
                     ✏️ Modifier
@@ -99,8 +100,8 @@ export default async function TenantDetailsPage({ params }: { params: Promise<{ 
                                             🏠 {lease.apartment.name || lease.apartment.address}
                                         </span>
                                         <span className={styles.leaseDate}>
-                                            Du {new Date(lease.startDate).toLocaleDateString()}
-                                            {lease.endDate ? ` au ${new Date(lease.endDate).toLocaleDateString()}` : ' (en cours)'}
+                                            Du {formatDate(lease.startDate)}
+                                            {lease.endDate ? ` au ${formatDate(lease.endDate)}` : ' (en cours)'}
                                         </span>
                                     </div>
                                     <div className={styles.leaseAmount}>

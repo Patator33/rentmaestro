@@ -1,20 +1,21 @@
 'use client';
 
-import { deleteApartment } from "@/actions/apartments";
+import { deleteTenant } from "@/actions/tenants";
 import { useState } from "react";
 import styles from "./DeleteButton.module.css";
 
-export default function DeleteApartmentButton({ id }: { id: string }) {
+export default function DeleteTenantButton({ id }: { id: string }) {
     const [isDeleting, setIsDeleting] = useState(false);
 
     const handleDelete = async (e: React.FormEvent) => {
+        // Prevent default form submission or link navigation if wrapping
         e.preventDefault();
         e.stopPropagation();
 
-        if (window.confirm("Êtes-vous sûr de vouloir supprimer cet appartement ? Cette action est irréversible et supprimera tout l'historique associé.")) {
+        if (window.confirm("Êtes-vous sûr de vouloir supprimer ce locataire ? Cette action est irréversible.")) {
             setIsDeleting(true);
             try {
-                await deleteApartment(id);
+                await deleteTenant(id);
             } catch (error) {
                 console.error("Erreur lors de la suppression:", error);
                 setIsDeleting(false);
@@ -33,7 +34,3 @@ export default function DeleteApartmentButton({ id }: { id: string }) {
         </button>
     );
 }
-
-
-// Add hover styles globally or inline with a style tag if needed, but for now inline styles + global css classes work nicely if they exist.
-// Since we are using modules mostly, we might want to pass a className or just rely on the inline styles for simplicity in this component.

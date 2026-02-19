@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import styles from "./UnpaidRents.module.css";
+import { formatDate } from "@/lib/utils";
 
 export default async function UnpaidRents() {
     const now = new Date();
@@ -58,7 +59,7 @@ export default async function UnpaidRents() {
                                 )}
                                 {payment.sentAt && (
                                     <div style={{ fontSize: '0.75rem', color: 'var(--warning)', marginTop: '0.25rem' }}>
-                                        📩 Relancé le {new Date(payment.sentAt).toLocaleDateString()}
+                                        📩 Relancé le {formatDate(payment.sentAt)}
                                     </div>
                                 )}
                             </div>
