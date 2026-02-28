@@ -9,7 +9,7 @@ datasource db {
 }
 
 model Apartment {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   name        String?
   address     String
   complement  String?
@@ -18,10 +18,11 @@ model Apartment {
   rent        Float
   charges     Float
   description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   comment     String?
   leases      Lease[]
+  expenses    Expense[]
 }
 
 model Tenant {
@@ -36,9 +37,10 @@ model Tenant {
   coTenantPhone     String?
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
-  paymentDay   Int?             @default(5) // Preferred payment day of month (1-31)
+  paymentDay   Int?             @default(5)
   leases       Lease[]
   documents    TenantDocument[]
+  notes        TenantNote[]
 }
 
 model TenantDocument {
@@ -47,6 +49,15 @@ model TenantDocument {
   url       String
   type      String
   size      Int
+  createdAt DateTime @default(now())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+model TenantNote {
+  id        String   @id @default(uuid())
+  content   String
+  type      String   @default("NOTE") // NOTE, CALL, EMAIL, LETTER, REMINDER
   createdAt DateTime @default(now())
   tenantId  String
   tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -75,11 +86,23 @@ model Lease {
 model RentPayment {
   id        String   @id @default(uuid())
   leaseId   String
-  period    DateTime // Represents the month being paid (e.g. 2023-10-01)
+  period    DateTime
   amount    Float
   status    String   // PAID, PENDING, LATE
   paidAt    DateTime?
-  sentAt    DateTime? // Email sent date
+  sentAt    DateTime?
   createdAt DateTime @default(now())
   lease     Lease    @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+}
+
+model Expense {
+  id          String    @id @default(uuid())
+  apartmentId String
+  category    String    // TAX, INSURANCE, MAINTENANCE, MANAGEMENT, OTHER
+  description String
+  amount      Float
+  date        DateTime
+  recurring   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  apartment   Apartment @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
 }

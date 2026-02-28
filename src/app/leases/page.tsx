@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import styles from "./page.module.css";
 import TerminateLeaseButton from "@/components/TerminateLeaseButton";
 import DeleteLeaseButton from "@/components/DeleteLeaseButton";
+import DepositStatusButton from "@/components/DepositStatusButton";
 import { formatDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -190,6 +191,13 @@ export default async function LeasesPage() {
                                         <div className={styles.info}>
                                             {rentDisplay}
                                             <span className={styles.date}>Début: {formatDate(lease.startDate)}</span>
+                                            {lease.depositAmount && (
+                                                <DepositStatusButton
+                                                    leaseId={lease.id}
+                                                    currentStatus={lease.depositStatus}
+                                                    amount={lease.depositAmount}
+                                                />
+                                            )}
                                         </div>
 
                                         <div className={styles.cardFooter}>

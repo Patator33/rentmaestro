@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import styles from "./page.module.css";
 import TerminateLeaseButton from "@/components/TerminateLeaseButton";
 import { formatDate } from "@/lib/utils";
+import ExpenseForm from "@/components/ExpenseForm";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +19,9 @@ export default async function ApartmentDetailsPage({ params }: { params: Promise
                     payments: true
                 },
                 orderBy: { startDate: 'desc' }
+            },
+            expenses: {
+                orderBy: { date: 'desc' }
             }
         }
     });
@@ -148,6 +152,8 @@ export default async function ApartmentDetailsPage({ params }: { params: Promise
                     </tbody>
                 </table>
             </div>
+
+            <ExpenseForm apartmentId={apartment.id} expenses={apartment.expenses} />
         </div>
     );
 }

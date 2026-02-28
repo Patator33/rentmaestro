@@ -13,6 +13,13 @@ export const metadata: Metadata = {
   title: "Rentmaestro — Gestion Locative",
   description: "Gérez vos investissements locatifs avec élégance. Suivi des appartements, locataires, baux et loyers.",
   keywords: ["gestion locative", "loyers", "appartements", "locataires", "baux"],
+  manifest: "/manifest.json",
+  themeColor: "#2b8cee",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Rentmaestro",
+  },
 };
 
 export default function RootLayout({

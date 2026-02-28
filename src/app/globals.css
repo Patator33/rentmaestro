@@ -41,6 +41,36 @@
   --font-sans: var(--font-manrope);
 }
 
+/* Light Theme */
+[data-theme="light"] {
+  --background: #f5f7fa;
+  --surface: rgba(255, 255, 255, 0.9);
+  --surface-hover: rgba(245, 247, 250, 0.95);
+  --surface-active: rgba(235, 240, 245, 1);
+  --text-main: #1e293b;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --border-color: rgba(43, 140, 238, 0.15);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.12);
+  --shadow-glow: 0 0 16px rgba(43, 140, 238, 0.15);
+}
+
+[data-theme="light"] body {
+  background: linear-gradient(to bottom, #f5f7fa, #e2e8f0) !important;
+}
+
+[data-theme="light"] .main-nav {
+  background: rgba(255, 255, 255, 0.85) !important;
+  border-bottom-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="light"] .mobile-nav-menu {
+  background: rgba(255, 255, 255, 0.98) !important;
+}
+
+
 * {
   box-sizing: border-box;
   padding: 0;

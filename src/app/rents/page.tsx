@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import styles from "./page.module.css";
 import { formatDate } from "@/lib/utils";
 import { markRentAsPaid, sendRentReminder } from "@/actions/rents";
+import GenerateRentsButton from "@/components/GenerateRentsButton";
 
 export const dynamic = "force-dynamic";
 
@@ -65,6 +66,8 @@ export default async function RentsPage({
                     </span>
                     <Link href={`/rents?month=${nextMonthStr}`} className={styles.navButton}>→</Link>
                 </div>
+
+                <GenerateRentsButton />
             </header>
 
             <div className={styles.tableWrapper}>

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { uploadDocument, deleteDocument } from "@/actions/documents";
 import styles from "./page.module.css";
 import { formatDate } from "@/lib/utils";
+import TenantNotes from "@/components/TenantNotes";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,9 @@ export default async function TenantDetailsPage({ params }: { params: Promise<{ 
         where: { id },
         include: {
             documents: {
+                orderBy: { createdAt: 'desc' }
+            },
+            notes: {
                 orderBy: { createdAt: 'desc' }
             },
             leases: {
@@ -159,6 +163,8 @@ export default async function TenantDetailsPage({ params }: { params: Promise<{ 
                         </ul>
                     )}
                 </section>
+
+                <TenantNotes tenantId={tenant.id} notes={tenant.notes} />
             </div>
         </div>
     );

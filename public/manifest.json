@@ -1,0 +1,22 @@
+{
+    "name": "Rentmaestro",
+    "short_name": "Rentmaestro",
+    "description": "Gestionnaire de biens locatifs",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#0a0e1a",
+    "theme_color": "#2b8cee",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "/icon?size=192",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/icon?size=512",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

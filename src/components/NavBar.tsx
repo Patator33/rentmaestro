@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Logo from "@/components/Logo";
+import ThemeToggle from "@/components/ThemeToggle";
 import { useState } from "react";
 
 const NAV_ITEMS = [
@@ -25,13 +26,13 @@ export default function NavBar() {
                         <span>Rentmaestro</span>
                     </Link>
 
-                    {/* Desktop Navigation */}
                     <div className="desktop-nav">
                         {NAV_ITEMS.map((item) => (
                             <Link key={item.href} href={item.href} className="nav-link">
                                 {item.label}
                             </Link>
                         ))}
+                        <ThemeToggle />
                     </div>
 
                     <button
