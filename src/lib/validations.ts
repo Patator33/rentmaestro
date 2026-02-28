@@ -27,4 +27,15 @@ export const apartmentSchema = z.object({
     description: z.string().optional(),
     comment: z.string().optional(),
     mortgageAmount: z.number().min(0, "La mensualité de crédit doit être positive").optional().nullable(),
+    insuranceAmount: z.number().min(0, "L'assurance doit être positive").optional().nullable(),
+    taxAmount: z.number().min(0, "Les impôts doivent être positifs").optional().nullable(),
+});
+
+export const taskSchema = z.object({
+    apartmentId: z.string().min(1, "L'appartement est requis"),
+    title: z.string().min(1, "Le titre est requis"),
+    description: z.string().optional().nullable(),
+    status: z.enum(["TODO", "IN_PROGRESS", "DONE"]).default("TODO"),
+    cost: z.number().min(0, "Le coût doit être positif").optional().nullable(),
+    dueDate: z.date().optional().nullable(),
 });

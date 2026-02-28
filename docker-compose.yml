@@ -6,6 +6,12 @@ services:
     environment:
       - NODE_ENV=production
       - DATABASE_URL=file:/app/data/rentmaestro.db
+      # Email Configuration (Gmail)
+      - SMTP_HOST=smtp.gmail.com
+      - SMTP_PORT=465
+      - SMTP_USER=votre.email@gmail.com
+      - SMTP_PASS=votre_mot_de_passe_d_application
+      - SMTP_FROM="Rentmaestro" <votre.email@gmail.com>
       # Authentication (uncomment to enable login)
       # - AUTH_USERNAME=admin
       # - AUTH_PASSWORD=changeme

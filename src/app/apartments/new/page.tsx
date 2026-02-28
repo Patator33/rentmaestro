@@ -59,6 +59,17 @@ export default function NewApartmentPage() {
                     </div>
                 </div>
 
+                <div className={styles.row}>
+                    <div className={styles.formGroup}>
+                        <label htmlFor="insuranceAmount" className={styles.label}>Assurance PNO (Mensuelle)</label>
+                        <input type="number" step="0.01" id="insuranceAmount" name="insuranceAmount" className={styles.input} placeholder="15.00" />
+                    </div>
+                    <div className={styles.formGroup}>
+                        <label htmlFor="taxAmount" className={styles.label}>Taxe Foncière (Mensuelle)</label>
+                        <input type="number" step="0.01" id="taxAmount" name="taxAmount" className={styles.input} placeholder="80.00" />
+                    </div>
+                </div>
+
                 <div className={styles.formGroup}>
                     <label htmlFor="description" className={styles.label}>Description</label>
                     <textarea id="description" name="description" className={styles.textarea} placeholder="T2 lumineux..." />

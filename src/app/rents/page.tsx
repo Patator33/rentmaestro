@@ -5,6 +5,7 @@ import styles from "./page.module.css";
 import { formatDate } from "@/lib/utils";
 import { markRentAsPaid, sendRentReminder } from "@/actions/rents";
 import GenerateRentsButton from "@/components/GenerateRentsButton";
+import PaymentEmailActions from "@/components/PaymentEmailActions";
 
 export const dynamic = "force-dynamic";
 
@@ -125,11 +126,20 @@ export default async function RentsPage({
 
                                                 {!isPaid && (
                                                     <form action={sendRentReminder.bind(null, lease.id, currentMonthStr)}>
-                                                        <button type="submit" className={`${styles.actionButton} ${styles.reminderButton}`}>
-                                                            Relancer
+                                                        <button type="submit" className={`${styles.actionButton} ${styles.reminderButton}`} style={{ opacity: 0.6 }}>
+                                                            Marquer Relancé (Manuel)
                                                         </button>
                                                     </form>
                                                 )}
+
+                                                <PaymentEmailActions
+                                                    paymentId={payment?.id || null}
+                                                    leaseId={lease.id}
+                                                    periodStr={currentMonthStr}
+                                                    isPaid={!!isPaid}
+                                                    hasEmail={!!lease.tenant.email}
+                                                    buttonStyle={styles.actionButton}
+                                                />
 
                                                 {isPaid && (
                                                     <a

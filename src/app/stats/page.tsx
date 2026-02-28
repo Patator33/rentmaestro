@@ -113,8 +113,10 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
 
         totalVacancyDays += (daysInPeriod - occupiedDays);
 
-        // Add mortgage expenses
-        if (apt.mortgageAmount) {
+        // Add mortgage, insurance, and tax expenses
+        const fixedCosts = (apt.mortgageAmount || 0) + (apt.insuranceAmount || 0) + (apt.taxAmount || 0);
+
+        if (fixedCosts > 0) {
             for (let i = 0; i < Math.min(monthsDiff, 12); i++) {
                 const monthDate = new Date(startDate.getFullYear(), startDate.getMonth() + i, 1);
                 const endOfMonth = new Date(startDate.getFullYear(), startDate.getMonth() + i + 1, 0);
@@ -123,8 +125,8 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
                     const key = monthDate.toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' });
                     const item = rechartsData.find(d => d.month === key);
                     if (item) {
-                        item.depenses += apt.mortgageAmount;
-                        totalExpenses += apt.mortgageAmount;
+                        item.depenses += fixedCosts;
+                        totalExpenses += fixedCosts;
                     }
                 }
             }

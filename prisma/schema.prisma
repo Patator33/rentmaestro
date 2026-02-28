@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
@@ -9,39 +9,42 @@ datasource db {
 }
 
 model Apartment {
-  id          String    @id @default(uuid())
-  name        String?
-  address     String
-  complement  String?
-  city        String
-  zipCode     String
-  rent        Float
-  charges     Float
-  description String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  comment     String?
-  mortgageAmount Float?
-  leases      Lease[]
-  expenses    Expense[]
+  id              String    @id @default(uuid())
+  name            String?
+  address         String
+  complement      String?
+  city            String
+  zipCode         String
+  rent            Float
+  charges         Float
+  description     String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  comment         String?
+  mortgageAmount  Float?
+  insuranceAmount Float?
+  taxAmount       Float?
+  leases          Lease[]
+  expenses        Expense[]
+  tasks           Task[]
 }
 
 model Tenant {
-  id           String           @id @default(uuid())
-  firstName    String
-  lastName     String
-  email        String           @unique
-  phone        String?
+  id                String           @id @default(uuid())
+  firstName         String
+  lastName          String
+  email             String           @unique
+  phone             String?
   coTenantFirstName String?
   coTenantLastName  String?
   coTenantEmail     String?
   coTenantPhone     String?
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
-  paymentDay   Int?             @default(5)
-  leases       Lease[]
-  documents    TenantDocument[]
-  notes        TenantNote[]
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  paymentDay        Int?             @default(5)
+  leases            Lease[]
+  documents         TenantDocument[]
+  notes             TenantNote[]
 }
 
 model TenantDocument {
@@ -65,45 +68,58 @@ model TenantNote {
 }
 
 model Lease {
-  id            String        @id @default(uuid())
-  apartmentId   String
-  tenantId      String
-  startDate     DateTime
-  endDate       DateTime?
-  rentAmount    Float
-  chargesAmount Float
-  depositAmount Float?
-  depositStatus String?       // PENDING, RECEIVED, TO_RETURN, RETURNED, DEDUCTED
-  depositReturnedAt DateTime?
-  isActive      Boolean       @default(true)
+  id                 String        @id @default(uuid())
+  apartmentId        String
+  tenantId           String
+  startDate          DateTime
+  endDate            DateTime?
+  rentAmount         Float
+  chargesAmount      Float
+  depositAmount      Float?
+  depositStatus      String? // PENDING, RECEIVED, TO_RETURN, RETURNED, DEDUCTED
+  depositReturnedAt  DateTime?
+  isActive           Boolean       @default(true)
   lastRentReviewDate DateTime?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  apartment     Apartment     @relation(fields: [apartmentId], references: [id])
-  tenant        Tenant        @relation(fields: [tenantId], references: [id])
-  payments      RentPayment[]
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  apartment          Apartment     @relation(fields: [apartmentId], references: [id])
+  tenant             Tenant        @relation(fields: [tenantId], references: [id])
+  payments           RentPayment[]
 }
 
 model RentPayment {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   leaseId   String
   period    DateTime
   amount    Float
-  status    String   // PAID, PENDING, LATE
+  status    String // PAID, PENDING, LATE
   paidAt    DateTime?
   sentAt    DateTime?
-  createdAt DateTime @default(now())
-  lease     Lease    @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  lease     Lease     @relation(fields: [leaseId], references: [id], onDelete: Cascade)
 }
 
 model Expense {
   id          String    @id @default(uuid())
   apartmentId String
-  category    String    // TAX, INSURANCE, MAINTENANCE, MANAGEMENT, OTHER
+  category    String // TAX, INSURANCE, MAINTENANCE, MANAGEMENT, OTHER
   description String
   amount      Float
   date        DateTime
   recurring   Boolean   @default(false)
   createdAt   DateTime  @default(now())
   apartment   Apartment @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
+}
+
+model Task {
+  id          String     @id @default(cuid())
+  apartmentId String
+  apartment   Apartment  @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  status      String     @default("TODO") // TODO, IN_PROGRESS, DONE
+  cost        Float?
+  dueDate     DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 }

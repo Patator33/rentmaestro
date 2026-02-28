@@ -17,6 +17,8 @@ export async function createApartment(formData: FormData) {
         description: formData.get("description") as string,
         comment: formData.get("comment") as string,
         mortgageAmount: formData.get("mortgageAmount") ? parseFloat(formData.get("mortgageAmount") as string) : null,
+        insuranceAmount: formData.get("insuranceAmount") ? parseFloat(formData.get("insuranceAmount") as string) : null,
+        taxAmount: formData.get("taxAmount") ? parseFloat(formData.get("taxAmount") as string) : null,
     };
 
     try {
@@ -57,6 +59,8 @@ export async function updateApartment(id: string, formData: FormData) {
         description: formData.get("description") as string,
         comment: formData.get("comment") as string,
         mortgageAmount: formData.get("mortgageAmount") ? parseFloat(formData.get("mortgageAmount") as string) : null,
+        insuranceAmount: formData.get("insuranceAmount") ? parseFloat(formData.get("insuranceAmount") as string) : null,
+        taxAmount: formData.get("taxAmount") ? parseFloat(formData.get("taxAmount") as string) : null,
     };
 
     try {

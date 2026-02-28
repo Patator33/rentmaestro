@@ -5,6 +5,7 @@ import styles from "./page.module.css";
 import TerminateLeaseButton from "@/components/TerminateLeaseButton";
 import { formatDate } from "@/lib/utils";
 import ExpenseForm from "@/components/ExpenseForm";
+import TaskBoard from "@/components/TaskBoard";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,9 @@ export default async function ApartmentDetailsPage({ params }: { params: Promise
             },
             expenses: {
                 orderBy: { date: 'desc' }
+            },
+            tasks: {
+                orderBy: { createdAt: 'desc' }
             }
         }
     });
@@ -63,21 +67,37 @@ export default async function ApartmentDetailsPage({ params }: { params: Promise
                     <span className={styles.value}>{(apartment.rent + apartment.charges).toFixed(2)} €</span>
                 </div>
                 {apartment.mortgageAmount !== null && apartment.mortgageAmount > 0 && (
-                    <>
-                        <div className={styles.detailItem}>
-                            <span className={styles.label}>Mensualité crédit</span>
-                            <span className={styles.value} style={{ color: 'var(--error)' }}>
-                                -{apartment.mortgageAmount.toFixed(2)} €
-                            </span>
-                        </div>
-                        <div className={styles.detailItem}>
-                            <span className={styles.label}>Cashflow Brut</span>
-                            <span className={styles.value} style={{ color: ((apartment.rent + apartment.charges) - apartment.mortgageAmount) >= 0 ? 'var(--success)' : 'var(--error)' }}>
-                                {((apartment.rent + apartment.charges) - apartment.mortgageAmount).toFixed(2)} €
-                            </span>
-                        </div>
-                    </>
+                    <div className={styles.detailItem}>
+                        <span className={styles.label}>Mensualité crédit</span>
+                        <span className={styles.value} style={{ color: 'var(--error)' }}>
+                            -{apartment.mortgageAmount.toFixed(2)} €
+                        </span>
+                    </div>
                 )}
+                {apartment.insuranceAmount !== null && apartment.insuranceAmount > 0 && (
+                    <div className={styles.detailItem}>
+                        <span className={styles.label}>Assurance PNO</span>
+                        <span className={styles.value} style={{ color: 'var(--error)' }}>
+                            -{apartment.insuranceAmount.toFixed(2)} €
+                        </span>
+                    </div>
+                )}
+                {apartment.taxAmount !== null && apartment.taxAmount > 0 && (
+                    <div className={styles.detailItem}>
+                        <span className={styles.label}>Taxe Foncière (mensuelle)</span>
+                        <span className={styles.value} style={{ color: 'var(--error)' }}>
+                            -{apartment.taxAmount.toFixed(2)} €
+                        </span>
+                    </div>
+                )}
+                {(apartment.mortgageAmount || apartment.insuranceAmount || apartment.taxAmount) ? (
+                    <div className={styles.detailItem}>
+                        <span className={styles.label}>Cashflow Brut Mensuel</span>
+                        <span className={styles.value} style={{ color: ((apartment.rent + apartment.charges) - (apartment.mortgageAmount || 0) - (apartment.insuranceAmount || 0) - (apartment.taxAmount || 0)) >= 0 ? 'var(--success)' : 'var(--error)' }}>
+                            {((apartment.rent + apartment.charges) - (apartment.mortgageAmount || 0) - (apartment.insuranceAmount || 0) - (apartment.taxAmount || 0)).toFixed(2)} €
+                        </span>
+                    </div>
+                ) : null}
                 {apartment.complement && (
                     <div className={styles.detailItem}>
                         <span className={styles.label}>Complément</span>
@@ -167,6 +187,13 @@ export default async function ApartmentDetailsPage({ params }: { params: Promise
                         )}
                     </tbody>
                 </table>
+            </div>
+
+            <div style={{ marginTop: '2rem' }}>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '1rem' }}>
+                    Interventions & Tâches
+                </h2>
+                <TaskBoard apartmentId={apartment.id} initialTasks={apartment.tasks} />
             </div>
 
             <ExpenseForm apartmentId={apartment.id} expenses={apartment.expenses} />
