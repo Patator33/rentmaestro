@@ -5,6 +5,7 @@ import { uploadDocument, deleteDocument } from "@/actions/documents";
 import styles from "./page.module.css";
 import { formatDate } from "@/lib/utils";
 import TenantNotes from "@/components/TenantNotes";
+import TenantPortalLink from "@/components/TenantPortalLink";
 
 export const dynamic = "force-dynamic";
 
@@ -65,6 +66,10 @@ export default async function TenantDetailsPage({ params }: { params: Promise<{ 
                             <span className={styles.value}>Le {tenant.paymentDay || 5} du mois</span>
                         </div>
                     </div>
+                </section>
+
+                <section className={styles.section} style={{ gridColumn: '1 / -1' }}>
+                    <TenantPortalLink tenantId={tenant.id} existingToken={tenant.portalToken} />
                 </section>
 
                 {hasCoTenant && (

@@ -71,3 +71,18 @@ export async function updateTenant(id: string, formData: FormData) {
     revalidatePath(`/tenants/${id}`);
     redirect(`/tenants/${id}`);
 }
+
+export async function generatePortalToken(tenantId: string) {
+    try {
+        const token = crypto.randomUUID();
+        await prisma.tenant.update({
+            where: { id: tenantId },
+            data: { portalToken: token }
+        });
+        revalidatePath(`/tenants/${tenantId}`);
+        return { success: true, token };
+    } catch (error) {
+        console.error("Erreur gnration token portail:", error);
+        return { success: false, error: "Impossible de gnrer le lien du portail" };
+    }
+}

@@ -27,6 +27,7 @@ model Apartment {
   leases          Lease[]
   expenses        Expense[]
   tasks           Task[]
+  documents       ApartmentDocument[]
 }
 
 model Tenant {
@@ -42,6 +43,7 @@ model Tenant {
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
   paymentDay        Int?             @default(5)
+  portalToken       String?          @unique
   leases            Lease[]
   documents         TenantDocument[]
   notes             TenantNote[]
@@ -122,4 +124,15 @@ model Task {
   dueDate     DateTime?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
+}
+
+model ApartmentDocument {
+  id          String    @id @default(uuid())
+  apartmentId String
+  name        String
+  url         String
+  type        String
+  size        Int
+  createdAt   DateTime  @default(now())
+  apartment   Apartment @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
 }
