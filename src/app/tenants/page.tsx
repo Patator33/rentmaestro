@@ -2,12 +2,20 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import styles from "./page.module.css";
 import DeleteTenantButton from "@/components/DeleteTenantButton";
+import SearchBar from "@/components/SearchBar";
 import { formatDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-export default async function TenantsPage() {
-    const tenants = await prisma.tenant.findMany({
+interface SearchParams {
+    q?: string;
+}
+
+export default async function TenantsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
+    const params = await searchParams;
+    const query = params.q?.toLowerCase() || '';
+
+    const allTenants = await prisma.tenant.findMany({
         include: {
             leases: {
                 where: { isActive: true },
@@ -16,6 +24,14 @@ export default async function TenantsPage() {
         },
         orderBy: { createdAt: 'desc' }
     });
+
+    const tenants = query
+        ? allTenants.filter(t =>
+            `${t.firstName} ${t.lastName}`.toLowerCase().includes(query) ||
+            t.email.toLowerCase().includes(query) ||
+            (t.phone && t.phone.includes(query))
+        )
+        : allTenants;
 
     return (
         <div className={styles.container}>
@@ -26,9 +42,14 @@ export default async function TenantsPage() {
                 </Link>
             </header>
 
+            <SearchBar
+                placeholder="Rechercher un locataire (nom, email, téléphone)..."
+                resultCount={query ? tenants.length : undefined}
+            />
+
             {tenants.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>
-                    <p>Aucun locataire enregistré. Commencez par en ajouter un.</p>
+                    <p>{query ? 'Aucun locataire trouvé pour cette recherche.' : 'Aucun locataire enregistré. Commencez par en ajouter un.'}</p>
                 </div>
             ) : (
                 <div className={styles.grid}>
@@ -62,7 +83,7 @@ export default async function TenantsPage() {
                                     )}
                                     {activeLease && (
                                         <div className={styles.occupiedBadge}>
-                                            <Link href={`/apartments/${activeLease.apartment.id}`} className="hover:underline" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'inherit', textDecoration: 'none' }}>
+                                            <Link href={`/apartments/${activeLease.apartment.id}`} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'inherit', textDecoration: 'none' }}>
                                                 🏠 {activeLease.apartment.name || activeLease.apartment.address}
                                             </Link>
                                         </div>

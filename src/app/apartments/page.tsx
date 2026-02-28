@@ -2,13 +2,22 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/utils";
 import styles from "./page.module.css";
-// import { deleteApartment } from "@/actions/apartments"; // Removed as now handled by client component
 import DeleteApartmentButton from "@/components/DeleteApartmentButton";
+import SearchBar from "@/components/SearchBar";
 
 export const dynamic = "force-dynamic";
 
-export default async function ApartmentsPage() {
-    const apartments = await prisma.apartment.findMany({
+interface SearchParams {
+    q?: string;
+    filter?: string;
+}
+
+export default async function ApartmentsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
+    const params = await searchParams;
+    const query = params.q?.toLowerCase() || '';
+    const filter = params.filter || '';
+
+    const allApartments = await prisma.apartment.findMany({
         include: {
             leases: {
                 orderBy: { endDate: 'desc' },
@@ -17,6 +26,25 @@ export default async function ApartmentsPage() {
         },
         orderBy: { createdAt: 'desc' }
     });
+
+    let apartments = allApartments;
+
+    // Text search
+    if (query) {
+        apartments = apartments.filter(apt =>
+            apt.address.toLowerCase().includes(query) ||
+            apt.city.toLowerCase().includes(query) ||
+            (apt.name && apt.name.toLowerCase().includes(query)) ||
+            apt.zipCode.includes(query)
+        );
+    }
+
+    // Status filter
+    if (filter === 'occupied') {
+        apartments = apartments.filter(apt => apt.leases.some(l => l.isActive));
+    } else if (filter === 'vacant') {
+        apartments = apartments.filter(apt => !apt.leases.some(l => l.isActive));
+    }
 
     return (
         <div className={styles.container}>
@@ -27,9 +55,20 @@ export default async function ApartmentsPage() {
                 </Link>
             </header>
 
+            <SearchBar
+                placeholder="Rechercher un bien (adresse, ville, code postal)..."
+                filterOptions={[
+                    { value: '', label: '🏢 Tous' },
+                    { value: 'occupied', label: '🟢 Occupés' },
+                    { value: 'vacant', label: '🔴 Vacants' },
+                ]}
+                filterParamName="filter"
+                resultCount={query || filter ? apartments.length : undefined}
+            />
+
             {apartments.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>
-                    <p>Aucun appartement enregistré. Commencez par en ajouter un.</p>
+                    <p>{query || filter ? 'Aucun appartement trouvé pour ces critères.' : 'Aucun appartement enregistré. Commencez par en ajouter un.'}</p>
                 </div>
             ) : (
                 <div className={styles.grid}>
@@ -77,7 +116,7 @@ export default async function ApartmentsPage() {
                                     ) : (
                                         <div className={styles.tenantBadge}>
                                             👤
-                                            <Link href={`/tenants/${activeLease?.tenant.id}`} className="hover:underline">
+                                            <Link href={`/tenants/${activeLease?.tenant.id}`}>
                                                 {activeLease?.tenant.firstName} {activeLease?.tenant.lastName}
                                             </Link>
                                             {activeLease && (

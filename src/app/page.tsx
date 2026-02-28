@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import UnpaidRents from "@/components/UnpaidRents";
+import UpcomingExpirations from "@/components/UpcomingExpirations";
 import styles from "./page.module.css";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/utils";
@@ -142,6 +143,7 @@ export default async function Home() {
       </section>
 
       <UnpaidRents />
+      <UpcomingExpirations />
     </div>
   );
 }

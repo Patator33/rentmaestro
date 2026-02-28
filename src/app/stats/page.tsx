@@ -120,6 +120,25 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
 
             <DateFilters />
 
+            <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
+                <a
+                    href={`/api/export?type=payments&year=${startDate.getFullYear()}`}
+                    className="std-add-button"
+                    style={{ fontSize: '0.85rem', padding: '0.5rem 1rem' }}
+                    download
+                >
+                    📥 Export Loyers (CSV)
+                </a>
+                <a
+                    href={`/api/export?type=annual&year=${startDate.getFullYear()}`}
+                    className="std-add-button"
+                    style={{ fontSize: '0.85rem', padding: '0.5rem 1rem' }}
+                    download
+                >
+                    📊 Récapitulatif Annuel (CSV)
+                </a>
+            </div>
+
             <div className={styles.kpiGrid}>
                 <div className={styles.kpiCard}>
                     <div className={styles.kpiTitle}>Revenus Encaissés</div>
