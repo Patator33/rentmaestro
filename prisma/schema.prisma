@@ -60,6 +60,9 @@ model Lease {
   endDate       DateTime?
   rentAmount    Float
   chargesAmount Float
+  depositAmount Float?
+  depositStatus String?       // PENDING, RECEIVED, TO_RETURN, RETURNED, DEDUCTED
+  depositReturnedAt DateTime?
   isActive      Boolean       @default(true)
   lastRentReviewDate DateTime?
   createdAt     DateTime      @default(now())

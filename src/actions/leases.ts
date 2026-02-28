@@ -11,6 +11,8 @@ export async function createLease(formData: FormData) {
     const startDate = new Date(startDateStr);
     const rentAmount = parseFloat(formData.get("rentAmount") as string);
     const chargesAmount = parseFloat(formData.get("chargesAmount") as string);
+    const depositAmountStr = formData.get("depositAmount") as string;
+    const depositAmount = depositAmountStr ? parseFloat(depositAmountStr) : null;
     const terminateLeaseId = formData.get("terminateLeaseId") as string;
 
     if (!apartmentId || !tenantId || !startDateStr || isNaN(rentAmount) || isNaN(chargesAmount)) {
@@ -38,6 +40,8 @@ export async function createLease(formData: FormData) {
                 startDate,
                 rentAmount,
                 chargesAmount,
+                depositAmount: depositAmount && !isNaN(depositAmount) ? depositAmount : null,
+                depositStatus: depositAmount && !isNaN(depositAmount) ? 'PENDING' : null,
                 isActive: true,
             },
         });

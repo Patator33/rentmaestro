@@ -198,6 +198,19 @@ export default function LeaseForm({ apartments, tenants }: LeaseFormProps) {
                     </div>
                 </div>
 
+                <div className={styles.formGroup}>
+                    <label htmlFor="depositAmount" className={styles.label}>Dépôt de garantie (€)</label>
+                    <input
+                        type="number"
+                        step="0.01"
+                        id="depositAmount"
+                        name="depositAmount"
+                        className={styles.input}
+                        placeholder="Montant du dépôt de garantie"
+                        defaultValue={rent ? String(Number(rent)) : ''}
+                    />
+                </div>
+
                 {prorataDisplay}
 
                 <button type="submit" className={styles.submitButton}>Créer le contrat</button>
