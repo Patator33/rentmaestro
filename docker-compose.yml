@@ -6,6 +6,9 @@ services:
     environment:
       - NODE_ENV=production
       - DATABASE_URL=file:/app/data/rentmaestro.db
+      # Authentication (uncomment to enable login)
+      # - AUTH_USERNAME=admin
+      # - AUTH_PASSWORD=changeme
     volumes:
       - rentmaestro_data:/app/data
       - rentmaestro_uploads:/app/public/uploads
@@ -16,6 +19,8 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
 
 volumes:
   rentmaestro_data:

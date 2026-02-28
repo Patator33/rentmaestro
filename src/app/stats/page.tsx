@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import DateFilters from "@/components/DateFilters";
+import RevenueChart from "@/components/RevenueChart";
 import styles from "./page.module.css";
 
 export const dynamic = "force-dynamic";
@@ -54,8 +55,22 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
         monthlyRevenue.set(key, current + p.amount);
     });
 
-    const chartData = Array.from(monthlyRevenue.entries()).map(([label, value]) => ({ label, value }));
-    const maxVal = Math.max(...chartData.map(d => d.value), 100);
+    const rechartsData = Array.from(monthlyRevenue.entries()).map(([label, value]) => ({ month: label, revenus: value, depenses: 0 }));
+
+    // Expenses by month
+    const expenses = await prisma.expense.findMany({
+        where: {
+            date: { gte: startDate, lte: endDate }
+        }
+    });
+
+    expenses.forEach(expense => {
+        const key = expense.date.toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' });
+        const item = rechartsData.find(d => d.month === key);
+        if (item) item.depenses += expense.amount;
+    });
+
+    const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
 
     // KPIs
     const totalRevenue = payments.reduce((acc, p) => acc + p.amount, 0);
@@ -159,18 +174,32 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
                 </div>
             </div>
 
-            <h2 className={styles.sectionTitle}>Évolution des Revenus</h2>
+            <h2 className={styles.sectionTitle}>Évolution des Revenus vs Dépenses</h2>
             <div className={styles.chartContainer}>
-                {chartData.map((d, i) => (
-                    <div key={i} className={styles.barGroup}>
-                        <span className={styles.barValue}>{d.value > 0 ? d.value.toFixed(0) : ''}</span>
-                        <div
-                            className={styles.bar}
-                            style={{ height: `${(d.value / maxVal) * 80}%`, opacity: d.value > 0 ? 1 : 0.2 }}
-                        ></div>
-                        <span className={styles.barLabel}>{d.label}</span>
+                <RevenueChart data={rechartsData} />
+            </div>
+
+            <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                <div className={styles.kpiCard}>
+                    <div className={styles.kpiTitle}>📉 Dépenses Totales</div>
+                    <div className={styles.kpiValue} style={{ color: 'var(--error)' }}>{totalExpenses.toFixed(2)} €</div>
+                </div>
+                <div className={styles.kpiCard}>
+                    <div className={styles.kpiTitle}>📈 Bénéfice Net</div>
+                    <div className={styles.kpiValue} style={{ color: (totalRevenue - totalExpenses) >= 0 ? 'var(--success)' : 'var(--error)' }}>
+                        {(totalRevenue - totalExpenses).toFixed(2)} €
                     </div>
-                ))}
+                </div>
+            </div>
+
+            <div style={{ marginTop: '2rem', padding: '1rem', background: 'var(--surface)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.5rem' }}>🔄 Calculateur IRL</h3>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                    Calculez la révision de loyer selon l&apos;Indice de Référence des Loyers :
+                </p>
+                <code style={{ fontSize: '0.8rem', color: 'var(--primary-color)' }}>
+                    /api/irl?oldRent=800&amp;oldIRL=130.57&amp;newIRL=132.42
+                </code>
             </div>
         </div>
     );
