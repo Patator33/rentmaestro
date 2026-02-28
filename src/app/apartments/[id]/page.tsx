@@ -59,9 +59,25 @@ export default async function ApartmentDetailsPage({ params }: { params: Promise
                     <span className={styles.value}>{apartment.charges.toFixed(2)} €</span>
                 </div>
                 <div className={styles.detailItem}>
-                    <span className={styles.label}>Total</span>
+                    <span className={styles.label}>Loyer brut</span>
                     <span className={styles.value}>{(apartment.rent + apartment.charges).toFixed(2)} €</span>
                 </div>
+                {apartment.mortgageAmount !== null && apartment.mortgageAmount > 0 && (
+                    <>
+                        <div className={styles.detailItem}>
+                            <span className={styles.label}>Mensualité crédit</span>
+                            <span className={styles.value} style={{ color: 'var(--error)' }}>
+                                -{apartment.mortgageAmount.toFixed(2)} €
+                            </span>
+                        </div>
+                        <div className={styles.detailItem}>
+                            <span className={styles.label}>Cashflow Brut</span>
+                            <span className={styles.value} style={{ color: ((apartment.rent + apartment.charges) - apartment.mortgageAmount) >= 0 ? 'var(--success)' : 'var(--error)' }}>
+                                {((apartment.rent + apartment.charges) - apartment.mortgageAmount).toFixed(2)} €
+                            </span>
+                        </div>
+                    </>
+                )}
                 {apartment.complement && (
                     <div className={styles.detailItem}>
                         <span className={styles.label}>Complément</span>

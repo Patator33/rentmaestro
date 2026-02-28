@@ -53,6 +53,10 @@ export default function NewApartmentPage() {
                         <label htmlFor="charges" className={styles.label}>Charges *</label>
                         <input type="number" step="0.01" id="charges" name="charges" required className={styles.input} placeholder="50.00" />
                     </div>
+                    <div className={styles.formGroup}>
+                        <label htmlFor="mortgageAmount" className={styles.label}>Mensualité crédit</label>
+                        <input type="number" step="0.01" id="mortgageAmount" name="mortgageAmount" className={styles.input} placeholder="650.00" />
+                    </div>
                 </div>
 
                 <div className={styles.formGroup}>

@@ -70,7 +70,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
         if (item) item.depenses += expense.amount;
     });
 
-    const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
+    let totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
 
     // KPIs
     const totalRevenue = payments.reduce((acc, p) => acc + p.amount, 0);
@@ -112,6 +112,23 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
         });
 
         totalVacancyDays += (daysInPeriod - occupiedDays);
+
+        // Add mortgage expenses
+        if (apt.mortgageAmount) {
+            for (let i = 0; i < Math.min(monthsDiff, 12); i++) {
+                const monthDate = new Date(startDate.getFullYear(), startDate.getMonth() + i, 1);
+                const endOfMonth = new Date(startDate.getFullYear(), startDate.getMonth() + i + 1, 0);
+
+                if (new Date(apt.createdAt) <= endOfMonth && monthDate <= endDate) {
+                    const key = monthDate.toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' });
+                    const item = rechartsData.find(d => d.month === key);
+                    if (item) {
+                        item.depenses += apt.mortgageAmount;
+                        totalExpenses += apt.mortgageAmount;
+                    }
+                }
+            }
+        }
     });
 
     const vacancyRate = totalPossibleDays > 0 ? ((totalVacancyDays / totalPossibleDays) * 100).toFixed(1) : 0;

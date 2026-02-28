@@ -26,4 +26,5 @@ export const apartmentSchema = z.object({
     charges: z.number().min(0, "Les charges doivent être positives"),
     description: z.string().optional(),
     comment: z.string().optional(),
+    mortgageAmount: z.number().min(0, "La mensualité de crédit doit être positive").optional().nullable(),
 });
