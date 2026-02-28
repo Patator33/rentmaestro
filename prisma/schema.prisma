@@ -24,6 +24,8 @@ model Apartment {
   mortgageAmount  Float?
   insuranceAmount Float?
   taxAmount       Float?
+  companyId       String?
+  company         Company?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
   leases          Lease[]
   expenses        Expense[]
   tasks           Task[]
@@ -135,4 +137,15 @@ model ApartmentDocument {
   size        Int
   createdAt   DateTime  @default(now())
   apartment   Apartment @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
+}
+
+model Company {
+  id          String      @id @default(uuid())
+  name        String
+  type        String      // SCI, LMNP, NOM_PROPRE, etc.
+  siret       String?
+  address     String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  apartments  Apartment[]
 }

@@ -7,6 +7,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type') || 'payments';
     const year = parseInt(searchParams.get('year') || new Date().getFullYear().toString());
+    const companyId = searchParams.get('companyId');
 
     try {
         if (type === 'payments') {
@@ -15,7 +16,8 @@ export async function GET(request: Request) {
                     period: {
                         gte: new Date(year, 0, 1),
                         lte: new Date(year, 11, 31),
-                    }
+                    },
+                    ...(companyId ? { lease: { apartment: { companyId } } } : {})
                 },
                 include: {
                     lease: {
@@ -56,7 +58,8 @@ export async function GET(request: Request) {
                         gte: new Date(year, 0, 1),
                         lte: new Date(year, 11, 31),
                     },
-                    status: 'PAID'
+                    status: 'PAID',
+                    ...(companyId ? { lease: { apartment: { companyId } } } : {})
                 },
                 include: {
                     lease: {

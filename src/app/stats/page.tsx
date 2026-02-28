@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 interface SearchParams {
     start?: string;
     end?: string;
+    companyId?: string;
 }
 
 export default async function StatsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
@@ -27,11 +28,17 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
         endDate = now;
     }
 
+    const companyId = params.companyId;
+
+    // Fetch companies for the filter
+    const companies = await prisma.company.findMany({ orderBy: { name: 'asc' } });
+
     // Revenue calculation
     const payments = await prisma.rentPayment.findMany({
         where: {
             period: { gte: startDate, lte: endDate },
-            status: 'PAID'
+            status: 'PAID',
+            ...(companyId ? { lease: { apartment: { companyId } } } : {})
         },
         orderBy: { period: 'asc' }
     });
@@ -60,7 +67,8 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
     // Expenses by month
     const expenses = await prisma.expense.findMany({
         where: {
-            date: { gte: startDate, lte: endDate }
+            date: { gte: startDate, lte: endDate },
+            ...(companyId ? { apartment: { companyId } } : {})
         }
     });
 
@@ -78,6 +86,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
 
     // Vacancy days calculation
     const apartments = await prisma.apartment.findMany({
+        where: companyId ? { companyId } : undefined,
         include: {
             leases: {
                 where: {
@@ -137,7 +146,10 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
 
     // Average rent
     const activeLeases = await prisma.lease.findMany({
-        where: { isActive: true }
+        where: {
+            isActive: true,
+            ...(companyId ? { apartment: { companyId } } : {})
+        }
     });
     const averageRent = activeLeases.length > 0
         ? (activeLeases.reduce((sum, l) => sum + l.rentAmount, 0) / activeLeases.length).toFixed(2)
@@ -152,11 +164,11 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
                 </div>
             </header>
 
-            <DateFilters />
+            <DateFilters companies={companies} />
 
             <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
                 <a
-                    href={`/api/export?type=payments&year=${startDate.getFullYear()}`}
+                    href={`/api/export?type=payments&year=${startDate.getFullYear()}${companyId ? `&companyId=${companyId}` : ''}`}
                     className="std-add-button"
                     style={{ fontSize: '0.85rem', padding: '0.5rem 1rem' }}
                     download
@@ -164,7 +176,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
                     📥 Export Loyers (CSV)
                 </a>
                 <a
-                    href={`/api/export?type=annual&year=${startDate.getFullYear()}`}
+                    href={`/api/export?type=annual&year=${startDate.getFullYear()}${companyId ? `&companyId=${companyId}` : ''}`}
                     className="std-add-button"
                     style={{ fontSize: '0.85rem', padding: '0.5rem 1rem' }}
                     download

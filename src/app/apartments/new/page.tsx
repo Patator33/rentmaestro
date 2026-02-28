@@ -1,8 +1,11 @@
 import Link from "next/link";
 import styles from "./page.module.css";
 import { createApartment } from "@/actions/apartments";
+import { prisma } from "@/lib/prisma";
 
-export default function NewApartmentPage() {
+export default async function NewApartmentPage() {
+    const companies = await prisma.company.findMany({ orderBy: { name: 'asc' } });
+
     return (
         <div className={styles.container}>
             <Link href="/apartments" className={styles.backLink}>
@@ -11,6 +14,16 @@ export default function NewApartmentPage() {
             <h1 className={styles.title}>Ajouter un appartement</h1>
 
             <form action={createApartment} className={styles.form}>
+                <div className={styles.formGroup}>
+                    <label htmlFor="companyId" className={styles.label}>Entité propriétaire (Optionnel)</label>
+                    <select id="companyId" name="companyId" className={styles.input}>
+                        <option value="">Aucune (Nom propre, sans SCI)</option>
+                        {companies.map(c => (
+                            <option key={c.id} value={c.id}>{c.name} ({c.type})</option>
+                        ))}
+                    </select>
+                </div>
+
                 <div className={styles.formGroup}>
                     <label htmlFor="name" className={styles.label}>Nom de l'appartement</label>
                     <input type="text" id="name" name="name" className={styles.input} placeholder="Studio Centre-ville, Appt Republique..." />

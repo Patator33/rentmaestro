@@ -4,25 +4,44 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import styles from './DateFilters.module.css';
 
-export default function DateFilters() {
+interface Props {
+    companies?: { id: string; name: string }[];
+}
+
+export default function DateFilters({ companies = [] }: Props) {
     const router = useRouter();
     const searchParams = useSearchParams();
 
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
+    const [companyId, setCompanyId] = useState('');
 
     useEffect(() => {
         const start = searchParams.get('start');
         const end = searchParams.get('end');
+        const comp = searchParams.get('companyId');
 
         if (start) setStartDate(start);
         if (end) setEndDate(end);
+        if (comp) setCompanyId(comp);
     }, [searchParams]);
 
-    const applyFilters = () => {
-        const params = new URLSearchParams();
-        if (startDate) params.set('start', startDate);
-        if (endDate) params.set('end', endDate);
+    const applyFilters = (presetStart?: string, presetEnd?: string, presetCompany?: string) => {
+        const params = new URLSearchParams(searchParams.toString());
+
+        const applyStart = presetStart !== undefined ? presetStart : startDate;
+        const applyEnd = presetEnd !== undefined ? presetEnd : endDate;
+        const applyComp = presetCompany !== undefined ? presetCompany : companyId;
+
+        if (applyStart) params.set('start', applyStart);
+        else params.delete('start');
+
+        if (applyEnd) params.set('end', applyEnd);
+        else params.delete('end');
+
+        if (applyComp) params.set('companyId', applyComp);
+        else params.delete('companyId');
+
         router.push(`/stats?${params.toString()}`);
     };
 
@@ -47,15 +66,34 @@ export default function DateFilters() {
         const startStr = start.toISOString().split('T')[0];
         const endStr = end.toISOString().split('T')[0];
 
-        const params = new URLSearchParams();
-        params.set('start', startStr);
-        params.set('end', endStr);
-        router.push(`/stats?${params.toString()}`);
+        setStartDate(startStr);
+        setEndDate(endStr);
+        applyFilters(startStr, endStr, companyId);
     };
 
     return (
         <div className={styles.filters}>
             <div className={styles.dateInputs}>
+                {companies.length > 0 && (
+                    <div className={styles.inputGroup}>
+                        <label htmlFor="company">Entité propriétaire</label>
+                        <select
+                            id="company"
+                            value={companyId}
+                            onChange={(e) => {
+                                setCompanyId(e.target.value);
+                                applyFilters(startDate, endDate, e.target.value);
+                            }}
+                            className={styles.dateInput}
+                            style={{ maxWidth: '200px' }}
+                        >
+                            <option value="">Toutes (Global)</option>
+                            {companies.map(c => (
+                                <option key={c.id} value={c.id}>{c.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                )}
                 <div className={styles.inputGroup}>
                     <label htmlFor="start">Du</label>
                     <input
@@ -76,8 +114,8 @@ export default function DateFilters() {
                         className={styles.dateInput}
                     />
                 </div>
-                <button onClick={applyFilters} className={styles.applyButton}>
-                    Appliquer
+                <button onClick={() => applyFilters()} className={styles.applyButton}>
+                    Filtrer
                 </button>
             </div>
 

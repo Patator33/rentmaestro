@@ -7,7 +7,8 @@ import { useState } from "react";
 
 const NAV_ITEMS = [
     { href: "/", label: "🏠 Accueil" },
-    { href: "/apartments", label: "🏢 Appartements" },
+    { href: "/companies", label: "🏢 Sociétés" },
+    { href: "/apartments", label: "🏠 Biens" },
     { href: "/tenants", label: "👥 Locataires" },
     { href: "/leases", label: "📜 Baux" },
     { href: "/rents", label: "💰 Loyers" },

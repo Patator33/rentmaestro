@@ -1,0 +1,141 @@
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.newButton {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    font-weight: 600;
+    transition: background-color 0.2s;
+    box-shadow: var(--shadow-sm);
+}
+
+.newButton:hover {
+    background-color: var(--primary-hover);
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+}
+
+.card {
+    background: var(--surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    transition: all 0.2s;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary-color);
+}
+
+.cardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.cardTitle {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-main);
+    text-decoration: none;
+    margin-bottom: 0.25rem;
+    display: inline-block;
+}
+
+.cardTitle:hover {
+    color: var(--primary-color);
+}
+
+.badge {
+    background: var(--surface-hover);
+    color: var(--text-secondary);
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid var(--border-color);
+}
+
+.cardContent {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.infoRow {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.cardFooter {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.propertyCount {
+    font-size: 0.85rem;
+    color: var(--primary-color);
+    font-weight: 500;
+    background: rgba(var(--primary-rgb), 0.1);
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+}
+
+.emptyState {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    border: 2px dashed var(--border-color);
+}
+
+.emptyTitle {
+    font-size: 1.5rem;
+    color: var(--text-main);
+    margin-bottom: 1rem;
+}
+
+.emptyDesc {
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+}

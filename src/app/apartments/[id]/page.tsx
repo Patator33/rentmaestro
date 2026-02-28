@@ -15,6 +15,7 @@ export default async function ApartmentDetailsPage({ params }: { params: Promise
     const apartment = await prisma.apartment.findUnique({
         where: { id },
         include: {
+            company: true,
             leases: {
                 include: {
                     tenant: true,
@@ -50,7 +51,14 @@ export default async function ApartmentDetailsPage({ params }: { params: Promise
             <header className={styles.header}>
                 <div>
                     <h1 className={styles.title}>{apartment.address}</h1>
-                    <p className={styles.subtitle}>{apartment.zipCode} {apartment.city}</p>
+                    <p className={styles.subtitle}>
+                        {apartment.zipCode} {apartment.city}
+                        {apartment.company && (
+                            <span style={{ marginLeft: '1rem' }}>
+                                | Propriétaire: <Link href={`/companies/${apartment.company.id}`} className="hover:text-primary hover:underline">{apartment.company.name}</Link>
+                            </span>
+                        )}
+                    </p>
                 </div>
                 <Link href={`/apartments/${apartment.id}/edit`} className={styles.editButton}>
                     ✏️ Modifier

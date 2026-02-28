@@ -14,6 +14,8 @@ export default async function EditApartmentPage({ params }: { params: Promise<{ 
         notFound();
     }
 
+    const companies = await prisma.company.findMany({ orderBy: { name: 'asc' } });
+
     const updateApartmentWithId = updateApartment.bind(null, apartment.id);
 
     return (
@@ -24,6 +26,16 @@ export default async function EditApartmentPage({ params }: { params: Promise<{ 
             <h1 className={styles.title}>Modifier l'appartement</h1>
 
             <form action={updateApartmentWithId} className={styles.form}>
+                <div className={styles.formGroup}>
+                    <label htmlFor="companyId" className={styles.label}>Entité propriétaire (Optionnel)</label>
+                    <select id="companyId" name="companyId" defaultValue={apartment.companyId || ''} className={styles.input}>
+                        <option value="">Aucune (Nom propre, sans SCI)</option>
+                        {companies.map(c => (
+                            <option key={c.id} value={c.id}>{c.name} ({c.type})</option>
+                        ))}
+                    </select>
+                </div>
+
                 <div className={styles.formGroup}>
                     <label htmlFor="name" className={styles.label}>Nom de l'appartement</label>
                     <input type="text" id="name" name="name" defaultValue={apartment.name || ''} className={styles.input} placeholder="Studio Centre-ville, Appt Republique..." />
