@@ -127,6 +127,18 @@ export default async function RentsPage({
                                                         </button>
                                                     </form>
                                                 )}
+
+                                                {isPaid && (
+                                                    <a
+                                                        href={`/api/quittance?leaseId=${lease.id}&period=${currentMonthStr}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className={`${styles.actionButton}`}
+                                                        style={{ textDecoration: 'none', background: 'rgba(34,197,94,0.15)', color: '#22c55e' }}
+                                                    >
+                                                        📄 Quittance
+                                                    </a>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>
