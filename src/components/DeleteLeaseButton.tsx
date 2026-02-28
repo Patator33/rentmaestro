@@ -1,12 +1,12 @@
 'use client';
 
-import { deleteApartment } from "@/actions/apartments";
+import { deleteLease } from "@/actions/leases";
 import { useState } from "react";
 import { useToast } from "./Toast";
 import ConfirmModal from "./ConfirmModal";
 import styles from "./DeleteButton.module.css";
 
-export default function DeleteApartmentButton({ id }: { id: string }) {
+export default function DeleteLeaseButton({ id, label = "Supprimer" }: { id: string; label?: string }) {
     const [isDeleting, setIsDeleting] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
     const { addToast } = useToast();
@@ -15,12 +15,12 @@ export default function DeleteApartmentButton({ id }: { id: string }) {
         setShowConfirm(false);
         setIsDeleting(true);
         try {
-            await deleteApartment(id);
-            addToast("Appartement supprimé avec succès", "success");
+            await deleteLease(id);
+            addToast("Contrat supprimé avec succès", "success");
         } catch (error) {
             console.error("Erreur lors de la suppression:", error);
             setIsDeleting(false);
-            addToast("Erreur lors de la suppression de l'appartement", "error");
+            addToast("Erreur lors de la suppression du contrat", "error");
         }
     };
 
@@ -31,14 +31,14 @@ export default function DeleteApartmentButton({ id }: { id: string }) {
                 disabled={isDeleting}
                 className={styles.deleteButton}
             >
-                {isDeleting ? "Suppression..." : "Supprimer"}
+                {isDeleting ? "Suppression..." : label}
             </button>
             <ConfirmModal
                 isOpen={showConfirm}
                 onConfirm={handleDelete}
                 onCancel={() => setShowConfirm(false)}
-                title="Supprimer cet appartement ?"
-                message="Cette action est irréversible et supprimera tout l'historique associé (baux, paiements)."
+                title="Supprimer ce contrat ?"
+                message="Cette action est irréversible et supprimera le contrat ainsi que son historique de paiements."
                 confirmText="Supprimer"
                 variant="danger"
             />

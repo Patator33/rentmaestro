@@ -13,30 +13,38 @@ export async function createLease(formData: FormData) {
     const chargesAmount = parseFloat(formData.get("chargesAmount") as string);
     const terminateLeaseId = formData.get("terminateLeaseId") as string;
 
-    if (terminateLeaseId) {
-        // Close previous lease the day before the new one starts
-        const endDate = new Date(startDate);
-        endDate.setDate(endDate.getDate() - 1);
-
-        await prisma.lease.update({
-            where: { id: terminateLeaseId },
-            data: {
-                isActive: false,
-                endDate: endDate
-            }
-        });
+    if (!apartmentId || !tenantId || !startDateStr || isNaN(rentAmount) || isNaN(chargesAmount)) {
+        throw new Error("Données invalides. Veuillez vérifier le formulaire.");
     }
 
-    await prisma.lease.create({
-        data: {
-            apartmentId,
-            tenantId,
-            startDate,
-            rentAmount,
-            chargesAmount,
-            isActive: true,
-        },
-    });
+    try {
+        if (terminateLeaseId) {
+            const endDate = new Date(startDate);
+            endDate.setDate(endDate.getDate() - 1);
+
+            await prisma.lease.update({
+                where: { id: terminateLeaseId },
+                data: {
+                    isActive: false,
+                    endDate: endDate
+                }
+            });
+        }
+
+        await prisma.lease.create({
+            data: {
+                apartmentId,
+                tenantId,
+                startDate,
+                rentAmount,
+                chargesAmount,
+                isActive: true,
+            },
+        });
+    } catch (error) {
+        console.error("Erreur lors de la création du bail:", error);
+        throw new Error("Impossible de créer le contrat. Veuillez réessayer.");
+    }
 
     revalidatePath("/leases");
     revalidatePath("/apartments");
@@ -44,9 +52,6 @@ export async function createLease(formData: FormData) {
 }
 
 export async function terminateLease(id: string, endDateStr?: string | null) {
-    // If endDateStr is explicitly null, we mean "cancel termination", so endDate becomes null.
-    // If undefined, default to now.
-    // If string, parse it.
     let endDate: Date | null = new Date();
 
     if (endDateStr === null) {
@@ -55,31 +60,45 @@ export async function terminateLease(id: string, endDateStr?: string | null) {
         endDate = new Date(endDateStr);
     }
 
-    await prisma.lease.update({
-        where: { id },
-        data: {
-            // We don't set isActive: false anymore, status is derived from dates
-            isActive: true,
-            endDate: endDate,
-        },
-    });
+    try {
+        await prisma.lease.update({
+            where: { id },
+            data: {
+                isActive: true,
+                endDate: endDate,
+            },
+        });
+    } catch (error) {
+        console.error("Erreur lors de la terminaison du bail:", error);
+        throw new Error("Impossible de modifier le contrat.");
+    }
+
     revalidatePath("/apartments");
-    revalidatePath(`/apartments`); // Force update all apartments lists
     revalidatePath("/leases");
 }
 
 export async function deleteLease(id: string) {
-    await prisma.lease.delete({
-        where: { id },
-    });
+    try {
+        await prisma.lease.delete({
+            where: { id },
+        });
+    } catch (error) {
+        console.error("Erreur lors de la suppression du bail:", error);
+        throw new Error("Impossible de supprimer le contrat.");
+    }
     revalidatePath("/leases");
     revalidatePath("/apartments");
 }
 
 export async function markRentReviewAsSent(leaseId: string) {
-    await prisma.lease.update({
-        where: { id: leaseId },
-        data: { lastRentReviewDate: new Date() }
-    });
+    try {
+        await prisma.lease.update({
+            where: { id: leaseId },
+            data: { lastRentReviewDate: new Date() }
+        });
+    } catch (error) {
+        console.error("Erreur lors du marquage de la révision:", error);
+        throw new Error("Impossible de marquer la révision comme envoyée.");
+    }
     revalidatePath("/");
 }

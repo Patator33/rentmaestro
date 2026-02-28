@@ -2,35 +2,46 @@
 
 import { deleteTenant } from "@/actions/tenants";
 import { useState } from "react";
+import { useToast } from "./Toast";
+import ConfirmModal from "./ConfirmModal";
 import styles from "./DeleteButton.module.css";
 
 export default function DeleteTenantButton({ id }: { id: string }) {
     const [isDeleting, setIsDeleting] = useState(false);
+    const [showConfirm, setShowConfirm] = useState(false);
+    const { addToast } = useToast();
 
-    const handleDelete = async (e: React.FormEvent) => {
-        // Prevent default form submission or link navigation if wrapping
-        e.preventDefault();
-        e.stopPropagation();
-
-        if (window.confirm("Êtes-vous sûr de vouloir supprimer ce locataire ? Cette action est irréversible.")) {
-            setIsDeleting(true);
-            try {
-                await deleteTenant(id);
-            } catch (error) {
-                console.error("Erreur lors de la suppression:", error);
-                setIsDeleting(false);
-                alert("Une erreur est survenue lors de la suppression.");
-            }
+    const handleDelete = async () => {
+        setShowConfirm(false);
+        setIsDeleting(true);
+        try {
+            await deleteTenant(id);
+            addToast("Locataire supprimé avec succès", "success");
+        } catch (error) {
+            console.error("Erreur lors de la suppression:", error);
+            setIsDeleting(false);
+            addToast("Erreur lors de la suppression du locataire", "error");
         }
     };
 
     return (
-        <button
-            onClick={handleDelete}
-            disabled={isDeleting}
-            className={styles.deleteButton}
-        >
-            {isDeleting ? "Suppression..." : "Supprimer"}
-        </button>
+        <>
+            <button
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowConfirm(true); }}
+                disabled={isDeleting}
+                className={styles.deleteButton}
+            >
+                {isDeleting ? "Suppression..." : "Supprimer"}
+            </button>
+            <ConfirmModal
+                isOpen={showConfirm}
+                onConfirm={handleDelete}
+                onCancel={() => setShowConfirm(false)}
+                title="Supprimer ce locataire ?"
+                message="Cette action est irréversible et supprimera toutes les informations et documents associés."
+                confirmText="Supprimer"
+                variant="danger"
+            />
+        </>
     );
 }

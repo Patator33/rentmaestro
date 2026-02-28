@@ -1,0 +1,141 @@
+.toastContainer {
+    position: fixed;
+    top: 1.5rem;
+    right: 1.5rem;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    pointer-events: none;
+}
+
+.toast {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1.25rem;
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-lg);
+    color: var(--text-main);
+    font-size: 0.9rem;
+    font-weight: 500;
+    min-width: 280px;
+    max-width: 420px;
+    pointer-events: auto;
+    animation: toastSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: all 0.3s ease;
+}
+
+.toast.exiting {
+    animation: toastSlideOut 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+.toastSuccess {
+    border-color: rgba(34, 197, 94, 0.3);
+    background: rgba(34, 197, 94, 0.1);
+}
+
+.toastError {
+    border-color: rgba(239, 68, 68, 0.3);
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.toastWarning {
+    border-color: rgba(245, 158, 11, 0.3);
+    background: rgba(245, 158, 11, 0.1);
+}
+
+.toastInfo {
+    border-color: rgba(43, 140, 238, 0.3);
+    background: rgba(43, 140, 238, 0.1);
+}
+
+.toastIcon {
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.toastMessage {
+    flex: 1;
+    line-height: 1.4;
+}
+
+.toastClose {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+    line-height: 1;
+}
+
+.toastClose:hover {
+    color: var(--text-main);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.progressBar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    animation: toastProgress linear forwards;
+}
+
+.toastSuccess .progressBar {
+    background: var(--success);
+}
+
+.toastError .progressBar {
+    background: var(--error);
+}
+
+.toastWarning .progressBar {
+    background: var(--warning);
+}
+
+.toastInfo .progressBar {
+    background: var(--primary-color);
+}
+
+@keyframes toastSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes toastSlideOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+}
+
+@keyframes toastProgress {
+    from {
+        width: 100%;
+    }
+
+    to {
+        width: 0%;
+    }
+}

@@ -4,70 +4,84 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
 export async function markRentAsPaid(leaseId: string, periodStr: string, amount: number) {
-    const period = new Date(periodStr); // Expecting YYYY-MM-DD which parses to UTC 00:00 if ISO
-
-    // Check if payment exists
-    const existing = await prisma.rentPayment.findFirst({
-        where: {
-            leaseId,
-            period,
-        }
-    });
-
-    if (existing) {
-        await prisma.rentPayment.update({
-            where: { id: existing.id },
-            data: {
-                status: "PAID",
-                paidAt: new Date(),
-                amount, // Update amount if changed
-            }
-        });
-    } else {
-        await prisma.rentPayment.create({
-            data: {
-                leaseId,
-                period,
-                amount,
-                status: "PAID",
-                paidAt: new Date(),
-            }
-        });
+    if (!leaseId || !periodStr || isNaN(amount) || amount <= 0) {
+        throw new Error("Données de paiement invalides.");
     }
-
-    revalidatePath("/rents");
-}
-
-export async function sendRentReminder(leaseId: string, periodStr: string) {
-    // Simulate email sending
-    console.log(`Sending reminder for lease ${leaseId} period ${periodStr}`);
 
     const period = new Date(periodStr);
 
-    const existing = await prisma.rentPayment.findFirst({
-        where: { leaseId, period }
-    });
-
-    if (existing) {
-        await prisma.rentPayment.update({
-            where: { id: existing.id },
-            data: { sentAt: new Date() }
+    try {
+        const existing = await prisma.rentPayment.findFirst({
+            where: { leaseId, period }
         });
-    } else {
-        // Create pending record
-        const lease = await prisma.lease.findUnique({ where: { id: leaseId } });
-        if (!lease) return;
 
-        await prisma.rentPayment.create({
-            data: {
-                leaseId,
-                period,
-                amount: lease.rentAmount + lease.chargesAmount,
-                status: "PENDING",
-                sentAt: new Date(),
-            }
-        });
+        if (existing) {
+            await prisma.rentPayment.update({
+                where: { id: existing.id },
+                data: {
+                    status: "PAID",
+                    paidAt: new Date(),
+                    amount,
+                }
+            });
+        } else {
+            await prisma.rentPayment.create({
+                data: {
+                    leaseId,
+                    period,
+                    amount,
+                    status: "PAID",
+                    paidAt: new Date(),
+                }
+            });
+        }
+    } catch (error) {
+        console.error("Erreur lors du marquage du paiement:", error);
+        throw new Error("Impossible de marquer le loyer comme payé.");
     }
 
     revalidatePath("/rents");
+    revalidatePath("/");
+}
+
+export async function sendRentReminder(leaseId: string, periodStr: string) {
+    if (!leaseId || !periodStr) {
+        throw new Error("Données de relance invalides.");
+    }
+
+    const period = new Date(periodStr);
+
+    try {
+        const existing = await prisma.rentPayment.findFirst({
+            where: { leaseId, period }
+        });
+
+        if (existing) {
+            await prisma.rentPayment.update({
+                where: { id: existing.id },
+                data: { sentAt: new Date() }
+            });
+        } else {
+            const lease = await prisma.lease.findUnique({ where: { id: leaseId } });
+            if (!lease) {
+                throw new Error("Bail introuvable.");
+            }
+
+            await prisma.rentPayment.create({
+                data: {
+                    leaseId,
+                    period,
+                    amount: lease.rentAmount + lease.chargesAmount,
+                    status: "PENDING",
+                    sentAt: new Date(),
+                }
+            });
+        }
+    } catch (error) {
+        console.error("Erreur lors de l'envoi de la relance:", error);
+        throw new Error("Impossible d'envoyer la relance.");
+    }
+
+    revalidatePath("/rents");
+    revalidatePath("/");
 }

@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import styles from "./page.module.css";
-import { deleteLease } from "@/actions/leases";
 import TerminateLeaseButton from "@/components/TerminateLeaseButton";
+import DeleteLeaseButton from "@/components/DeleteLeaseButton";
 import { formatDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -102,9 +102,7 @@ export default async function LeasesPage() {
                                                     label="Modifier dates"
                                                     style={{ marginRight: 'auto', background: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border-color)' }}
                                                 />
-                                                <form action={deleteLease.bind(null, lease.id)}>
-                                                    <button type="submit" className={styles.deleteButton} title="Supprimer">Supprimer</button>
-                                                </form>
+                                                <DeleteLeaseButton id={lease.id} />
                                             </div>
                                         </div>
                                     );
@@ -247,9 +245,7 @@ export default async function LeasesPage() {
                                                 style={{ marginRight: 'auto', fontSize: '0.8rem', opacity: 0.5 }}
                                                 label="Modifier"
                                             />
-                                            <form action={deleteLease.bind(null, lease.id)}>
-                                                <button type="submit" className={styles.deleteButton} title="Supprimer de l'historique">Supprimer</button>
-                                            </form>
+                                            <DeleteLeaseButton id={lease.id} />
                                         </div>
                                     </div>
                                 ))}
