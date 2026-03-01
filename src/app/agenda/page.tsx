@@ -150,11 +150,11 @@ export default async function AgendaPage() {
                 Object.entries(grouped).map(([month, monthEvents]) => (
                     <section key={month} style={{ marginBottom: '2.5rem' }}>
                         <h2 style={{
-                            fontSize: '1rem', fontWeight: 700, textTransform: 'uppercase',
+                            fontSize: '1rem', fontWeight: 700,
                             letterSpacing: '0.08em', color: 'var(--text-muted)',
                             marginBottom: '1rem', paddingBottom: '0.5rem',
                             borderBottom: '1px solid var(--border-color)',
-                            textTransform: 'capitalize' as any,
+                            textTransform: 'capitalize',
                         }}>
                             {month}
                         </h2>
