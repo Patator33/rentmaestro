@@ -46,8 +46,8 @@ export default function RevenueChart({ data }: RevenueChartProps) {
                         formatter={(value: number | undefined) => [`${(value ?? 0).toFixed(2)} €`]}
                     />
                     <Legend />
-                    <Bar dataKey="revenus" fill="#22c55e" radius={[4, 4, 0, 0]} name="Revenus" />
-                    <Bar dataKey="depenses" fill="#ef4444" radius={[4, 4, 0, 0]} name="Dépenses" />
+                    <Bar dataKey="revenus" fill="#2b8cee" radius={[4, 4, 0, 0]} name="Revenus" />
+                    <Bar dataKey="depenses" fill="#e879a8" radius={[4, 4, 0, 0]} name="Dépenses" />
                 </BarChart>
             </ResponsiveContainer>
         </div>
