@@ -126,8 +126,8 @@ export default async function ApartmentDetailsPage({ params }: { params: Promise
 
             <h2 className={styles.sectionTitle}>Historique des Locataires</h2>
 
-            <div className={styles.tableWrapper}>
-                <table className={styles.table}>
+            <div className="table-container">
+                <table className="std-table">
                     <thead>
                         <tr>
                             <th>Locataire</th>

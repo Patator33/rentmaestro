@@ -50,6 +50,10 @@ export default function NavBar() {
             {/* Mobile Navigation Overlay & Menu */}
             <div className={`mobile-nav-overlay ${menuOpen ? 'open' : ''}`} onClick={() => setMenuOpen(false)}></div>
             <div className={`mobile-nav-menu ${menuOpen ? 'open' : ''}`}>
+                <div style={{ paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Menu</span>
+                    <ThemeToggle />
+                </div>
                 {NAV_ITEMS.map((item) => (
                     <Link
                         key={item.href}

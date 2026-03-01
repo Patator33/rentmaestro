@@ -2,19 +2,74 @@ import Link from "next/link";
 import Logo from "@/components/Logo";
 import UnpaidRents from "@/components/UnpaidRents";
 import UpcomingExpirations from "@/components/UpcomingExpirations";
+import CashflowChart from "@/components/CashflowChart";
 import styles from "./page.module.css";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/utils";
 import { markRentReviewAsSent } from "@/actions/leases";
+import { RentPayment, Expense, Apartment, Lease, Tenant } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
+
+async function getCashflowData() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const startDate = new Date(year, 0, 1);
+  const endDate = new Date(year, 11, 31);
+
+  // Variable Expenses
+  const expenses = await prisma.expense.findMany({
+    where: { date: { gte: startDate, lte: endDate } }
+  });
+
+  // Payments (Income)
+  const payments = await prisma.rentPayment.findMany({
+    where: { period: { gte: startDate, lte: endDate } }
+  });
+
+  // Fixed Costs (Apartment level)
+  const apartments = await prisma.apartment.findMany();
+
+  const monthlyData = [];
+  for (let m = 0; m < 12; m++) {
+    const monthStart = new Date(year, m, 1);
+    const monthEnd = new Date(year, m + 1, 0);
+    const monthKey = monthStart.toLocaleDateString('fr-FR', { month: 'short' });
+
+    let income = payments
+      .filter((p: RentPayment) => p.period >= monthStart && p.period <= monthEnd)
+      .reduce((s: number, p: RentPayment) => s + p.amount, 0);
+
+    let varExpenses = expenses
+      .filter((e: Expense) => e.date >= monthStart && e.date <= monthEnd)
+      .reduce((s: number, e: Expense) => s + e.amount, 0);
+
+    let fixedExpenses = 0;
+    apartments.forEach((apt: Apartment) => {
+      // Only count fixed costs if apartment existed at that time
+      if (new Date(apt.createdAt) <= monthEnd) {
+        fixedExpenses += (apt.mortgageAmount || 0) + (apt.insuranceAmount || 0) + (apt.taxAmount || 0);
+      }
+    });
+
+    const totalExp = varExpenses + fixedExpenses;
+
+    monthlyData.push({
+      month: monthKey,
+      revenus: income,
+      depenses: totalExp,
+      net: income - totalExp
+    });
+  }
+  return monthlyData;
+}
 
 async function getStats() {
   const apartmentCount = await prisma.apartment.count();
   const tenantCount = await prisma.tenant.count();
   const leaseCount = await prisma.lease.count({ where: { isActive: true } });
 
-  const occupancyRate = apartmentCount > 0 ? ((leaseCount / apartmentCount) * 100).toFixed(0) : 0;
+  const occupancyRate = apartmentCount > 0 ? ((leaseCount / apartmentCount) * 100).toFixed(0) : "0";
 
   const now = new Date();
   const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -23,17 +78,17 @@ async function getStats() {
     where: { period: { gte: currentMonthStart } }
   });
 
-  const paidPayments = paymentsThisMonth.filter(p => p.status === 'PAID').length;
+  const paidPayments = paymentsThisMonth.filter((p: RentPayment) => p.status === 'PAID').length;
   const totalPayments = paymentsThisMonth.length;
-  const paymentRate = totalPayments > 0 ? ((paidPayments / totalPayments) * 100).toFixed(0) : 0;
+  const paymentRate = totalPayments > 0 ? ((paidPayments / totalPayments) * 100).toFixed(0) : "0";
 
   const totalRevenue = paymentsThisMonth
-    .filter(p => p.status === 'PAID')
-    .reduce((sum, p) => sum + p.amount, 0);
+    .filter((p: RentPayment) => p.status === 'PAID')
+    .reduce((sum: number, p: RentPayment) => sum + p.amount, 0);
 
-  const expectedRevenue = paymentsThisMonth.reduce((sum, p) => sum + p.amount, 0);
+  const expectedRevenue = paymentsThisMonth.reduce((sum: number, p: RentPayment) => sum + p.amount, 0);
 
-  const latePayments = paymentsThisMonth.filter(p => p.status === 'LATE').length;
+  const latePayments = paymentsThisMonth.filter((p: RentPayment) => p.status === 'LATE').length;
 
   return {
     apartmentCount,
@@ -48,6 +103,7 @@ async function getStats() {
 
 export default async function Home() {
   const stats = await getStats();
+  const cashflowData = await getCashflowData();
 
   // Rent Review Alerts Logic
   const activeLeases = await prisma.lease.findMany({
@@ -57,7 +113,7 @@ export default async function Home() {
 
   const now = new Date();
 
-  const rentReviews = activeLeases.filter(lease => {
+  const rentReviews = activeLeases.filter((lease: any) => {
     const start = new Date(lease.startDate);
     const monthsDiff = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
     const isTimeForReview = monthsDiff >= 10 && monthsDiff % 12 === 10;
@@ -78,6 +134,16 @@ export default async function Home() {
         <p className={styles.subtitle}>Gérez vos investissements locatifs avec élégance.</p>
       </header>
 
+      {/* Financial Projection Section */}
+      <section style={{ marginBottom: '5rem', animation: 'fadeIn 1s ease-out' }}>
+        <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1.5rem', color: 'var(--text-main)', letterSpacing: '0.05em' }}>
+          📊 Projection de Trésorerie Annuelle
+        </h2>
+        <div style={{ background: 'var(--surface)', padding: '2rem', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-lg)' }}>
+          <CashflowChart data={cashflowData} />
+        </div>
+      </section>
+
       {/* Rent Review Alert Section */}
       {rentReviews.length > 0 && (
         <section className={styles.alertSection}>
@@ -85,7 +151,7 @@ export default async function Home() {
             📈 Révisions de Loyer à prévoir
           </h2>
           <div className={styles.alertList}>
-            {rentReviews.map(lease => (
+            {rentReviews.map((lease: any) => (
               <div key={lease.id} className={styles.alertItem}>
                 <span>
                   <strong>{lease.tenant.firstName} {lease.tenant.lastName}</strong> ({lease.apartment.address})

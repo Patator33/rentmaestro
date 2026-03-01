@@ -328,3 +328,52 @@ button {
     display: none;
   }
 }
+
+/* Responsive Table Utility */
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 2rem;
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.std-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+  color: var(--text-main);
+}
+
+.std-table th {
+  text-align: left;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.std-table td {
+  padding: 1.25rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+  transition: background 0.2s ease;
+}
+
+.std-table tr:hover td {
+  background: rgba(43, 140, 238, 0.03);
+}
+
+.std-table tr:last-child td {
+  border-bottom: none;
+}
+
+[data-theme="light"] .std-table th {
+  background: rgba(0, 0, 0, 0.02);
+}

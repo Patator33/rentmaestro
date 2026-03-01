@@ -153,3 +153,17 @@ model Company {
   updatedAt   DateTime    @updatedAt
   apartments  Apartment[]
 }
+
+model Contact {
+  id          String     @id @default(uuid())
+  name        String
+  role        String     // ARTISAN, SYNDIC, INSURANCE, OTHER
+  email       String?
+  phone       String?
+  address     String?
+  comment     String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  apartmentId String?
+  apartment   Apartment? @relation(fields: [apartmentId], references: [id], onDelete: SetNull)
+}

@@ -71,8 +71,8 @@ export default async function RentsPage({
                 <GenerateRentsButton />
             </header>
 
-            <div className={styles.tableWrapper}>
-                <table className={styles.table}>
+            <div className="table-container">
+                <table className="std-table">
                     <thead>
                         <tr>
                             <th>Appartement</th>
