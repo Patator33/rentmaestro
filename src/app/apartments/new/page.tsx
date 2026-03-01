@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import Link from "next/link";
 import styles from "./page.module.css";
 import { createApartment } from "@/actions/apartments";
