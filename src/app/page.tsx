@@ -101,9 +101,19 @@ async function getStats() {
   };
 }
 
+async function getOpenIncidents() {
+  return prisma.task.findMany({
+    where: { tenantId: { not: null }, status: { not: 'DONE' } },
+    include: { apartment: true, tenant: true },
+    orderBy: { createdAt: 'desc' },
+    take: 10,
+  });
+}
+
 export default async function Home() {
   const stats = await getStats();
   const cashflowData = await getCashflowData();
+  const openIncidents = await getOpenIncidents();
 
   // Rent Review Alerts Logic
   const activeLeases = await prisma.lease.findMany({
@@ -168,6 +178,34 @@ export default async function Home() {
                     Marquer comme envoyé
                   </button>
                 </form>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Open Incidents from Tenants */}
+      {openIncidents.length > 0 && (
+        <section style={{ marginBottom: '3rem', padding: '1.5rem', background: 'rgba(251, 146, 60, 0.08)', border: '1px solid rgba(251, 146, 60, 0.3)', borderRadius: 'var(--radius-xl)' }}>
+          <h2 style={{ color: '#fb923c', fontSize: '1.25rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            🔧 Signalements locataires en cours ({openIncidents.length})
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+            {openIncidents.map((task: any) => (
+              <div key={task.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <span style={{ color: 'var(--text-main)' }}>
+                  <strong>{task.tenant.firstName} {task.tenant.lastName}</strong>
+                  {' · '}
+                  <Link href={`/apartments/${task.apartmentId}`} style={{ color: '#fb923c', textDecoration: 'underline' }}>
+                    {task.apartment.address}
+                  </Link>
+                  <span style={{ display: 'block', fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>
+                    {task.title}{task.description ? ` — ${task.description}` : ''}
+                  </span>
+                </span>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  {task.status === 'TODO' ? 'À traiter' : 'En cours'} · {formatDate(task.createdAt)}
+                </span>
               </div>
             ))}
           </div>

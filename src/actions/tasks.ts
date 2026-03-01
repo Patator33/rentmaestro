@@ -35,6 +35,33 @@ export async function createTask(data: any) {
     }
 }
 
+export async function updateTask(taskId: string, data: {
+    title: string;
+    description?: string | null;
+    cost?: number | null;
+    status: string;
+}) {
+    if (!data.title?.trim()) {
+        return { success: false, error: "Le titre est requis" };
+    }
+    try {
+        const task = await prisma.task.update({
+            where: { id: taskId },
+            data: {
+                title: data.title.trim(),
+                description: data.description || null,
+                cost: data.cost ?? null,
+                status: data.status,
+            }
+        });
+        revalidatePath(`/apartments/${task.apartmentId}`);
+        return { success: true, task };
+    } catch (error) {
+        console.error("Erreur updateTask:", error);
+        return { success: false, error: "Impossible de modifier la tâche" };
+    }
+}
+
 export async function updateTaskStatus(taskId: string, status: string) {
     try {
         const task = await prisma.task.update({

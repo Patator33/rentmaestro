@@ -95,55 +95,62 @@ export default async function TenantPortalPage({ params }: { params: Promise<{ t
 
                     <section>
                         <h2 style={{ fontSize: '1.2rem', color: '#334155', marginBottom: '1rem' }}>Historique des Loyers & Quittances</h2>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            {currentLease.payments.length === 0 ? (
-                                <p style={{ color: '#64748b', fontStyle: 'italic' }}>Aucun historique de paiement pour le moment.</p>
-                            ) : (
-                                currentLease.payments.map((payment) => {
-                                    const isPaid = payment.status === 'PAID';
-                                    const monthName = format(new Date(payment.period), 'MMMM yyyy', { locale: fr });
+                        {(() => {
+                            const allPayments = tenant.leases
+                                .flatMap((lease: any) => lease.payments.map((p: any) => ({ ...p, lease })))
+                                .sort((a: any, b: any) => new Date(b.period).getTime() - new Date(a.period).getTime());
 
-                                    return (
-                                        <div key={payment.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'white', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                                            <div>
-                                                <p style={{ fontWeight: 600, color: '#1e293b', textTransform: 'capitalize' }}>
-                                                    {monthName}
-                                                </p>
-                                                <p style={{ fontSize: '0.9rem', color: '#64748b' }}>
-                                                    {payment.amount.toFixed(2)} €
-                                                </p>
-                                            </div>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                                {isPaid ? (
-                                                    <span style={{ padding: '0.3rem 0.8rem', background: '#ecfdf5', color: '#059669', borderRadius: '9999px', fontSize: '0.85rem', fontWeight: 500 }}>
-                                                        Payé
-                                                    </span>
-                                                ) : (
-                                                    <span style={{ padding: '0.3rem 0.8rem', background: '#fffbeb', color: '#d97706', borderRadius: '9999px', fontSize: '0.85rem', fontWeight: 500 }}>
-                                                        En attente
-                                                    </span>
-                                                )}
+                            return (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                    {allPayments.length === 0 ? (
+                                        <p style={{ color: '#64748b', fontStyle: 'italic' }}>Aucun historique de paiement pour le moment.</p>
+                                    ) : (
+                                        allPayments.map((payment: any) => {
+                                            const isPaid = payment.status === 'PAID';
+                                            const monthName = format(new Date(payment.period), 'MMMM yyyy', { locale: fr });
 
-                                                {isPaid ? (
-                                                    <a
-                                                        href={`/api/portal/${token}/quittance/${payment.id}`}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        style={{ display: 'inline-block', padding: '0.5rem 1rem', background: '#f8fafc', color: '#475569', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem', fontWeight: 500, textDecoration: 'none', transition: 'background 0.2s' }}
-                                                    >
-                                                        ⬇️ Télécharger Quittance
-                                                    </a>
-                                                ) : (
-                                                    <div style={{ width: '175px', textAlign: 'center', fontSize: '0.85rem', color: '#cbd5e1' }}>
-                                                        Quittance indisponible
+                                            return (
+                                                <div key={payment.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'white', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                                                    <div>
+                                                        <p style={{ fontWeight: 600, color: '#1e293b', textTransform: 'capitalize' }}>
+                                                            {monthName}
+                                                        </p>
+                                                        <p style={{ fontSize: '0.9rem', color: '#64748b' }}>
+                                                            {payment.amount.toFixed(2)} €
+                                                        </p>
                                                     </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    );
-                                })
-                            )}
-                        </div>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                                        {isPaid ? (
+                                                            <span style={{ padding: '0.3rem 0.8rem', background: '#ecfdf5', color: '#059669', borderRadius: '9999px', fontSize: '0.85rem', fontWeight: 500 }}>
+                                                                Payé
+                                                            </span>
+                                                        ) : (
+                                                            <span style={{ padding: '0.3rem 0.8rem', background: '#fffbeb', color: '#d97706', borderRadius: '9999px', fontSize: '0.85rem', fontWeight: 500 }}>
+                                                                En attente
+                                                            </span>
+                                                        )}
+                                                        {isPaid ? (
+                                                            <a
+                                                                href={`/api/portal/${token}/quittance/${payment.id}`}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                style={{ display: 'inline-block', padding: '0.5rem 1rem', background: '#f8fafc', color: '#475569', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem', fontWeight: 500, textDecoration: 'none' }}
+                                                            >
+                                                                ⬇️ Télécharger Quittance
+                                                            </a>
+                                                        ) : (
+                                                            <div style={{ width: '175px', textAlign: 'center', fontSize: '0.85rem', color: '#cbd5e1' }}>
+                                                                Quittance indisponible
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })
+                                    )}
+                                </div>
+                            );
+                        })()}
                     </section>
                 </>
             )}

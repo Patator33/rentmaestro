@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { notifyN8n } from "@/lib/n8n";
+import { sendEmail } from "@/lib/email";
 
 export async function reportIncident(
     apartmentId: string,
@@ -31,10 +32,18 @@ export async function reportIncident(
             }
         });
 
-        // Notify over Webhook (Optional but good)
-        // Need apartment info to send a better notification
+        // Add an entry in the tenant notes journal
+        await prisma.tenantNote.create({
+            data: {
+                tenantId,
+                type: "NOTE",
+                content: `🔧 Signalement technique : ${title}${description ? ` — ${description}` : ''}`
+            }
+        });
+
         const apt = await prisma.apartment.findUnique({ where: { id: apartmentId } });
 
+        // Notify via n8n webhook
         await notifyN8n("INCIDENT_REPORTED", {
             taskId: task.id,
             tenantName: `${tenant.firstName} ${tenant.lastName}`,
@@ -43,8 +52,34 @@ export async function reportIncident(
             description
         });
 
-        // We revalidate the portal page
+        // Notify landlord via email
+        if (process.env.SMTP_USER) {
+            try {
+                await sendEmail({
+                    to: process.env.SMTP_USER,
+                    subject: `Nouveau signalement — ${tenant.firstName} ${tenant.lastName}`,
+                    html: `
+                        <div style="font-family: sans-serif; color: #333; line-height: 1.6; max-width: 500px;">
+                            <h2 style="color: #1e293b;">🔧 Nouveau signalement technique</h2>
+                            <p><strong>${tenant.firstName} ${tenant.lastName}</strong> a signalé un problème
+                            pour le logement au <strong>${apt ? apt.address : apartmentId}</strong>.</p>
+                            <table style="width:100%; border-collapse: collapse; margin: 1rem 0;">
+                                <tr><td style="padding: 0.5rem; font-weight:600; width:120px;">Objet</td><td style="padding: 0.5rem;">${title}</td></tr>
+                                ${description ? `<tr><td style="padding: 0.5rem; font-weight:600;">Détail</td><td style="padding: 0.5rem;">${description}</td></tr>` : ''}
+                            </table>
+                            <p style="color: #64748b; font-size: 0.9rem;"><em>Rentmaestro — Gestion Locative</em></p>
+                        </div>
+                    `,
+                });
+            } catch {
+                // Email failure is non-blocking
+            }
+        }
+
         revalidatePath(`/portal/${token}`);
+        revalidatePath(`/apartments/${apartmentId}`);
+        revalidatePath(`/tenants/${tenantId}`);
+        revalidatePath(`/`);
 
         return { success: true };
     } catch (error: any) {
