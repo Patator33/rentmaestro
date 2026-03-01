@@ -68,14 +68,14 @@ export default function CashflowChart({ data }: CashflowChartProps) {
 
                     <Bar
                         dataKey="revenus"
-                        fill="#22c55e"
+                        fill="#2b8cee"
                         name="Loyers (Encaissements)"
                         radius={[4, 4, 0, 0]}
                         barSize={30}
                     />
                     <Bar
                         dataKey="depenses"
-                        fill="#ef4444"
+                        fill="#e879a8"
                         name="Charges (Sorties)"
                         radius={[4, 4, 0, 0]}
                         barSize={30}
@@ -83,10 +83,10 @@ export default function CashflowChart({ data }: CashflowChartProps) {
                     <Line
                         type="monotone"
                         dataKey="net"
-                        stroke="#2563eb"
+                        stroke="#5b5fc7"
                         name="Cashflow Net (Reste à vivre)"
                         strokeWidth={3}
-                        dot={{ r: 4, fill: '#2563eb', strokeWidth: 2, stroke: '#fff' }}
+                        dot={{ r: 4, fill: '#5b5fc7', strokeWidth: 2, stroke: '#fff' }}
                         activeDot={{ r: 6 }}
                     />
                 </ComposedChart>

@@ -126,7 +126,7 @@ export default async function TenantPortalPage({ params }: { params: Promise<{ t
 
                                                 {isPaid ? (
                                                     <a
-                                                        href={`/api/quittance/${payment.id}/pdf`}
+                                                        href={`/api/portal/${token}/quittance/${payment.id}`}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
                                                         style={{ display: 'inline-block', padding: '0.5rem 1rem', background: '#f8fafc', color: '#475569', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem', fontWeight: 500, textDecoration: 'none', transition: 'background 0.2s' }}
