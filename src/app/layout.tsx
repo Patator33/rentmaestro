@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Manrope } from "next/font/google";
-import NavBar from "@/components/NavBar";
+import NavBarWrapper from "@/components/NavBarWrapper";
 import { ToastProvider } from "@/components/Toast";
 import "./globals.css";
 
@@ -31,7 +31,7 @@ export default function RootLayout({
     <html lang="fr">
       <body className={`${manrope.variable}`}>
         <ToastProvider>
-          <NavBar />
+          <NavBarWrapper />
           <main>
             {children}
           </main>
