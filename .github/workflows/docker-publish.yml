@@ -60,7 +60,7 @@ jobs:
           docker build --progress=plain . -t rentmaestro-test 2>&1 | tee /tmp/docker_build.log
           BUILD_EXIT=${PIPESTATUS[0]}
           if [ "$BUILD_EXIT" != "0" ]; then
-            LAST_LINES=$(tail -40 /tmp/docker_build.log | tr '\n' ' | ')
+            LAST_LINES=$(grep -E "(error|Error|ERROR|failed|FAILED|exit code)" /tmp/docker_build.log | tail -20 | tr '\n' ' | ')
             echo "::error title=Docker Build Failed::${LAST_LINES}"
             exit 1
           fi
