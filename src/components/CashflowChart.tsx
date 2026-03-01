@@ -61,7 +61,7 @@ export default function CashflowChart({ data }: CashflowChartProps) {
                             boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
                         }}
                         itemStyle={{ fontSize: '12px', padding: '2px 0' }}
-                        formatter={(value: number) => [`${value.toFixed(2)} €`]}
+                        formatter={(value: number | undefined) => [value !== undefined ? `${value.toFixed(2)} €` : '']}
                     />
                     <Legend verticalAlign="top" height={40} iconType="circle" />
                     <ReferenceLine y={0} stroke="var(--border-color)" />
