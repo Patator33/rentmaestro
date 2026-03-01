@@ -12,10 +12,10 @@ export const dynamic = "force-dynamic";
 export default async function RentsPage({
     searchParams,
 }: {
-    searchParams: { month?: string };
+    searchParams: Promise<{ month?: string }>;
 }) {
     const now = new Date();
-    const monthParam = searchParams.month; // YYYY-MM
+    const { month: monthParam } = await searchParams; // YYYY-MM
 
     let currentDate = now;
     if (monthParam) {
