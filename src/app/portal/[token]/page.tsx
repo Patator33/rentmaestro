@@ -4,6 +4,8 @@ import { formatDate } from '@/lib/utils';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
+import ReportIncidentForm from '@/components/ReportIncidentForm';
+
 export const dynamic = 'force-dynamic';
 
 export default async function TenantPortalPage({ params }: { params: Promise<{ token: string }> }) {
@@ -13,6 +15,9 @@ export default async function TenantPortalPage({ params }: { params: Promise<{ t
     const tenant = await prisma.tenant.findUnique({
         where: { portalToken: token },
         include: {
+            tasks: {
+                orderBy: { createdAt: 'desc' }
+            },
             leases: {
                 include: {
                     apartment: true,
@@ -53,6 +58,38 @@ export default async function TenantPortalPage({ params }: { params: Promise<{ t
                             <p><strong>Ville :</strong> {currentLease.apartment.zipCode} {currentLease.apartment.city}</p>
                             <p><strong>Loyer mensuel :</strong> {(currentLease.rentAmount + currentLease.chargesAmount).toFixed(2)} € (charges comprises)</p>
                             <p><strong>Début du bail :</strong> {formatDate(currentLease.startDate)}</p>
+                        </div>
+                    </section>
+
+                    <section style={{ marginBottom: '2rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
+                            <h2 style={{ fontSize: '1.2rem', color: '#334155', margin: 0 }}>Vos Signalements techniques</h2>
+                            <ReportIncidentForm apartmentId={currentLease.apartmentId} tenantId={tenant.id} token={token} />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            {tenant.tasks.length === 0 ? (
+                                <p style={{ color: '#64748b', fontStyle: 'italic' }}>Aucun incident signalé.</p>
+                            ) : (
+                                tenant.tasks.map((task) => (
+                                    <div key={task.id} style={{ padding: '1rem', background: 'white', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                                            <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: '#1e293b', margin: 0 }}>{task.title}</h3>
+                                            <span style={{
+                                                padding: '0.2rem 0.6rem',
+                                                borderRadius: '9999px',
+                                                fontSize: '0.8rem',
+                                                fontWeight: 500,
+                                                background: task.status === 'DONE' ? '#ecfdf5' : task.status === 'IN_PROGRESS' ? '#eff6ff' : '#fffbeb',
+                                                color: task.status === 'DONE' ? '#059669' : task.status === 'IN_PROGRESS' ? '#3b82f6' : '#d97706'
+                                            }}>
+                                                {task.status === 'TODO' ? 'À traiter' : task.status === 'IN_PROGRESS' ? 'En cours' : 'Résolu'}
+                                            </span>
+                                        </div>
+                                        {task.description && <p style={{ fontSize: '0.9rem', color: '#475569', marginBottom: '0.5rem', whiteSpace: 'pre-wrap' }}>{task.description}</p>}
+                                        <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: 0 }}>Signalé le {formatDate(task.createdAt)}</p>
+                                    </div>
+                                ))
+                            )}
                         </div>
                     </section>
 

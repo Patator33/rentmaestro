@@ -81,7 +81,10 @@ export default function TaskBoard({ apartmentId, initialTasks }: TaskBoardProps)
     const renderTaskCard = (task: Task) => (
         <div key={task.id} className={styles.taskCard}>
             <div className={styles.taskHeader}>
-                <span className={styles.taskTitle}>{task.title}</span>
+                <span className={styles.taskTitle}>
+                    {task.title}
+                    {task.tenantId && <span style={{ marginLeft: "0.5rem", fontSize: "0.7rem", backgroundColor: "#fffbeb", color: "#d97706", padding: "0.2rem 0.5rem", borderRadius: "10px", fontWeight: "bold" }}>Locataire</span>}
+                </span>
                 <button onClick={() => handleDelete(task.id)} className={styles.deleteBtn} title="Supprimer">×</button>
             </div>
             {task.description && <div className={styles.taskDesc}>{task.description}</div>}

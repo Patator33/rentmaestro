@@ -4,6 +4,7 @@ import { tenantSchema } from "@/lib/validations";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { notifyN8n } from "@/lib/n8n";
 
 export async function createTenant(formData: FormData) {
     const rawData = {
@@ -20,9 +21,12 @@ export async function createTenant(formData: FormData) {
 
     try {
         const validatedData = tenantSchema.parse(rawData);
-        await prisma.tenant.create({
+        const newTenant = await prisma.tenant.create({
             data: validatedData,
         });
+
+        // Trigger n8n webhook
+        await notifyN8n('TENANT_CREATED', newTenant);
     } catch (error) {
         console.error("Erreur lors de la création du locataire:", error);
         throw new Error("Impossible de créer le locataire. Vérifiez les données saisies.");

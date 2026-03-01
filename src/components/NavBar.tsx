@@ -13,6 +13,7 @@ const NAV_ITEMS = [
     { href: "/leases", label: "📜 Baux" },
     { href: "/rents", label: "💰 Loyers" },
     { href: "/stats", label: "📈 Stats" },
+    { href: "/reconciliation", label: "🔄 Banque" },
 ];
 
 export default function NavBar() {

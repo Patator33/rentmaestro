@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { notifyN8n } from "@/lib/n8n";
 
 export async function markRentAsPaid(leaseId: string, periodStr: string, amount: number) {
     if (!leaseId || !periodStr || isNaN(amount) || amount <= 0) {
@@ -34,6 +35,16 @@ export async function markRentAsPaid(leaseId: string, periodStr: string, amount:
                     paidAt: new Date(),
                 }
             });
+        }
+
+        // Fetch the created/updated payment to send to n8n
+        const paymentData = await prisma.rentPayment.findFirst({
+            where: { leaseId, period },
+            include: { lease: { include: { tenant: true, apartment: true } } }
+        });
+
+        if (paymentData) {
+            await notifyN8n('RENT_PAID', paymentData);
         }
     } catch (error) {
         console.error("Erreur lors du marquage du paiement:", error);

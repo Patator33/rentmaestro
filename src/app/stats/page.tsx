@@ -183,6 +183,14 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
                 >
                     📊 Récapitulatif Annuel (CSV)
                 </a>
+                <a
+                    href={`/api/export?type=tax&year=${startDate.getFullYear()}${companyId ? `&companyId=${companyId}` : ''}`}
+                    className="std-add-button"
+                    style={{ fontSize: '0.85rem', padding: '0.5rem 1rem', background: 'var(--text-color)', color: 'var(--bg-color)' }}
+                    download
+                >
+                    🏛️ Liasse Fiscale (CSV)
+                </a>
             </div>
 
             <div className={styles.kpiGrid}>

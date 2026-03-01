@@ -36,6 +36,13 @@ export async function sendQuittanceEmail(paymentId: string) {
             html
         });
 
+        // Save timestamp
+        await prisma.rentPayment.update({
+            where: { id: paymentId },
+            data: { receiptSentAt: new Date() }
+        });
+
+        revalidatePath("/rents");
         return { success: true };
     } catch (error: any) {
         console.error("Erreur sendQuittanceEmail:", error);
@@ -92,6 +99,13 @@ export async function sendReminderEmail(leaseId: string, periodStr: string) {
             html
         });
 
+        // Save timestamp
+        await prisma.rentPayment.update({
+            where: { id: payment.id },
+            data: { sentAt: new Date() }
+        });
+
+        revalidatePath("/rents");
         return { success: true };
     } catch (error: any) {
         console.error("Erreur sendReminderEmail:", error);

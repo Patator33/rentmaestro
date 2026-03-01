@@ -49,6 +49,7 @@ model Tenant {
   leases            Lease[]
   documents         TenantDocument[]
   notes             TenantNote[]
+  tasks             Task[]
 }
 
 model TenantDocument {
@@ -92,15 +93,16 @@ model Lease {
 }
 
 model RentPayment {
-  id        String    @id @default(uuid())
-  leaseId   String
-  period    DateTime
-  amount    Float
-  status    String // PAID, PENDING, LATE
-  paidAt    DateTime?
-  sentAt    DateTime?
-  createdAt DateTime  @default(now())
-  lease     Lease     @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+  id              String    @id @default(uuid())
+  leaseId         String
+  period          DateTime
+  amount          Float
+  status          String // PAID, PENDING, LATE
+  paidAt          DateTime?
+  sentAt          DateTime? // Used for LATE/PENDING reminders
+  receiptSentAt   DateTime? // Used for PAID receipts
+  createdAt       DateTime  @default(now())
+  lease           Lease     @relation(fields: [leaseId], references: [id], onDelete: Cascade)
 }
 
 model Expense {
@@ -124,6 +126,8 @@ model Task {
   status      String     @default("TODO") // TODO, IN_PROGRESS, DONE
   cost        Float?
   dueDate     DateTime?
+  tenantId    String?
+  tenant      Tenant?    @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 }
