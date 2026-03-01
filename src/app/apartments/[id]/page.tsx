@@ -6,6 +6,7 @@ import TerminateLeaseButton from "@/components/TerminateLeaseButton";
 import { formatDate } from "@/lib/utils";
 import ExpenseForm from "@/components/ExpenseForm";
 import TaskBoard from "@/components/TaskBoard";
+import InspectionBoard from "@/components/InspectionBoard";
 import { uploadApartmentDocument, deleteApartmentDocument } from "@/actions/documents";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +20,10 @@ export default async function ApartmentDetailsPage({ params }: { params: Promise
             leases: {
                 include: {
                     tenant: true,
-                    payments: true
+                    payments: true,
+                    inspections: {
+                        orderBy: { date: 'desc' }
+                    }
                 },
                 orderBy: { startDate: 'desc' }
             },
@@ -253,6 +257,19 @@ export default async function ApartmentDetailsPage({ params }: { params: Promise
                     Interventions & Tâches
                 </h2>
                 <TaskBoard key={apartment.id} apartmentId={apartment.id} initialTasks={apartment.tasks} />
+            </div>
+
+            <div style={{ marginTop: '2rem' }}>
+                <InspectionBoard
+                    apartmentId={apartment.id}
+                    leases={apartment.leases.map((l: typeof apartment.leases[0]) => ({
+                        id: l.id,
+                        tenantFirstName: l.tenant.firstName,
+                        tenantLastName: l.tenant.lastName,
+                        startDate: l.startDate,
+                        inspections: l.inspections,
+                    }))}
+                />
             </div>
 
             <ExpenseForm apartmentId={apartment.id} expenses={apartment.expenses} />

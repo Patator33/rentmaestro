@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 import ReportIncidentForm from '@/components/ReportIncidentForm';
+import TenantMessaging from '@/components/TenantMessaging';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,6 +27,9 @@ export default async function TenantPortalPage({ params }: { params: Promise<{ t
                     }
                 },
                 orderBy: { startDate: 'desc' }
+            },
+            messages: {
+                orderBy: { createdAt: 'asc' }
             }
         }
     });
@@ -151,6 +155,14 @@ export default async function TenantPortalPage({ params }: { params: Promise<{ t
                                 </div>
                             );
                         })()}
+                    </section>
+
+                    <section style={{ marginTop: '2rem' }}>
+                        <TenantMessaging
+                            tenantId={tenant.id}
+                            initialMessages={tenant.messages}
+                            portalToken={token}
+                        />
                     </section>
                 </>
             )}

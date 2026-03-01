@@ -51,6 +51,7 @@ model Tenant {
   documents         TenantDocument[]
   notes             TenantNote[]
   tasks             Task[]
+  messages          Message[]
 }
 
 model TenantDocument {
@@ -91,6 +92,7 @@ model Lease {
   apartment          Apartment     @relation(fields: [apartmentId], references: [id])
   tenant             Tenant        @relation(fields: [tenantId], references: [id])
   payments           RentPayment[]
+  inspections        Inspection[]
 }
 
 model RentPayment {
@@ -167,4 +169,25 @@ model Contact {
   updatedAt   DateTime   @updatedAt
   apartmentId String?
   apartment   Apartment? @relation(fields: [apartmentId], references: [id], onDelete: SetNull)
+}
+
+model Message {
+  id         String    @id @default(uuid())
+  tenantId   String
+  content    String
+  fromTenant Boolean   @default(false)
+  readAt     DateTime?
+  createdAt  DateTime  @default(now())
+  tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+model Inspection {
+  id        String   @id @default(uuid())
+  leaseId   String
+  type      String   // ENTRY, EXIT
+  date      DateTime
+  rooms     String   @default("[]") // JSON: [{name, condition, notes}]
+  notes     String?
+  createdAt DateTime @default(now())
+  lease     Lease    @relation(fields: [leaseId], references: [id], onDelete: Cascade)
 }

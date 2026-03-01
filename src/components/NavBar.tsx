@@ -3,10 +3,12 @@
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
+import GlobalSearch from "@/components/GlobalSearch";
 import { useState } from "react";
 
 const NAV_ITEMS = [
     { href: "/", label: "🏠 Accueil" },
+    { href: "/agenda", label: "📅 Agenda" },
     { href: "/companies", label: "🏢 Sociétés" },
     { href: "/apartments", label: "🏠 Biens" },
     { href: "/tenants", label: "👥 Locataires" },
@@ -34,6 +36,7 @@ export default function NavBar() {
                                 {item.label}
                             </Link>
                         ))}
+                        <GlobalSearch />
                         <ThemeToggle />
                     </div>
 

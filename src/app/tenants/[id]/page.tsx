@@ -6,6 +6,7 @@ import styles from "./page.module.css";
 import { formatDate } from "@/lib/utils";
 import TenantNotes from "@/components/TenantNotes";
 import TenantPortalLink from "@/components/TenantPortalLink";
+import TenantMessaging from "@/components/TenantMessaging";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,9 @@ export default async function TenantDetailsPage({ params }: { params: Promise<{ 
             leases: {
                 include: { apartment: true },
                 orderBy: { startDate: 'desc' }
+            },
+            messages: {
+                orderBy: { createdAt: 'asc' }
             }
         }
     });
@@ -170,6 +174,11 @@ export default async function TenantDetailsPage({ params }: { params: Promise<{ 
                 </section>
 
                 <TenantNotes tenantId={tenant.id} notes={tenant.notes} />
+
+                <section className={styles.section} style={{ gridColumn: '1 / -1' }}>
+                    <h2 className={styles.sectionTitle}>Messagerie</h2>
+                    <TenantMessaging tenantId={tenant.id} initialMessages={tenant.messages} />
+                </section>
             </div>
         </div>
     );

@@ -1,0 +1,124 @@
+'use client';
+
+import { useState, useEffect, useRef } from 'react';
+import { sendAdminMessage, sendPortalMessage, markMessagesRead } from '@/actions/messages';
+
+interface Message {
+    id: string;
+    content: string;
+    fromTenant: boolean;
+    readAt: Date | null;
+    createdAt: Date;
+}
+
+interface Props {
+    tenantId: string;
+    initialMessages: Message[];
+    // If portalToken is set, we are in portal (tenant) mode
+    portalToken?: string;
+}
+
+export default function TenantMessaging({ tenantId, initialMessages, portalToken }: Props) {
+    const [messages, setMessages] = useState<Message[]>(initialMessages);
+    const [text, setText] = useState('');
+    const [sending, setSending] = useState(false);
+    const bottomRef = useRef<HTMLDivElement>(null);
+    const isPortal = !!portalToken;
+
+    useEffect(() => {
+        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages]);
+
+    // Mark unread messages as read on mount
+    useEffect(() => {
+        // Admin reads tenant messages (fromTenant=true), portal reads admin messages (fromTenant=false)
+        markMessagesRead(tenantId, isPortal ? false : true).catch(() => {});
+    }, [tenantId, isPortal]);
+
+    const handleSend = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!text.trim()) return;
+        setSending(true);
+
+        const res = isPortal
+            ? await sendPortalMessage(tenantId, text, portalToken!)
+            : await sendAdminMessage(tenantId, text);
+
+        if (res.success && res.message) {
+            setMessages(prev => [...prev, res.message as Message]);
+            setText('');
+        }
+        setSending(false);
+    };
+
+    const unreadCount = messages.filter(m => m.fromTenant !== isPortal && !m.readAt).length;
+
+    return (
+        <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+            <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#1e293b', margin: 0 }}>
+                    💬 {isPortal ? 'Messagerie avec votre propriétaire' : 'Messagerie'}
+                </h3>
+                {unreadCount > 0 && (
+                    <span style={{ background: '#e879a8', color: 'white', fontSize: '0.75rem', fontWeight: 700, padding: '0.2rem 0.6rem', borderRadius: '9999px' }}>
+                        {unreadCount} non lu{unreadCount > 1 ? 's' : ''}
+                    </span>
+                )}
+            </div>
+
+            {/* Messages thread */}
+            <div style={{ height: '320px', overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {messages.length === 0 ? (
+                    <p style={{ color: '#94a3b8', fontStyle: 'italic', textAlign: 'center', marginTop: '4rem', fontSize: '0.9rem' }}>
+                        Aucun message pour l'instant.
+                    </p>
+                ) : (
+                    messages.map(msg => {
+                        const isMine = isPortal ? msg.fromTenant : !msg.fromTenant;
+                        return (
+                            <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', alignItems: isMine ? 'flex-end' : 'flex-start' }}>
+                                <div style={{
+                                    maxWidth: '75%',
+                                    padding: '0.6rem 0.9rem',
+                                    borderRadius: isMine ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
+                                    background: isMine ? '#2b8cee' : '#f1f5f9',
+                                    color: isMine ? 'white' : '#1e293b',
+                                    fontSize: '0.9rem',
+                                    lineHeight: 1.5,
+                                    whiteSpace: 'pre-wrap',
+                                    wordBreak: 'break-word',
+                                }}>
+                                    {msg.content}
+                                </div>
+                                <span style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '0.2rem' }}>
+                                    {new Date(msg.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                    {isMine && msg.readAt && <span style={{ marginLeft: '0.3rem' }}>✓✓</span>}
+                                </span>
+                            </div>
+                        );
+                    })
+                )}
+                <div ref={bottomRef} />
+            </div>
+
+            {/* Input */}
+            <form onSubmit={handleSend} style={{ padding: '0.75rem', borderTop: '1px solid #e2e8f0', display: 'flex', gap: '0.5rem' }}>
+                <input
+                    type="text"
+                    value={text}
+                    onChange={e => setText(e.target.value)}
+                    placeholder="Votre message..."
+                    style={{ flex: 1, padding: '0.6rem 0.9rem', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '0.9rem', fontFamily: 'inherit', outline: 'none' }}
+                    disabled={sending}
+                />
+                <button
+                    type="submit"
+                    disabled={sending || !text.trim()}
+                    style={{ padding: '0.6rem 1.2rem', background: '#2b8cee', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', fontSize: '0.9rem', opacity: sending || !text.trim() ? 0.6 : 1 }}
+                >
+                    {sending ? '...' : 'Envoyer'}
+                </button>
+            </form>
+        </div>
+    );
+}

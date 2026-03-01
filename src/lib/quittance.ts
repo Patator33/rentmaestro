@@ -1,4 +1,25 @@
-import { Lease, Apartment, Tenant } from '@prisma/client';
+interface Apartment {
+    address: string;
+    complement: string | null;
+    zipCode: string;
+    city: string;
+    name: string | null;
+}
+
+interface Tenant {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string | null;
+}
+
+interface Lease {
+    rentAmount: number;
+    chargesAmount: number;
+    startDate: Date;
+    apartment: Apartment;
+    tenant: Tenant;
+}
 
 function formatDateFR(date: Date): string {
     return date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
@@ -8,8 +29,18 @@ function getMonthYear(date: Date): string {
     return date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
 }
 
-export function generateQuittanceHtml(lease: Lease & { apartment: Apartment, tenant: Tenant }, period: Date): string {
+export function generateQuittanceHtml(lease: Lease, period: Date, verifyUrl?: string): string {
     const totalAmount = lease.rentAmount + lease.chargesAmount;
+
+    const qrBlock = verifyUrl ? `
+    <div class="qr-block">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(verifyUrl)}" alt="QR Code Vérification" />
+        <div>
+            <strong>Vérifier l'authenticité de cette quittance</strong>
+            <p>Scannez ce QR code ou rendez-vous sur :</p>
+            <p style="word-break:break-all;">${verifyUrl}</p>
+        </div>
+    </div>` : '';
 
     return `<!DOCTYPE html>
 <html lang="fr">
@@ -42,6 +73,10 @@ export function generateQuittanceHtml(lease: Lease & { apartment: Apartment, ten
         .signature-box .sig-label { font-size: 12px; color: #888; margin-bottom: 0.5rem; }
         .signature-box .sig-line { border-bottom: 1px solid #ccc; height: 4rem; }
         .footer { margin-top: 3rem; text-align: center; font-size: 11px; color: #999; border-top: 1px solid #eee; padding-top: 1rem; }
+        .qr-block { display: flex; align-items: center; gap: 1rem; margin-top: 2rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef; }
+        .qr-block img { width: 80px; height: 80px; flex-shrink: 0; }
+        .qr-block p { font-size: 11px; color: #666; line-height: 1.5; }
+        .qr-block strong { font-size: 12px; color: #333; display: block; margin-bottom: 0.25rem; }
         @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
     </style>
 </head>
@@ -109,6 +144,8 @@ export function generateQuittanceHtml(lease: Lease & { apartment: Apartment, ten
             <div class="sig-line"></div>
         </div>
     </div>
+
+    ${qrBlock}
 
     <div class="footer">
         Document généré par Rentmaestro le ${formatDateFR(new Date())} — Cette quittance est un document officiel attestant du paiement du loyer.
