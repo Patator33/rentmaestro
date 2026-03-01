@@ -29,10 +29,11 @@ export default function TenantMessaging({ tenantId, initialMessages, portalToken
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    // Mark unread messages as read on mount
+    // Portal only: mark admin messages as read when tenant opens the conversation
     useEffect(() => {
-        // Admin reads tenant messages (fromTenant=true), portal reads admin messages (fromTenant=false)
-        markMessagesRead(tenantId, isPortal ? false : true).catch(() => {});
+        if (isPortal) {
+            markMessagesRead(tenantId, false).catch(() => {});
+        }
     }, [tenantId, isPortal]);
 
     const handleSend = async (e: React.FormEvent) => {
@@ -47,6 +48,10 @@ export default function TenantMessaging({ tenantId, initialMessages, portalToken
         if (res.success && res.message) {
             setMessages(prev => [...prev, res.message as Message]);
             setText('');
+            // Admin replying → mark tenant messages as read
+            if (!isPortal) {
+                markMessagesRead(tenantId, true).catch(() => {});
+            }
         }
         setSending(false);
     };
@@ -59,10 +64,17 @@ export default function TenantMessaging({ tenantId, initialMessages, portalToken
                 <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#1e293b', margin: 0 }}>
                     💬 {isPortal ? 'Messagerie avec votre propriétaire' : 'Messagerie'}
                 </h3>
-                {unreadCount > 0 && (
-                    <span style={{ background: '#e879a8', color: 'white', fontSize: '0.75rem', fontWeight: 700, padding: '0.2rem 0.6rem', borderRadius: '9999px' }}>
-                        {unreadCount} non lu{unreadCount > 1 ? 's' : ''}
-                    </span>
+                {!isPortal && unreadCount > 0 && (
+                    <button
+                        onClick={() => {
+                            markMessagesRead(tenantId, true).catch(() => {});
+                            setMessages(prev => prev.map(m => m.fromTenant && !m.readAt ? { ...m, readAt: new Date() } : m));
+                        }}
+                        style={{ background: '#e879a8', color: 'white', fontSize: '0.75rem', fontWeight: 700, padding: '0.2rem 0.7rem', borderRadius: '9999px', border: 'none', cursor: 'pointer' }}
+                        title="Marquer tous les messages du locataire comme lus"
+                    >
+                        {unreadCount} non lu{unreadCount > 1 ? 's' : ''} · ✓ Lu
+                    </button>
                 )}
             </div>
 
