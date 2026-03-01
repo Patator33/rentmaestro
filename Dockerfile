@@ -11,7 +11,7 @@ RUN PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true npm ci
 
 # Rebuild the source code only when needed
 FROM base AS builder
-RUN apk add --no-cache libc6-compat
+RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
