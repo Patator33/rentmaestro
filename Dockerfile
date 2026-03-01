@@ -7,7 +7,7 @@ WORKDIR /app
 
 # Install dependencies
 COPY package*.json ./
-RUN npm ci
+RUN PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true npm ci
 
 # Rebuild the source code only when needed
 FROM base AS builder
