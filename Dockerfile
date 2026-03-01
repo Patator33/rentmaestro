@@ -22,6 +22,9 @@ ENV DATABASE_URL="file:./dev.db"
 # Generate Prisma Client
 RUN npx prisma generate
 
+# Create empty DB schema for build-time static page generation
+RUN npx prisma migrate deploy
+
 # Build Next.js
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
