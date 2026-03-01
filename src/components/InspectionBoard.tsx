@@ -127,16 +127,16 @@ export default function InspectionBoard({ apartmentId, leases }: Props) {
 
             {/* Creation form */}
             {showForm && (
-                <form onSubmit={handleSubmit} style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '1.5rem', marginBottom: '1.5rem' }}>
-                    <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1.25rem', color: '#1e293b' }}>Nouveau état des lieux</h3>
+                <form onSubmit={handleSubmit} style={{ background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '1.5rem', marginBottom: '1.5rem' }}>
+                    <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1.25rem', color: 'var(--text-main)' }}>Nouveau état des lieux</h3>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1.25rem' }}>
                         <div>
-                            <label style={{ fontSize: '0.85rem', fontWeight: 500, color: '#475569', display: 'block', marginBottom: '0.3rem' }}>Bail</label>
+                            <label style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: '0.3rem' }}>Bail</label>
                             <select
                                 value={selectedLeaseId}
                                 onChange={e => setSelectedLeaseId(e.target.value)}
-                                style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '6px', fontFamily: 'inherit', fontSize: '0.9rem' }}
+                                style={{ width: '100%', padding: '0.5rem', border: '1px solid var(--border-color)', borderRadius: '6px', fontFamily: 'inherit', fontSize: '0.9rem', background: 'var(--surface-active)', color: 'var(--text-main)' }}
                             >
                                 {leases.map(l => (
                                     <option key={l.id} value={l.id}>
@@ -146,24 +146,24 @@ export default function InspectionBoard({ apartmentId, leases }: Props) {
                             </select>
                         </div>
                         <div>
-                            <label style={{ fontSize: '0.85rem', fontWeight: 500, color: '#475569', display: 'block', marginBottom: '0.3rem' }}>Type</label>
+                            <label style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: '0.3rem' }}>Type</label>
                             <select
                                 value={type}
                                 onChange={e => setType(e.target.value as 'ENTRY' | 'EXIT')}
-                                style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '6px', fontFamily: 'inherit', fontSize: '0.9rem' }}
+                                style={{ width: '100%', padding: '0.5rem', border: '1px solid var(--border-color)', borderRadius: '6px', fontFamily: 'inherit', fontSize: '0.9rem', background: 'var(--surface-active)', color: 'var(--text-main)' }}
                             >
                                 <option value="ENTRY">Entrée</option>
                                 <option value="EXIT">Sortie</option>
                             </select>
                         </div>
                         <div>
-                            <label style={{ fontSize: '0.85rem', fontWeight: 500, color: '#475569', display: 'block', marginBottom: '0.3rem' }}>Date</label>
+                            <label style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: '0.3rem' }}>Date</label>
                             <input
                                 type="date"
                                 value={date}
                                 onChange={e => setDate(e.target.value)}
                                 required
-                                style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '6px', fontFamily: 'inherit', fontSize: '0.9rem' }}
+                                style={{ width: '100%', padding: '0.5rem', border: '1px solid var(--border-color)', borderRadius: '6px', fontFamily: 'inherit', fontSize: '0.9rem', background: 'var(--surface-active)', color: 'var(--text-main)' }}
                             />
                         </div>
                     </div>
@@ -171,8 +171,8 @@ export default function InspectionBoard({ apartmentId, leases }: Props) {
                     {/* Rooms */}
                     <div style={{ marginBottom: '1.25rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#475569' }}>Pièces</label>
-                            <button type="button" onClick={addRoom} style={{ fontSize: '0.8rem', background: 'none', border: '1px solid #cbd5e1', padding: '0.25rem 0.7rem', borderRadius: '6px', cursor: 'pointer', color: '#475569' }}>
+                            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Pièces</label>
+                            <button type="button" onClick={addRoom} style={{ fontSize: '0.8rem', background: 'none', border: '1px solid var(--border-color)', padding: '0.25rem 0.7rem', borderRadius: '6px', cursor: 'pointer', color: 'var(--text-secondary)' }}>
                                 + Ajouter une pièce
                             </button>
                         </div>
@@ -185,12 +185,12 @@ export default function InspectionBoard({ apartmentId, leases }: Props) {
                                         onChange={e => updateRoom(i, 'name', e.target.value)}
                                         placeholder="Nom de la pièce"
                                         required
-                                        style={{ padding: '0.4rem 0.6rem', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.85rem', fontFamily: 'inherit' }}
+                                        style={{ padding: '0.4rem 0.6rem', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '0.85rem', fontFamily: 'inherit', background: 'var(--surface-active)', color: 'var(--text-main)' }}
                                     />
                                     <select
                                         value={room.condition}
                                         onChange={e => updateRoom(i, 'condition', e.target.value)}
-                                        style={{ padding: '0.4rem 0.5rem', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.85rem', fontFamily: 'inherit', color: CONDITION_LABELS[room.condition].color, fontWeight: 600 }}
+                                        style={{ padding: '0.4rem 0.5rem', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '0.85rem', fontFamily: 'inherit', color: CONDITION_LABELS[room.condition].color, fontWeight: 600, background: 'var(--surface-active)' }}
                                     >
                                         <option value="BON">Bon état</option>
                                         <option value="MOYEN">État moyen</option>
@@ -201,7 +201,7 @@ export default function InspectionBoard({ apartmentId, leases }: Props) {
                                         value={room.notes}
                                         onChange={e => updateRoom(i, 'notes', e.target.value)}
                                         placeholder="Observations (optionnel)"
-                                        style={{ padding: '0.4rem 0.6rem', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.85rem', fontFamily: 'inherit' }}
+                                        style={{ padding: '0.4rem 0.6rem', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '0.85rem', fontFamily: 'inherit', background: 'var(--surface-active)', color: 'var(--text-main)' }}
                                     />
                                     <button type="button" onClick={() => removeRoom(i)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '1.1rem', lineHeight: 1, padding: '0 0.25rem' }}>×</button>
                                 </div>
@@ -210,13 +210,13 @@ export default function InspectionBoard({ apartmentId, leases }: Props) {
                     </div>
 
                     <div style={{ marginBottom: '1.25rem' }}>
-                        <label style={{ fontSize: '0.85rem', fontWeight: 500, color: '#475569', display: 'block', marginBottom: '0.3rem' }}>Observations générales</label>
+                        <label style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: '0.3rem' }}>Observations générales</label>
                         <textarea
                             value={globalNotes}
                             onChange={e => setGlobalNotes(e.target.value)}
                             rows={2}
                             placeholder="Compteurs, clés remises, remarques..."
-                            style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '6px', fontFamily: 'inherit', fontSize: '0.9rem', resize: 'vertical' }}
+                            style={{ width: '100%', padding: '0.5rem', border: '1px solid var(--border-color)', borderRadius: '6px', fontFamily: 'inherit', fontSize: '0.9rem', resize: 'vertical', background: 'var(--surface-active)', color: 'var(--text-main)' }}
                         />
                     </div>
 
@@ -231,7 +231,7 @@ export default function InspectionBoard({ apartmentId, leases }: Props) {
                         <a
                             href="#"
                             onClick={e => { e.preventDefault(); setShowForm(false); }}
-                            style={{ padding: '0.6rem 1rem', color: '#64748b', fontSize: '0.9rem', lineHeight: '1.6' }}
+                            style={{ padding: '0.6rem 1rem', color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6' }}
                         >
                             Annuler
                         </a>
@@ -251,19 +251,19 @@ export default function InspectionBoard({ apartmentId, leases }: Props) {
                         const rooms: Room[] = JSON.parse(insp.rooms || '[]');
                         const isEntry = insp.type === 'ENTRY';
                         return (
-                            <div key={insp.id} style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden' }}>
-                                <div style={{ padding: '0.9rem 1.1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: rooms.length > 0 ? '1px solid #f1f5f9' : 'none', background: isEntry ? 'rgba(43,140,238,0.04)' : 'rgba(232,121,168,0.04)' }}>
+                            <div key={insp.id} style={{ background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: '12px', overflow: 'hidden' }}>
+                                <div style={{ padding: '0.9rem 1.1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: rooms.length > 0 ? '1px solid var(--border-color)' : 'none', background: isEntry ? 'rgba(43,140,238,0.04)' : 'rgba(232,121,168,0.04)' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                         <span style={{ fontSize: '1.2rem' }}>{isEntry ? '📥' : '📤'}</span>
                                         <div>
-                                            <span style={{ fontWeight: 600, color: '#1e293b', fontSize: '0.95rem' }}>
+                                            <span style={{ fontWeight: 600, color: 'var(--text-main)', fontSize: '0.95rem' }}>
                                                 État des lieux de {isEntry ? 'entrée' : 'sortie'}
                                             </span>
-                                            <span style={{ color: '#64748b', fontSize: '0.85rem', marginLeft: '0.75rem' }}>
+                                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginLeft: '0.75rem' }}>
                                                 {new Date(insp.date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
                                             </span>
                                         </div>
-                                        <span style={{ fontSize: '0.75rem', color: '#64748b', background: '#f1f5f9', padding: '0.2rem 0.6rem', borderRadius: '9999px' }}>
+                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', background: 'var(--surface-active)', padding: '0.2rem 0.6rem', borderRadius: '9999px' }}>
                                             {insp.lease.tenantFirstName} {insp.lease.tenantLastName}
                                         </span>
                                     </div>
@@ -272,7 +272,7 @@ export default function InspectionBoard({ apartmentId, leases }: Props) {
                                             href={`/api/inspections/${insp.id}/pdf`}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            style={{ fontSize: '0.8rem', padding: '0.3rem 0.8rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', color: '#475569', textDecoration: 'none', fontWeight: 500 }}
+                                            style={{ fontSize: '0.8rem', padding: '0.3rem 0.8rem', background: 'var(--surface-active)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: 500 }}
                                         >
                                             📄 PDF
                                         </a>
@@ -296,7 +296,7 @@ export default function InspectionBoard({ apartmentId, leases }: Props) {
                                             })}
                                         </div>
                                         {insp.notes && (
-                                            <p style={{ marginTop: '0.5rem', fontSize: '0.82rem', color: '#64748b', fontStyle: 'italic' }}>{insp.notes}</p>
+                                            <p style={{ marginTop: '0.5rem', fontSize: '0.82rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>{insp.notes}</p>
                                         )}
                                     </div>
                                 )}

@@ -59,9 +59,9 @@ export default function TenantMessaging({ tenantId, initialMessages, portalToken
     const unreadCount = messages.filter(m => m.fromTenant !== isPortal && !m.readAt).length;
 
     return (
-        <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-            <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#1e293b', margin: 0 }}>
+        <div style={{ background: 'var(--surface)', borderRadius: '12px', border: '1px solid var(--border-color)', overflow: 'hidden' }}>
+            <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-main)', margin: 0 }}>
                     💬 {isPortal ? 'Messagerie avec votre propriétaire' : 'Messagerie'}
                 </h3>
                 {!isPortal && unreadCount > 0 && (
@@ -81,7 +81,7 @@ export default function TenantMessaging({ tenantId, initialMessages, portalToken
             {/* Messages thread */}
             <div style={{ height: '320px', overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 {messages.length === 0 ? (
-                    <p style={{ color: '#94a3b8', fontStyle: 'italic', textAlign: 'center', marginTop: '4rem', fontSize: '0.9rem' }}>
+                    <p style={{ color: 'var(--text-muted)', fontStyle: 'italic', textAlign: 'center', marginTop: '4rem', fontSize: '0.9rem' }}>
                         Aucun message pour l'instant.
                     </p>
                 ) : (
@@ -93,8 +93,8 @@ export default function TenantMessaging({ tenantId, initialMessages, portalToken
                                     maxWidth: '75%',
                                     padding: '0.6rem 0.9rem',
                                     borderRadius: isMine ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
-                                    background: isMine ? '#2b8cee' : '#f1f5f9',
-                                    color: isMine ? 'white' : '#1e293b',
+                                    background: isMine ? '#2b8cee' : 'var(--surface-active)',
+                                    color: isMine ? 'white' : 'var(--text-main)',
                                     fontSize: '0.9rem',
                                     lineHeight: 1.5,
                                     whiteSpace: 'pre-wrap',
@@ -102,7 +102,7 @@ export default function TenantMessaging({ tenantId, initialMessages, portalToken
                                 }}>
                                     {msg.content}
                                 </div>
-                                <span style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '0.2rem' }}>
+                                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
                                     {new Date(msg.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                                     {isMine && msg.readAt && <span style={{ marginLeft: '0.3rem' }}>✓✓</span>}
                                 </span>
@@ -114,13 +114,13 @@ export default function TenantMessaging({ tenantId, initialMessages, portalToken
             </div>
 
             {/* Input */}
-            <form onSubmit={handleSend} style={{ padding: '0.75rem', borderTop: '1px solid #e2e8f0', display: 'flex', gap: '0.5rem' }}>
+            <form onSubmit={handleSend} style={{ padding: '0.75rem', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '0.5rem' }}>
                 <input
                     type="text"
                     value={text}
                     onChange={e => setText(e.target.value)}
                     placeholder="Votre message..."
-                    style={{ flex: 1, padding: '0.6rem 0.9rem', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '0.9rem', fontFamily: 'inherit', outline: 'none' }}
+                    style={{ flex: 1, padding: '0.6rem 0.9rem', border: '1px solid var(--border-color)', borderRadius: '8px', fontSize: '0.9rem', fontFamily: 'inherit', outline: 'none', background: 'var(--surface-active)', color: 'var(--text-main)' }}
                     disabled={sending}
                 />
                 <button

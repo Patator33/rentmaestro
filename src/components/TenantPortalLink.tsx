@@ -28,9 +28,9 @@ export default function TenantPortalLink({ tenantId, existingToken }: Props) {
     };
 
     return (
-        <div style={{ marginTop: '2rem', padding: '1.5rem', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#1e293b', marginBottom: '0.5rem' }}>Portail Locataire</h3>
-            <p style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '1rem' }}>
+        <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'var(--surface)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>Portail Locataire</h3>
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
                 Générez un lien magique sécurisé pour permettre à ce locataire d'accéder à son historique de paiements et de télécharger ses quittances, sans avoir de compte.
             </p>
 
@@ -49,7 +49,7 @@ export default function TenantPortalLink({ tenantId, existingToken }: Props) {
                             type="text"
                             readOnly
                             value={`${typeof window !== 'undefined' ? window.location.origin : ''}/portal/${existingToken}`}
-                            style={{ flex: 1, padding: '0.6rem', border: '1px solid #cbd5e1', borderRadius: '6px', background: 'white', color: '#475569' }}
+                            style={{ flex: 1, padding: '0.6rem', border: '1px solid var(--border-color)', borderRadius: '6px', background: 'var(--surface-active)', color: 'var(--text-secondary)' }}
                         />
                         <button
                             onClick={handleCopy}
@@ -60,7 +60,7 @@ export default function TenantPortalLink({ tenantId, existingToken }: Props) {
                         <button
                             onClick={handleGenerate}
                             disabled={loading}
-                            style={{ padding: '0.6rem 1.2rem', background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', borderRadius: '6px', fontWeight: 500, cursor: 'pointer' }}
+                            style={{ padding: '0.6rem 1.2rem', background: 'var(--surface-active)', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', borderRadius: '6px', fontWeight: 500, cursor: 'pointer' }}
                             title="Régénérer et révoquer l'ancien lien"
                         >
                             {loading ? '...' : 'Régénérer'}

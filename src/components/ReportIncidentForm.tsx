@@ -48,8 +48,8 @@ export default function ReportIncidentForm({ apartmentId, tenantId, token }: Pro
     }
 
     return (
-        <div style={{ background: "#f8fafc", padding: "1.5rem", borderRadius: "12px", border: "1px solid #e2e8f0", marginTop: "1rem" }}>
-            <h3 style={{ fontSize: "1.2rem", fontWeight: 600, color: "#1e293b", marginBottom: "1rem" }}>Nouveau Signalement</h3>
+        <div style={{ background: "var(--surface)", padding: "1.5rem", borderRadius: "12px", border: "1px solid var(--border-color)", marginTop: "1rem" }}>
+            <h3 style={{ fontSize: "1.2rem", fontWeight: 600, color: "var(--text-main)", marginBottom: "1rem" }}>Nouveau Signalement</h3>
 
             {success ? (
                 <div style={{ background: "#ecfdf5", color: "#059669", padding: "1rem", borderRadius: "8px", border: "1px solid #10b981", fontWeight: 500 }}>

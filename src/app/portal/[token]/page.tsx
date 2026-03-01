@@ -44,19 +44,19 @@ export default async function TenantPortalPage({ params }: { params: Promise<{ t
     return (
         <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>
             <header style={{ textAlign: 'center', marginBottom: '3rem' }}>
-                <h1 style={{ fontSize: '2rem', color: '#1e293b', marginBottom: '0.5rem' }}>Espace Locataire</h1>
-                <p style={{ color: '#64748b' }}>Bienvenue, {tenant.firstName} {tenant.lastName}</p>
+                <h1 style={{ fontSize: '2rem', color: 'var(--text-main)', marginBottom: '0.5rem' }}>Espace Locataire</h1>
+                <p style={{ color: 'var(--text-secondary)' }}>Bienvenue, {tenant.firstName} {tenant.lastName}</p>
             </header>
 
             {!currentLease ? (
-                <div style={{ textAlign: 'center', padding: '3rem', background: '#f8fafc', borderRadius: '12px' }}>
-                    <p style={{ color: '#64748b' }}>Aucun bail actif trouvé.</p>
+                <div style={{ textAlign: 'center', padding: '3rem', background: 'var(--surface)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                    <p style={{ color: 'var(--text-secondary)' }}>Aucun bail actif trouvé.</p>
                 </div>
             ) : (
                 <>
-                    <section style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '2rem' }}>
-                        <h2 style={{ fontSize: '1.2rem', color: '#334155', marginBottom: '1rem' }}>Votre Logement</h2>
-                        <div style={{ display: 'grid', gap: '0.5rem', color: '#475569' }}>
+                    <section style={{ background: 'var(--surface)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '2rem' }}>
+                        <h2 style={{ fontSize: '1.2rem', color: 'var(--text-main)', marginBottom: '1rem' }}>Votre Logement</h2>
+                        <div style={{ display: 'grid', gap: '0.5rem', color: 'var(--text-secondary)' }}>
                             <p><strong>Adresse :</strong> {currentLease.apartment.address}</p>
                             {currentLease.apartment.complement && <p><strong>Complément :</strong> {currentLease.apartment.complement}</p>}
                             <p><strong>Ville :</strong> {currentLease.apartment.zipCode} {currentLease.apartment.city}</p>
@@ -67,17 +67,17 @@ export default async function TenantPortalPage({ params }: { params: Promise<{ t
 
                     <section style={{ marginBottom: '2rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
-                            <h2 style={{ fontSize: '1.2rem', color: '#334155', margin: 0 }}>Vos Signalements techniques</h2>
+                            <h2 style={{ fontSize: '1.2rem', color: 'var(--text-main)', margin: 0 }}>Vos Signalements techniques</h2>
                             <ReportIncidentForm apartmentId={currentLease.apartmentId} tenantId={tenant.id} token={token} />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                             {tenant.tasks.length === 0 ? (
-                                <p style={{ color: '#64748b', fontStyle: 'italic' }}>Aucun incident signalé.</p>
+                                <p style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>Aucun incident signalé.</p>
                             ) : (
                                 tenant.tasks.map((task) => (
-                                    <div key={task.id} style={{ padding: '1rem', background: 'white', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                                    <div key={task.id} style={{ padding: '1rem', background: 'var(--surface-active)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
-                                            <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: '#1e293b', margin: 0 }}>{task.title}</h3>
+                                            <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-main)', margin: 0 }}>{task.title}</h3>
                                             <span style={{
                                                 padding: '0.2rem 0.6rem',
                                                 borderRadius: '9999px',
@@ -89,8 +89,8 @@ export default async function TenantPortalPage({ params }: { params: Promise<{ t
                                                 {task.status === 'TODO' ? 'À traiter' : task.status === 'IN_PROGRESS' ? 'En cours' : 'Résolu'}
                                             </span>
                                         </div>
-                                        {task.description && <p style={{ fontSize: '0.9rem', color: '#475569', marginBottom: '0.5rem', whiteSpace: 'pre-wrap' }}>{task.description}</p>}
-                                        <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: 0 }}>Signalé le {formatDate(task.createdAt)}</p>
+                                        {task.description && <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.5rem', whiteSpace: 'pre-wrap' }}>{task.description}</p>}
+                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>Signalé le {formatDate(task.createdAt)}</p>
                                     </div>
                                 ))
                             )}
@@ -98,7 +98,7 @@ export default async function TenantPortalPage({ params }: { params: Promise<{ t
                     </section>
 
                     <section>
-                        <h2 style={{ fontSize: '1.2rem', color: '#334155', marginBottom: '1rem' }}>Historique des Loyers & Quittances</h2>
+                        <h2 style={{ fontSize: '1.2rem', color: 'var(--text-main)', marginBottom: '1rem' }}>Historique des Loyers & Quittances</h2>
                         {(() => {
                             const allPayments = tenant.leases
                                 .flatMap((lease: any) => lease.payments.map((p: any) => ({ ...p, lease })))
@@ -107,19 +107,19 @@ export default async function TenantPortalPage({ params }: { params: Promise<{ t
                             return (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                     {allPayments.length === 0 ? (
-                                        <p style={{ color: '#64748b', fontStyle: 'italic' }}>Aucun historique de paiement pour le moment.</p>
+                                        <p style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>Aucun historique de paiement pour le moment.</p>
                                     ) : (
                                         allPayments.map((payment: any) => {
                                             const isPaid = payment.status === 'PAID';
                                             const monthName = format(new Date(payment.period), 'MMMM yyyy', { locale: fr });
 
                                             return (
-                                                <div key={payment.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'white', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                                                <div key={payment.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'var(--surface-active)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
                                                     <div>
-                                                        <p style={{ fontWeight: 600, color: '#1e293b', textTransform: 'capitalize' }}>
+                                                        <p style={{ fontWeight: 600, color: 'var(--text-main)', textTransform: 'capitalize' }}>
                                                             {monthName}
                                                         </p>
-                                                        <p style={{ fontSize: '0.9rem', color: '#64748b' }}>
+                                                        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
                                                             {payment.amount.toFixed(2)} €
                                                         </p>
                                                     </div>
@@ -138,12 +138,12 @@ export default async function TenantPortalPage({ params }: { params: Promise<{ t
                                                                 href={`/api/portal/${token}/quittance/${payment.id}`}
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
-                                                                style={{ display: 'inline-block', padding: '0.5rem 1rem', background: '#f8fafc', color: '#475569', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem', fontWeight: 500, textDecoration: 'none' }}
+                                                                style={{ display: 'inline-block', padding: '0.5rem 1rem', background: 'var(--surface)', color: 'var(--text-secondary)', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '0.9rem', fontWeight: 500, textDecoration: 'none' }}
                                                             >
                                                                 ⬇️ Télécharger Quittance
                                                             </a>
                                                         ) : (
-                                                            <div style={{ width: '175px', textAlign: 'center', fontSize: '0.85rem', color: '#cbd5e1' }}>
+                                                            <div style={{ width: '175px', textAlign: 'center', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                                                                 Quittance indisponible
                                                             </div>
                                                         )}
