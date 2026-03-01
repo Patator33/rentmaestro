@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import styles from "./page.module.css";
-import { Company } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 

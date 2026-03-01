@@ -7,7 +7,7 @@ import styles from "./page.module.css";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/utils";
 import { markRentReviewAsSent } from "@/actions/leases";
-import { RentPayment, Expense, Apartment, Lease, Tenant } from "@prisma/client";
+import { RentPayment, Expense, Apartment } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 

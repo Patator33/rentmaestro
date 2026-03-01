@@ -30,6 +30,7 @@ model Apartment {
   expenses        Expense[]
   tasks           Task[]
   documents       ApartmentDocument[]
+  contacts        Contact[]
 }
 
 model Tenant {
