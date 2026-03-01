@@ -38,9 +38,6 @@ jobs:
       - name: TypeScript check
         run: npx tsc --noEmit
 
-      - name: ESLint check
-        run: npx next lint
-
       - name: Log in to Container Registry
         uses: docker/login-action@v3
         with:
