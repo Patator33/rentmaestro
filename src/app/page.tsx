@@ -110,10 +110,20 @@ async function getOpenIncidents() {
   });
 }
 
+async function getUnreadMessages() {
+  return prisma.message.findMany({
+    where: { fromTenant: true, readAt: null },
+    include: { tenant: true },
+    orderBy: { createdAt: 'desc' },
+    take: 10,
+  });
+}
+
 export default async function Home() {
   const stats = await getStats();
   const cashflowData = await getCashflowData();
   const openIncidents = await getOpenIncidents();
+  const unreadMessages = await getUnreadMessages();
 
   // Rent Review Alerts Logic
   const activeLeases = await prisma.lease.findMany({
@@ -205,6 +215,32 @@ export default async function Home() {
                 </span>
                 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                   {task.status === 'TODO' ? 'À traiter' : 'En cours'} · {formatDate(task.createdAt)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Unread messages from tenants */}
+      {unreadMessages.length > 0 && (
+        <section style={{ marginBottom: '3rem', padding: '1.5rem', background: 'rgba(43, 140, 238, 0.07)', border: '1px solid rgba(43, 140, 238, 0.3)', borderRadius: 'var(--radius-xl)' }}>
+          <h2 style={{ color: '#2b8cee', fontSize: '1.25rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            💬 Messages non lus ({unreadMessages.length})
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+            {unreadMessages.map((msg: any) => (
+              <div key={msg.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <span style={{ color: 'var(--text-main)' }}>
+                  <Link href={`/tenants/${msg.tenantId}`} style={{ color: '#2b8cee', fontWeight: 600, textDecoration: 'underline' }}>
+                    {msg.tenant.firstName} {msg.tenant.lastName}
+                  </Link>
+                  <span style={{ display: 'block', fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.1rem', fontStyle: 'italic' }}>
+                    "{msg.content.length > 80 ? msg.content.slice(0, 80) + '…' : msg.content}"
+                  </span>
+                </span>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                  {new Date(msg.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
             ))}

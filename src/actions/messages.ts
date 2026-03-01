@@ -39,9 +39,11 @@ export async function sendPortalMessage(tenantId: string, content: string, token
     }).catch(() => {});
 
     if (process.env.SMTP_USER) {
+        const baseUrl = process.env.APP_BASE_URL || 'http://localhost:3000';
+        const tenantUrl = `${baseUrl}/tenants/${tenant.id}`;
         sendEmail({
             to: process.env.SMTP_USER,
-            subject: `Nouveau message de ${tenant.firstName} ${tenant.lastName}`,
+            subject: `💬 Nouveau message de ${tenant.firstName} ${tenant.lastName}`,
             html: `
                 <div style="font-family:sans-serif;color:#333;max-width:500px;">
                     <h2 style="color:#1e293b;">Message de votre locataire</h2>
@@ -49,7 +51,10 @@ export async function sendPortalMessage(tenantId: string, content: string, token
                     <blockquote style="border-left:3px solid #2b8cee;padding:0.75rem 1rem;margin:1rem 0;background:#f8fafc;color:#334155;">
                         ${content.trim().replace(/\n/g, '<br>')}
                     </blockquote>
-                    <p style="color:#64748b;font-size:0.9rem;">Connectez-vous à Rentmaestro pour répondre.</p>
+                    <a href="${tenantUrl}" style="display:inline-block;margin-top:0.5rem;padding:0.6rem 1.2rem;background:#2b8cee;color:white;text-decoration:none;border-radius:8px;font-weight:600;font-size:0.9rem;">
+                        Répondre sur Rentmaestro →
+                    </a>
+                    <p style="margin-top:1rem;color:#94a3b8;font-size:0.8rem;">${tenantUrl}</p>
                 </div>
             `,
         }).catch(() => {});

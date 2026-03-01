@@ -12,6 +12,8 @@ services:
       - SMTP_USER=votre.email@gmail.com
       - SMTP_PASS=votre_mot_de_passe_d_application
       - SMTP_FROM="Rentmaestro" <votre.email@gmail.com>
+      # URL externe de l'application (pour les liens dans les emails)
+      - APP_BASE_URL=https://rentmaestro.nico33.net
       # Automations & Webhooks
       - CRON_SECRET=remplacez_moi_par_un_vrai_mot_de_passe
       - N8N_WEBHOOK_URL=http://n8n.votredomaine.com/webhook/rentmaestro
