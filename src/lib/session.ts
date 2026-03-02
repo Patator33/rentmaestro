@@ -25,8 +25,8 @@ export async function getSession(): Promise<IronSession<SessionData>> {
     return getIronSession<SessionData>(cookieStore, SESSION_OPTIONS);
 }
 
-// For use in Route Handlers: returns [session, response] — MUST return the response
-export async function getSessionFromRouteHandler(
+// For Middleware only (no access to next/headers)
+export async function getSessionFromRequest(
     req: NextRequest,
     res: NextResponse
 ): Promise<IronSession<SessionData>> {

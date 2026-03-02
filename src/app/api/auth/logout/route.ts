@@ -1,9 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getSessionFromRouteHandler } from '@/lib/session';
+import { NextResponse } from 'next/server';
+import { getSession } from '@/lib/session';
 
-export async function POST(request: NextRequest) {
-    const res = NextResponse.json({ success: true });
-    const session = await getSessionFromRouteHandler(request, res);
+export async function POST() {
+    const session = await getSession();
     session.destroy();
-    return res;
+    return NextResponse.json({ success: true });
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUser, verifyPassword } from '@/lib/auth';
-import { getSessionFromRouteHandler } from '@/lib/session';
+import { getSession } from '@/lib/session';
 
 export async function POST(request: NextRequest) {
     const { email, password } = await request.json();
@@ -16,21 +16,18 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Identifiants incorrects.' }, { status: 401 });
     }
 
-    const res = NextResponse.json({ success: true, requireTotp: user.totpEnabled });
-    const session = await getSessionFromRouteHandler(request, res);
+    const session = await getSession();
 
     if (user.totpEnabled) {
-        // Partial session — TOTP still needs to be verified
         session.userId = user.id;
         session.email = user.email;
         session.pendingTotp = true;
     } else {
-        // Full session
         session.userId = user.id;
         session.email = user.email;
         session.pendingTotp = false;
     }
 
     await session.save();
-    return res;
+    return NextResponse.json({ success: true, requireTotp: user.totpEnabled });
 }

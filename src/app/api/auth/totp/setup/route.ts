@@ -2,14 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generateSecret, generateURI, verify } from 'otplib';
 import QRCode from 'qrcode';
 import { prisma } from '@/lib/prisma';
-import { getSessionFromRouteHandler } from '@/lib/session';
+import { getSession } from '@/lib/session';
 
 const TOTP_OPTS = { algorithm: 'sha1' as const, digits: 6, period: 30, type: 'totp' as const };
 
 // GET: generate a new TOTP secret and return QR code
-export async function GET(request: NextRequest) {
-    const res = NextResponse.next();
-    const session = await getSessionFromRouteHandler(request, res);
+export async function GET() {
+    const session = await getSession();
     if (!session.userId) {
         return NextResponse.json({ error: 'Non authentifié.' }, { status: 401 });
     }
@@ -28,8 +27,7 @@ export async function GET(request: NextRequest) {
 
 // POST: verify the code with the candidate secret, then save and enable TOTP
 export async function POST(request: NextRequest) {
-    const res = NextResponse.next();
-    const session = await getSessionFromRouteHandler(request, res);
+    const session = await getSession();
     if (!session.userId) {
         return NextResponse.json({ error: 'Non authentifié.' }, { status: 401 });
     }
@@ -50,9 +48,8 @@ export async function POST(request: NextRequest) {
 }
 
 // DELETE: disable TOTP
-export async function DELETE(request: NextRequest) {
-    const res = NextResponse.next();
-    const session = await getSessionFromRouteHandler(request, res);
+export async function DELETE() {
+    const session = await getSession();
     if (!session.userId) {
         return NextResponse.json({ error: 'Non authentifié.' }, { status: 401 });
     }
