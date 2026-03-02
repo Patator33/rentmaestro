@@ -1,10 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 
 export default function SetupPage() {
-    const router = useRouter();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirm, setConfirm] = useState('');
@@ -38,7 +36,7 @@ export default function SetupPage() {
             return;
         }
 
-        router.push('/login');
+        window.location.href = '/login';
     };
 
     return (
