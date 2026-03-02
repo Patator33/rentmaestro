@@ -32,16 +32,16 @@ export async function POST(request: NextRequest) {
     };
     const sealed = await sealData(sessionData, { password: SESSION_OPTIONS.password as string });
 
-    const response = NextResponse.json({ success: true });
-    response.cookies.set({
-        name: SESSION_OPTIONS.cookieName,
-        value: sealed,
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: SESSION_OPTIONS.ttl,
-        path: '/',
-    });
-
-    return response;
+    const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+    const setCookie = `${SESSION_OPTIONS.cookieName}=${sealed}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_OPTIONS.ttl}${secure}`;
+    return new NextResponse(
+        JSON.stringify({ success: true }),
+        {
+            status: 200,
+            headers: {
+                'Content-Type': 'application/json',
+                'Set-Cookie': setCookie,
+            },
+        }
+    );
 }

@@ -2,15 +2,16 @@ import { NextResponse } from 'next/server';
 import { SESSION_OPTIONS } from '@/lib/session';
 
 export async function POST() {
-    const response = NextResponse.json({ success: true });
-    response.cookies.set({
-        name: SESSION_OPTIONS.cookieName,
-        value: '',
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 0,
-        path: '/',
-    });
-    return response;
+    const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+    const clearCookie = `${SESSION_OPTIONS.cookieName}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure}`;
+    return new NextResponse(
+        JSON.stringify({ success: true }),
+        {
+            status: 200,
+            headers: {
+                'Content-Type': 'application/json',
+                'Set-Cookie': clearCookie,
+            },
+        }
+    );
 }

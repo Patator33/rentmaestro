@@ -3,6 +3,11 @@ import { sealData } from 'iron-session';
 import { getUser, verifyPassword } from '@/lib/auth';
 import { SESSION_OPTIONS, type SessionData } from '@/lib/session';
 
+function buildSetCookie(name: string, value: string, maxAge: number): string {
+    const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+    return `${name}=${value}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${secure}`;
+}
+
 export async function POST(request: NextRequest) {
     const { email, password } = await request.json();
 
@@ -25,16 +30,14 @@ export async function POST(request: NextRequest) {
 
     const sealed = await sealData(sessionData, { password: SESSION_OPTIONS.password as string });
 
-    const response = NextResponse.json({ success: true, requireTotp: user.totpEnabled });
-    response.cookies.set({
-        name: SESSION_OPTIONS.cookieName,
-        value: sealed,
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: SESSION_OPTIONS.ttl,
-        path: '/',
-    });
-
-    return response;
+    return new NextResponse(
+        JSON.stringify({ success: true, requireTotp: user.totpEnabled }),
+        {
+            status: 200,
+            headers: {
+                'Content-Type': 'application/json',
+                'Set-Cookie': buildSetCookie(SESSION_OPTIONS.cookieName, sealed, SESSION_OPTIONS.ttl as number),
+            },
+        }
+    );
 }
