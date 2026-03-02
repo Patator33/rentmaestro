@@ -19,8 +19,8 @@ services:
       - N8N_WEBHOOK_URL=http://n8n.votredomaine.com/webhook/rentmaestro
       # Session secret for iron-session (generate with: node -e "require('crypto').randomBytes(32).toString('hex')" | xargs)
       - SESSION_SECRET=CHANGEZ_MOI_PAR_UNE_CLE_DE_64_CARACTERES_ALEATOIRES
-      # Set to 'true' ONLY if the app is served over HTTPS (reverse proxy with TLS)
-      # - COOKIE_SECURE=true
+      # Set to 'true' if served over HTTPS (reverse proxy with TLS) — required for PWA install on Android
+      - COOKIE_SECURE=true
     volumes:
       - rentmaestro_data:/app/data
       - rentmaestro_uploads:/app/public/uploads
