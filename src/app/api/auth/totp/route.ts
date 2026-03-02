@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticator } from 'otplib';
+import { verify } from 'otplib';
 import { getUser } from '@/lib/auth';
 import { getSessionFromRouteHandler } from '@/lib/session';
+
+const TOTP_OPTS = { algorithm: 'sha1' as const, digits: 6, period: 30, type: 'totp' as const };
 
 export async function POST(request: NextRequest) {
     const { code } = await request.json();
@@ -19,8 +21,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Utilisateur introuvable.' }, { status: 401 });
     }
 
-    const valid = authenticator.verify({ token: code, secret: user.totpSecret });
-    if (!valid) {
+    const result = await verify({ token: code, secret: user.totpSecret, ...TOTP_OPTS });
+    if (!result.valid) {
         return NextResponse.json({ error: 'Code incorrect ou expiré.' }, { status: 401 });
     }
 

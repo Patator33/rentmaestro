@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticator } from 'otplib';
+import { generateSecret, generateURI, verify } from 'otplib';
 import QRCode from 'qrcode';
 import { prisma } from '@/lib/prisma';
 import { getSessionFromRouteHandler } from '@/lib/session';
+
+const TOTP_OPTS = { algorithm: 'sha1' as const, digits: 6, period: 30, type: 'totp' as const };
 
 // GET: generate a new TOTP secret and return QR code
 export async function GET(request: NextRequest) {
@@ -12,9 +14,13 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Non authentifié.' }, { status: 401 });
     }
 
-    const secret = authenticator.generateSecret();
-    const issuer = 'Rentmaestro';
-    const otpauth = authenticator.keyuri(session.email!, issuer, secret);
+    const secret = generateSecret();
+    const otpauth = generateURI({
+        label: session.email!,
+        issuer: 'Rentmaestro',
+        secret,
+        ...TOTP_OPTS,
+    });
     const qrDataUrl = await QRCode.toDataURL(otpauth);
 
     return NextResponse.json({ secret, qrDataUrl });
@@ -30,8 +36,8 @@ export async function POST(request: NextRequest) {
 
     const { secret, code } = await request.json();
 
-    const valid = authenticator.verify({ token: code, secret });
-    if (!valid) {
+    const result = await verify({ token: code, secret, ...TOTP_OPTS });
+    if (!result.valid) {
         return NextResponse.json({ error: 'Code incorrect. Veuillez réessayer.' }, { status: 400 });
     }
 
