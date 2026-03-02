@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     };
     const sealed = await sealData(sessionData, { password: SESSION_OPTIONS.password as string });
 
-    const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+    const secure = process.env.COOKIE_SECURE === 'true' ? '; Secure' : '';
     const setCookie = `${SESSION_OPTIONS.cookieName}=${sealed}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_OPTIONS.ttl}${secure}`;
     return new NextResponse(
         JSON.stringify({ success: true }),

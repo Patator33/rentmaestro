@@ -13,7 +13,7 @@ export const SESSION_OPTIONS: SessionOptions = {
     cookieName: 'rentmaestro_session',
     ttl: 60 * 60 * 8, // 8 hours
     cookieOptions: {
-        secure: process.env.NODE_ENV === 'production',
+        secure: process.env.COOKIE_SECURE === 'true',
         httpOnly: true,
         sameSite: 'lax',
     },

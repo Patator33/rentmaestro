@@ -4,7 +4,7 @@ import { getUser, verifyPassword } from '@/lib/auth';
 import { SESSION_OPTIONS, type SessionData } from '@/lib/session';
 
 function buildSetCookie(name: string, value: string, maxAge: number): string {
-    const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+    const secure = process.env.COOKIE_SECURE === 'true' ? '; Secure' : '';
     return `${name}=${value}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${secure}`;
 }
 
