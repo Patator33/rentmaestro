@@ -17,9 +17,8 @@ services:
       # Automations & Webhooks
       - CRON_SECRET=remplacez_moi_par_un_vrai_mot_de_passe
       - N8N_WEBHOOK_URL=http://n8n.votredomaine.com/webhook/rentmaestro
-      # Authentication (uncomment to enable login)
-      # - AUTH_USERNAME=admin
-      # - AUTH_PASSWORD=changeme
+      # Session secret for iron-session (generate with: node -e "require('crypto').randomBytes(32).toString('hex')" | xargs)
+      - SESSION_SECRET=CHANGEZ_MOI_PAR_UNE_CLE_DE_64_CARACTERES_ALEATOIRES
     volumes:
       - rentmaestro_data:/app/data
       - rentmaestro_uploads:/app/public/uploads

@@ -191,3 +191,12 @@ model Inspection {
   createdAt DateTime @default(now())
   lease     Lease    @relation(fields: [leaseId], references: [id], onDelete: Cascade)
 }
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  passwordHash  String
+  totpSecret    String?
+  totpEnabled   Boolean  @default(false)
+  createdAt     DateTime @default(now())
+}

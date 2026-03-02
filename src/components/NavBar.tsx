@@ -5,6 +5,7 @@ import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
 import GlobalSearch from "@/components/GlobalSearch";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 const NAV_ITEMS = [
     { href: "/", label: "🏠 Accueil" },
@@ -20,6 +21,12 @@ const NAV_ITEMS = [
 
 export default function NavBar() {
     const [menuOpen, setMenuOpen] = useState(false);
+    const router = useRouter();
+
+    const handleLogout = async () => {
+        await fetch('/api/auth/logout', { method: 'POST' });
+        router.push('/login');
+    };
 
     return (
         <>
@@ -38,6 +45,15 @@ export default function NavBar() {
                         ))}
                         <GlobalSearch />
                         <ThemeToggle />
+                        <Link href="/settings/security" className="nav-link" title="Sécurité">🔐</Link>
+                        <button
+                            onClick={handleLogout}
+                            className="nav-link"
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit' }}
+                            title="Déconnexion"
+                        >
+                            ↪ Déconnexion
+                        </button>
                     </div>
 
                     <button
@@ -67,6 +83,16 @@ export default function NavBar() {
                         {item.label}
                     </Link>
                 ))}
+                <Link href="/settings/security" className="mobile-nav-link" onClick={() => setMenuOpen(false)}>
+                    🔐 Sécurité
+                </Link>
+                <button
+                    onClick={() => { setMenuOpen(false); handleLogout(); }}
+                    className="mobile-nav-link"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit', textAlign: 'left', width: '100%' }}
+                >
+                    ↪ Déconnexion
+                </button>
             </div>
         </>
     );

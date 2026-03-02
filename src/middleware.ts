@@ -1,49 +1,56 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { getIronSession } from 'iron-session';
+import { SESSION_OPTIONS, type SessionData } from '@/lib/session';
 
-// Simple Basic Auth middleware
-// Set AUTH_USERNAME and AUTH_PASSWORD in .env to enable authentication
-// If not set, the app is accessible without authentication
+// Routes that don't require authentication
+const PUBLIC_PATHS = [
+    '/login',
+    '/setup',
+    '/api/auth',
+    '/portal',
+    '/api/portal',
+    '/api/verify',
+];
 
-export function middleware(request: NextRequest) {
-    const authUser = process.env.AUTH_USERNAME;
-    const authPass = process.env.AUTH_PASSWORD;
+function isPublic(pathname: string): boolean {
+    return PUBLIC_PATHS.some(p => pathname === p || pathname.startsWith(p + '/'));
+}
 
-    // Skip auth if no credentials configured
-    if (!authUser || !authPass) {
-        return NextResponse.next();
-    }
+export async function middleware(request: NextRequest) {
+    const { pathname } = request.nextUrl;
 
-    // Skip auth for static assets and _next
+    // Always allow static assets
     if (
-        request.nextUrl.pathname.startsWith('/_next') ||
-        request.nextUrl.pathname.startsWith('/favicon') ||
-        request.nextUrl.pathname.startsWith('/icon')
+        pathname.startsWith('/_next') ||
+        pathname.startsWith('/favicon') ||
+        pathname.startsWith('/icon')
     ) {
         return NextResponse.next();
     }
 
-    const authHeader = request.headers.get('authorization');
-
-    if (authHeader) {
-        const [scheme, encoded] = authHeader.split(' ');
-
-        if (scheme === 'Basic' && encoded) {
-            const decoded = atob(encoded);
-            const [user, pass] = decoded.split(':');
-
-            if (user === authUser && pass === authPass) {
-                return NextResponse.next();
-            }
-        }
+    // Allow public routes
+    if (isPublic(pathname)) {
+        return NextResponse.next();
     }
 
-    return new NextResponse('Accès non autorisé', {
-        status: 401,
-        headers: {
-            'WWW-Authenticate': 'Basic realm="Rentmaestro"',
-        },
-    });
+    // Check session
+    const res = NextResponse.next();
+    const session = await getIronSession<SessionData>(request, res, SESSION_OPTIONS);
+
+    // Not logged in → redirect to login
+    if (!session.userId) {
+        const loginUrl = new URL('/login', request.url);
+        loginUrl.searchParams.set('from', pathname);
+        return NextResponse.redirect(loginUrl);
+    }
+
+    // Logged in but TOTP pending → redirect to TOTP verification
+    if (session.pendingTotp && pathname !== '/login/totp') {
+        return NextResponse.redirect(new URL('/login/totp', request.url));
+    }
+
+    return res;
 }
 
 export const config = {
