@@ -1,10 +1,9 @@
 'use client';
 
 import { useState, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 
 function Form() {
-    const router = useRouter();
     const searchParams = useSearchParams();
     const from = searchParams.get('from') || '/';
 
@@ -32,9 +31,9 @@ function Form() {
         }
 
         if (data.requireTotp) {
-            router.push('/login/totp');
+            window.location.href = '/login/totp';
         } else {
-            router.push(from);
+            window.location.href = from;
         }
     };
 

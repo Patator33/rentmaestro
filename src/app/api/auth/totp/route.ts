@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { sealData } from 'iron-session';
 import { verify } from 'otplib';
 import { getUser } from '@/lib/auth';
-import { getSession } from '@/lib/session';
+import { getSession, SESSION_OPTIONS, type SessionData } from '@/lib/session';
 
-const TOTP_OPTS = { algorithm: 'sha1' as const, digits: 6, period: 30, type: 'totp' as const };
+const TOTP_OPTS = { algorithm: 'sha1' as const, digits: 6, period: 30 };
 
 export async function POST(request: NextRequest) {
     const { code } = await request.json();
@@ -24,8 +25,23 @@ export async function POST(request: NextRequest) {
     }
 
     // Upgrade session: remove pendingTotp flag
-    session.pendingTotp = false;
-    await session.save();
+    const sessionData: SessionData = {
+        userId: session.userId,
+        email: session.email,
+        pendingTotp: false,
+    };
+    const sealed = await sealData(sessionData, { password: SESSION_OPTIONS.password as string });
 
-    return NextResponse.json({ success: true });
+    const response = NextResponse.json({ success: true });
+    response.cookies.set({
+        name: SESSION_OPTIONS.cookieName,
+        value: sealed,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: SESSION_OPTIONS.ttl,
+        path: '/',
+    });
+
+    return response;
 }

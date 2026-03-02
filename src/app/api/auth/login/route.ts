@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { sealData } from 'iron-session';
 import { getUser, verifyPassword } from '@/lib/auth';
-import { getSession } from '@/lib/session';
+import { SESSION_OPTIONS, type SessionData } from '@/lib/session';
 
 export async function POST(request: NextRequest) {
     const { email, password } = await request.json();
@@ -16,18 +17,24 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Identifiants incorrects.' }, { status: 401 });
     }
 
-    const session = await getSession();
+    const sessionData: SessionData = {
+        userId: user.id,
+        email: user.email,
+        pendingTotp: user.totpEnabled,
+    };
 
-    if (user.totpEnabled) {
-        session.userId = user.id;
-        session.email = user.email;
-        session.pendingTotp = true;
-    } else {
-        session.userId = user.id;
-        session.email = user.email;
-        session.pendingTotp = false;
-    }
+    const sealed = await sealData(sessionData, { password: SESSION_OPTIONS.password as string });
 
-    await session.save();
-    return NextResponse.json({ success: true, requireTotp: user.totpEnabled });
+    const response = NextResponse.json({ success: true, requireTotp: user.totpEnabled });
+    response.cookies.set({
+        name: SESSION_OPTIONS.cookieName,
+        value: sealed,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: SESSION_OPTIONS.ttl,
+        path: '/',
+    });
+
+    return response;
 }
