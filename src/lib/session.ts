@@ -1,4 +1,4 @@
-import { getIronSession, IronSession, SessionOptions } from 'iron-session';
+import { getIronSession, IronSession, SessionOptions, unsealData } from 'iron-session';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -23,6 +23,19 @@ export const SESSION_OPTIONS: SessionOptions = {
 export async function getSession(): Promise<IronSession<SessionData>> {
     const cookieStore = await cookies();
     return getIronSession<SessionData>(cookieStore, SESSION_OPTIONS);
+}
+
+// For Route Handlers: reads session directly from request cookies (Next.js 16 workaround)
+export async function readSession(req: NextRequest): Promise<SessionData> {
+    const cookieValue = req.cookies.get(SESSION_OPTIONS.cookieName)?.value;
+    if (!cookieValue) return {};
+    try {
+        return await unsealData<SessionData>(cookieValue, {
+            password: SESSION_OPTIONS.password as string,
+        });
+    } catch {
+        return {};
+    }
 }
 
 // For Middleware only (no access to next/headers)

@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sealData } from 'iron-session';
 import { verify } from 'otplib';
 import { getUser } from '@/lib/auth';
-import { getSession, SESSION_OPTIONS, type SessionData } from '@/lib/session';
+import { readSession, SESSION_OPTIONS, type SessionData } from '@/lib/session';
 
 const TOTP_OPTS = { algorithm: 'sha1' as const, digits: 6, period: 30 };
 
 export async function POST(request: NextRequest) {
     const { code } = await request.json();
-    const session = await getSession();
+    const session = await readSession(request);
 
     if (!session.userId || !session.pendingTotp) {
         return NextResponse.json({ error: 'Session invalide.' }, { status: 401 });
