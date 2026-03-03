@@ -89,7 +89,7 @@ export default function NavBar() {
                 <button
                     onClick={() => { setMenuOpen(false); handleLogout(); }}
                     className="mobile-nav-link"
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit', textAlign: 'left', width: '100%' }}
+                    style={{ marginTop: 'auto', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit', textAlign: 'left', width: '100%', color: '#ef4444' }}
                 >
                     ↪ Déconnexion
                 </button>
