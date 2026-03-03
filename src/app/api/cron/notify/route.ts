@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import webpush from 'web-push';
 import { prisma } from '@/lib/prisma';
 
-webpush.setVapidDetails(
-    process.env.VAPID_SUBJECT!,
-    process.env.VAPID_PUBLIC_KEY!,
-    process.env.VAPID_PRIVATE_KEY!
-);
-
 async function sendToAll(payload: { title: string; body: string; url: string }) {
+    // Set VAPID details at call time so build-time missing env vars don't crash
+    webpush.setVapidDetails(
+        process.env.VAPID_SUBJECT!,
+        process.env.VAPID_PUBLIC_KEY!,
+        process.env.VAPID_PRIVATE_KEY!
+    );
     const subs = await prisma.pushSubscription.findMany();
     const results = await Promise.allSettled(
         subs.map((sub) =>
