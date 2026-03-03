@@ -4,6 +4,7 @@ import Link from "next/link";
 import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
 import GlobalSearch from "@/components/GlobalSearch";
+import BottomNav from "@/components/BottomNav";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -56,6 +57,7 @@ export default function NavBar() {
                         </button>
                     </div>
 
+                    {/* Hamburger visible on mobile only when bottom nav is absent (fallback) */}
                     <button
                         className="nav-toggle"
                         onClick={() => setMenuOpen(!menuOpen)}
@@ -66,10 +68,10 @@ export default function NavBar() {
                 </div>
             </nav>
 
-            {/* Mobile Navigation Overlay & Menu */}
+            {/* Mobile Navigation Overlay & Slide-out Menu */}
             <div className={`mobile-nav-overlay ${menuOpen ? 'open' : ''}`} onClick={() => setMenuOpen(false)}></div>
             <div className={`mobile-nav-menu ${menuOpen ? 'open' : ''}`}>
-                <div style={{ paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)', marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Menu</span>
                     <ThemeToggle />
                 </div>
@@ -94,6 +96,9 @@ export default function NavBar() {
                     ↪ Déconnexion
                 </button>
             </div>
+
+            {/* Bottom Navigation Bar (mobile only) */}
+            <BottomNav onMoreClick={() => setMenuOpen(true)} />
         </>
     );
 }

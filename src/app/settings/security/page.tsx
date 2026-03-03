@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/session';
 import { getUser } from '@/lib/auth';
 import TotpSetup from '@/components/TotpSetup';
+import PushNotificationToggle from '@/components/PushNotificationToggle';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
@@ -25,6 +26,7 @@ export default async function SecuritySettingsPage() {
             </p>
 
             <TotpSetup totpEnabled={user.totpEnabled} />
+            <PushNotificationToggle />
         </div>
     );
 }

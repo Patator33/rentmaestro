@@ -39,7 +39,7 @@ export default function RootLayout({
         <ToastProvider>
           <ServiceWorkerRegistration />
           <NavBarWrapper />
-          <main>
+          <main className="main-content">
             {children}
           </main>
         </ToastProvider>

@@ -21,6 +21,10 @@ services:
       - SESSION_SECRET=CHANGEZ_MOI_PAR_UNE_CLE_DE_64_CARACTERES_ALEATOIRES
       # Set to 'true' if served over HTTPS (reverse proxy with TLS) — required for PWA install on Android
       - COOKIE_SECURE=true
+      # Push notifications (VAPID keys — generate with: node -e "require('web-push').generateVAPIDKeys()|console.log")
+      - VAPID_PUBLIC_KEY=BPaD50kf2C4lSJlWpvRhLJHdr7nhfz5ArCmcSr45wo7r3Tk3hzqMYlOw3fqjtg64xWyYczdFjOaLgI8_SF8JAzw
+      - VAPID_PRIVATE_KEY=d5G4Ifmnqfsov_NUq33oIo-izo9oJOINCbIAJODQEno
+      - VAPID_SUBJECT=https://rentmaestro.nico33.net
     volumes:
       - rentmaestro_data:/app/data
       - rentmaestro_uploads:/app/public/uploads
