@@ -2,31 +2,43 @@
 
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
+import { writeFile } from 'fs/promises';
+import path from 'path';
 
-interface RoomEntry {
-    name: string;
-    condition: 'BON' | 'MOYEN' | 'MAUVAIS';
-    notes: string;
-}
+export async function uploadInspection(formData: FormData) {
+    const leaseId = formData.get('leaseId') as string;
+    const apartmentId = formData.get('apartmentId') as string;
+    const type = formData.get('type') as string;
+    const date = formData.get('date') as string;
+    const notes = formData.get('notes') as string;
+    const file = formData.get('file') as File;
 
-export async function createInspection(data: {
-    leaseId: string;
-    apartmentId: string;
-    type: 'ENTRY' | 'EXIT';
-    date: string;
-    rooms: RoomEntry[];
-    notes?: string;
-}) {
+    let fileUrl: string | null = null;
+    let fileName: string | null = null;
+
+    if (file && file.size > 0) {
+        const bytes = await file.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+        const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+        const filename = `edl-${Date.now()}-${file.name}`;
+        await writeFile(path.join(uploadDir, filename), buffer);
+        fileUrl = `/uploads/${filename}`;
+        fileName = file.name;
+    }
+
     const inspection = await prisma.inspection.create({
         data: {
-            leaseId: data.leaseId,
-            type: data.type,
-            date: new Date(data.date),
-            rooms: JSON.stringify(data.rooms),
-            notes: data.notes || null,
+            leaseId,
+            type,
+            date: new Date(date),
+            rooms: '[]',
+            notes: notes || null,
+            fileUrl,
+            fileName,
         },
     });
-    revalidatePath(`/apartments/${data.apartmentId}`);
+
+    revalidatePath(`/apartments/${apartmentId}`);
     return { success: true, inspection };
 }
 

@@ -186,8 +186,10 @@ model Inspection {
   leaseId   String
   type      String   // ENTRY, EXIT
   date      DateTime
-  rooms     String   @default("[]") // JSON: [{name, condition, notes}]
+  rooms     String   @default("[]") // kept for backward compat
   notes     String?
+  fileUrl   String?  // uploaded inspection document
+  fileName  String?
   createdAt DateTime @default(now())
   lease     Lease    @relation(fields: [leaseId], references: [id], onDelete: Cascade)
 }
