@@ -150,7 +150,7 @@ export default function InspectionBoard({ apartmentId, leases }: Props) {
                     {allInspections.map(insp => {
                         const isEntry = insp.type === 'ENTRY';
                         return (
-                            <div key={insp.id} style={{ background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '0.9rem 1.1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', background: isEntry ? 'rgba(43,140,238,0.04)' : 'rgba(232,121,168,0.04)' }}>
+                            <div key={insp.id} style={{ background: isEntry ? 'rgba(43,140,238,0.04)' : 'rgba(232,121,168,0.04)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '0.9rem 1.1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', flex: 1 }}>
                                     <span style={{ fontSize: '1.2rem' }}>{isEntry ? '📥' : '📤'}</span>
                                     <div>
