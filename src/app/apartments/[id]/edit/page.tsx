@@ -37,7 +37,7 @@ export default async function EditApartmentPage({ params }: { params: Promise<{ 
                 </div>
 
                 <div className={styles.formGroup}>
-                    <label htmlFor="name" className={styles.label}>Nom de l'appartement</label>
+                    <label htmlFor="name" className={styles.label}>Surnom <span style={{fontWeight:400,color:'var(--text-muted)',fontSize:'0.85em'}}>(affiché dans la liste)</span></label>
                     <input type="text" id="name" name="name" defaultValue={apartment.name || ''} className={styles.input} placeholder="Studio Centre-ville, Appt Republique..." />
                 </div>
 
