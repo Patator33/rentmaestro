@@ -95,7 +95,7 @@ export default async function RentsPage({
 
                                 return (
                                     <tr key={lease.id}>
-                                        <td>{lease.apartment.address}</td>
+                                        <td>{lease.apartment.name || lease.apartment.address}</td>
                                         <td>{lease.tenant.firstName} {lease.tenant.lastName}</td>
                                         <td>{totalAmount.toFixed(2)} €</td>
                                         <td>

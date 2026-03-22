@@ -174,7 +174,7 @@ export default async function Home() {
             {rentReviews.map((lease: any) => (
               <div key={lease.id} className={styles.alertItem}>
                 <span>
-                  <strong>{lease.tenant.firstName} {lease.tenant.lastName}</strong> ({lease.apartment.address})
+                  <strong>{lease.tenant.firstName} {lease.tenant.lastName}</strong> ({lease.apartment.name || lease.apartment.address})
                   <span className={styles.alertItemDetail}>
                     En place depuis le {formatDate(lease.startDate)}
                   </span>
@@ -207,7 +207,7 @@ export default async function Home() {
                   <strong>{task.tenant.firstName} {task.tenant.lastName}</strong>
                   {' · '}
                   <Link href={`/apartments/${task.apartmentId}`} style={{ color: '#fb923c', textDecoration: 'underline' }}>
-                    {task.apartment.address}
+                    {task.apartment.name || task.apartment.address}
                   </Link>
                   <span style={{ display: 'block', fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>
                     {task.title}{task.description ? ` — ${task.description}` : ''}

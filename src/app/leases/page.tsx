@@ -84,7 +84,7 @@ export default async function LeasesPage() {
                                         <div key={lease.id} className={styles.card} style={{ borderColor: 'var(--accent-color)', background: 'rgba(255, 165, 0, 0.05)' }}>
                                             <div className={styles.cardHeader}>
                                                 <span className={styles.statusBadge} style={{ background: 'rgba(255, 165, 0, 0.15)', color: 'var(--accent-color)' }}>À VENIR</span>
-                                                <h3 className={styles.cardTitle}>{lease.apartment.address}</h3>
+                                                <h3 className={styles.cardTitle}>{lease.apartment.name || lease.apartment.address}</h3>
                                                 <p className={styles.cardSubtitle}>
                                                     Locataire : <Link href={`/tenants/${lease.tenant.id}`} className="hover:underline">{lease.tenant.firstName} {lease.tenant.lastName}</Link>
                                                 </p>
@@ -180,7 +180,7 @@ export default async function LeasesPage() {
                                                     </span>
                                                 )}
                                             </div>
-                                            <h3 className={styles.cardTitle} style={{ marginTop: '0.5rem' }}>{lease.apartment.address}</h3>
+                                            <h3 className={styles.cardTitle} style={{ marginTop: '0.5rem' }}>{lease.apartment.name || lease.apartment.address}</h3>
                                             <p className={styles.cardSubtitle}>
                                                 <Link href={`/tenants/${lease.tenant.id}`} className="hover:underline">
                                                     {lease.tenant.firstName} {lease.tenant.lastName}
@@ -231,7 +231,7 @@ export default async function LeasesPage() {
                                     <div key={lease.id} className={styles.historyCard}>
                                         <div className={styles.cardHeader}>
                                             <span className={`${styles.statusBadge} ${styles.statusInactive}`}>TERMINÉ</span>
-                                            <h3 className={styles.cardTitle}>{lease.apartment.address}</h3>
+                                            <h3 className={styles.cardTitle}>{lease.apartment.name || lease.apartment.address}</h3>
                                             <p className={styles.cardSubtitle}>
                                                 {lease.tenant.firstName} {lease.tenant.lastName}
                                             </p>

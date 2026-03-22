@@ -54,7 +54,7 @@ export default async function ApartmentDetailsPage({ params }: { params: Promise
 
             <header className={styles.header}>
                 <div>
-                    <h1 className={styles.title}>{apartment.address}</h1>
+                    <h1 className={styles.title}>{apartment.name || apartment.address}</h1>
                     <p className={styles.subtitle}>
                         {apartment.zipCode} {apartment.city}
                         {apartment.company && (

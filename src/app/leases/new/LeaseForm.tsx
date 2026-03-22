@@ -108,7 +108,7 @@ export default function LeaseForm({ apartments, tenants }: LeaseFormProps) {
                         <option value="">Sélectionner un appartement</option>
                         {apartments.map((apt) => (
                             <option key={apt.id} value={apt.id}>
-                                {apt.address} - {apt.city} ({apt.rent}€)
+                                {apt.name || apt.address} - {apt.city} ({apt.rent}€)
                                 {apt.leases.length > 0 ? " (Occupé)" : ""}
                             </option>
                         ))}

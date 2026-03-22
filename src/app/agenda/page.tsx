@@ -51,7 +51,7 @@ export default async function AgendaPage() {
                     date: end,
                     type: 'LEASE_END',
                     label: `Fin de bail — ${lease.tenant.firstName} ${lease.tenant.lastName}`,
-                    sublabel: lease.apartment.address,
+                    sublabel: lease.apartment.name || lease.apartment.address,
                     href: `/apartments/${lease.apartmentId}`,
                     urgency: daysLeft <= 30 ? 'high' : daysLeft <= 60 ? 'medium' : 'low',
                 });
@@ -71,7 +71,7 @@ export default async function AgendaPage() {
                 date: nextReview,
                 type: 'RENT_REVIEW',
                 label: `Révision de loyer — ${lease.tenant.firstName} ${lease.tenant.lastName}`,
-                sublabel: `${lease.apartment.address} · ${(lease.rentAmount + lease.chargesAmount).toFixed(0)} €/mois`,
+                sublabel: `${lease.apartment.name || lease.apartment.address} · ${(lease.rentAmount + lease.chargesAmount).toFixed(0)} €/mois`,
                 href: `/apartments/${lease.apartmentId}`,
                 urgency: daysLeft <= 30 ? 'high' : daysLeft <= 60 ? 'medium' : 'low',
             });
@@ -84,7 +84,7 @@ export default async function AgendaPage() {
             date: new Date(lease.startDate),
             type: 'LEASE_START',
             label: `Entrée — ${lease.tenant.firstName} ${lease.tenant.lastName}`,
-            sublabel: lease.apartment.address,
+            sublabel: lease.apartment.name || lease.apartment.address,
             href: `/apartments/${lease.apartmentId}`,
             urgency: 'low',
         });
@@ -99,7 +99,7 @@ export default async function AgendaPage() {
                 date: due,
                 type: 'TASK_DUE',
                 label: `Tâche — ${task.title}`,
-                sublabel: task.apartment.address + (task.tenant ? ` · ${task.tenant.firstName} ${task.tenant.lastName}` : ''),
+                sublabel: (task.apartment.name || task.apartment.address) + (task.tenant ? ` · ${task.tenant.firstName} ${task.tenant.lastName}` : ''),
                 href: `/apartments/${task.apartmentId}`,
                 urgency: daysLeft <= 0 ? 'high' : daysLeft <= 14 ? 'medium' : 'low',
             });
