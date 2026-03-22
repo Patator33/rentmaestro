@@ -37,13 +37,17 @@ export async function createApartment(formData: FormData) {
 }
 
 export async function deleteApartment(id: string) {
+    const leaseCount = await prisma.lease.count({ where: { apartmentId: id } });
+    if (leaseCount > 0) {
+        throw new Error("le bail associé doit d'abord être supprimé pour pouvoir supprimer l'appartement ou le locataire !");
+    }
     try {
         await prisma.apartment.delete({
             where: { id },
         });
     } catch (error) {
         console.error("Erreur lors de la suppression de l'appartement:", error);
-        throw new Error("Impossible de supprimer l'appartement. Il est peut-être encore lié à un bail actif.");
+        throw new Error("Impossible de supprimer l'appartement.");
     }
     revalidatePath("/apartments");
 }

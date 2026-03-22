@@ -37,13 +37,17 @@ export async function createTenant(formData: FormData) {
 }
 
 export async function deleteTenant(id: string) {
+    const leaseCount = await prisma.lease.count({ where: { tenantId: id } });
+    if (leaseCount > 0) {
+        throw new Error("le bail associé doit d'abord être supprimé pour pouvoir supprimer l'appartement ou le locataire !");
+    }
     try {
         await prisma.tenant.delete({
             where: { id },
         });
     } catch (error) {
         console.error("Erreur lors de la suppression du locataire:", error);
-        throw new Error("Impossible de supprimer le locataire. Il est peut-être encore lié à un bail actif.");
+        throw new Error("Impossible de supprimer le locataire.");
     }
     revalidatePath("/tenants");
 }
