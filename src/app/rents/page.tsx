@@ -38,7 +38,7 @@ export default async function RentsPage({
     // Active if startDate < end of this month AND (no endDate OR endDate > start of this month)
     const leases = await prisma.lease.findMany({
         where: {
-            startDate: { lte: nextMonth },
+            startDate: { lt: nextMonth },
             OR: [
                 { endDate: null },
                 { endDate: { gte: startOfMonth } }

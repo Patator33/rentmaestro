@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sealData } from 'iron-session';
-import { getUser, verifyPassword } from '@/lib/auth';
+import { getUserByEmail, verifyPassword } from '@/lib/auth';
 import { SESSION_OPTIONS, type SessionData } from '@/lib/session';
 
 function buildSetCookie(name: string, value: string, maxAge: number): string {
@@ -11,9 +11,9 @@ function buildSetCookie(name: string, value: string, maxAge: number): string {
 export async function POST(request: NextRequest) {
     const { email, password } = await request.json();
 
-    const user = await getUser();
+    const user = await getUserByEmail(email);
 
-    if (!user || user.email !== email) {
+    if (!user) {
         return NextResponse.json({ error: 'Identifiants incorrects.' }, { status: 401 });
     }
 

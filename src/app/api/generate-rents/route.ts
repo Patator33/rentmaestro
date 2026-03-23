@@ -16,7 +16,7 @@ export async function POST() {
         // Find all active leases that should have rent for this month
         const activeLeases = await prisma.lease.findMany({
             where: {
-                startDate: { lte: new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 0)) },
+                startDate: { lt: new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 1)) },
                 OR: [
                     { endDate: null },
                     { endDate: { gte: period } }

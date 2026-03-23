@@ -1,8 +1,9 @@
 import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/session';
-import { getUser } from '@/lib/auth';
+import { getUserById } from '@/lib/auth';
 import TotpSetup from '@/components/TotpSetup';
 import PushNotificationToggle from '@/components/PushNotificationToggle';
+import UserManagement from '@/components/UserManagement';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
@@ -11,7 +12,7 @@ export default async function SecuritySettingsPage() {
     const session = await getSession();
     if (!session.userId) redirect('/login');
 
-    const user = await getUser();
+    const user = await getUserById(session.userId);
     if (!user) redirect('/login');
 
     return (
@@ -27,6 +28,8 @@ export default async function SecuritySettingsPage() {
 
             <TotpSetup totpEnabled={user.totpEnabled} />
             <PushNotificationToggle />
+
+            <UserManagement currentUserId={user.id} />
         </div>
     );
 }

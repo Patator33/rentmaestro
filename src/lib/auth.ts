@@ -13,6 +13,18 @@ export async function getUser() {
     return prisma.user.findFirst();
 }
 
+export async function getUserById(id: string) {
+    return prisma.user.findUnique({ where: { id } });
+}
+
+export async function getUserByEmail(email: string) {
+    return prisma.user.findUnique({ where: { email } });
+}
+
+export async function getAllUsers() {
+    return prisma.user.findMany({ orderBy: { createdAt: 'asc' } });
+}
+
 export async function hasUser(): Promise<boolean> {
     const count = await prisma.user.count();
     return count > 0;
