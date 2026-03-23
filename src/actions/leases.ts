@@ -94,6 +94,48 @@ export async function deleteLease(id: string) {
     revalidatePath("/apartments");
 }
 
+export async function updateLease(id: string, formData: FormData) {
+    const startDateStr = formData.get("startDate") as string;
+    const endDateStr = formData.get("endDate") as string;
+    const rentAmountStr = formData.get("rentAmount") as string;
+    const chargesAmountStr = formData.get("chargesAmount") as string;
+    const depositAmountStr = formData.get("depositAmount") as string;
+
+    if (!startDateStr) {
+        throw new Error("La date de début est obligatoire.");
+    }
+
+    const startDate = new Date(startDateStr);
+    const endDate = endDateStr ? new Date(endDateStr) : null;
+    const rentAmount = parseFloat(rentAmountStr);
+    const chargesAmount = parseFloat(chargesAmountStr);
+    const depositAmount = depositAmountStr ? parseFloat(depositAmountStr) : null;
+
+    if (isNaN(rentAmount) || isNaN(chargesAmount)) {
+        throw new Error("Montants invalides.");
+    }
+
+    try {
+        await prisma.lease.update({
+            where: { id },
+            data: {
+                startDate,
+                endDate,
+                rentAmount,
+                chargesAmount,
+                depositAmount: depositAmount !== null && !isNaN(depositAmount) ? depositAmount : null,
+            }
+        });
+    } catch (error) {
+        console.error("Erreur lors de la modification du bail:", error);
+        throw new Error("Impossible de modifier le contrat.");
+    }
+
+    revalidatePath("/leases");
+    revalidatePath("/apartments");
+    redirect("/leases");
+}
+
 export async function markRentReviewAsSent(leaseId: string) {
     try {
         await prisma.lease.update({

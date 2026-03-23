@@ -24,7 +24,7 @@ export default async function ApartmentsPage({ searchParams }: { searchParams: P
                 include: { tenant: true }
             }
         },
-        orderBy: { createdAt: 'desc' }
+        orderBy: { address: 'asc' }
     });
 
     let apartments = allApartments;

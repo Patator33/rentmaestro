@@ -14,7 +14,7 @@ export default async function LeasesPage() {
             apartment: true,
             tenant: true,
         },
-        orderBy: { createdAt: 'desc' }
+        orderBy: { apartment: { address: 'asc' } }
     });
 
     const today = new Date();
@@ -97,11 +97,14 @@ export default async function LeasesPage() {
                                                 )}
                                             </div>
                                             <div className={styles.cardFooter}>
+                                                <Link href={`/leases/${lease.id}/edit`} className="std-add-button" style={{ fontSize: '0.85rem', padding: '0.4rem 0.75rem' }}>
+                                                    ✏️ Modifier
+                                                </Link>
                                                 <TerminateLeaseButton
                                                     leaseId={lease.id}
                                                     currentEndDate={lease.endDate ? lease.endDate.toISOString().split('T')[0] : undefined}
-                                                    label="Modifier dates"
-                                                    style={{ marginRight: 'auto', background: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border-color)' }}
+                                                    label="Dates"
+                                                    style={{ background: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border-color)' }}
                                                 />
                                                 <DeleteLeaseButton id={lease.id} />
                                             </div>
@@ -201,6 +204,9 @@ export default async function LeasesPage() {
                                         </div>
 
                                         <div className={styles.cardFooter}>
+                                            <Link href={`/leases/${lease.id}/edit`} className="std-add-button" style={{ fontSize: '0.85rem', padding: '0.4rem 0.75rem' }}>
+                                                ✏️ Modifier
+                                            </Link>
                                             <TerminateLeaseButton
                                                 leaseId={lease.id}
                                                 currentEndDate={lease.endDate ? lease.endDate.toISOString().split('T')[0] : undefined}
@@ -247,12 +253,9 @@ export default async function LeasesPage() {
                                         </div>
 
                                         <div className={styles.cardFooter}>
-                                            <TerminateLeaseButton
-                                                leaseId={lease.id}
-                                                currentEndDate={lease.endDate ? lease.endDate.toISOString().split('T')[0] : undefined}
-                                                style={{ marginRight: 'auto', fontSize: '0.8rem', opacity: 0.5 }}
-                                                label="Modifier"
-                                            />
+                                            <Link href={`/leases/${lease.id}/edit`} className="std-add-button" style={{ fontSize: '0.85rem', padding: '0.4rem 0.75rem', opacity: 0.7 }}>
+                                                ✏️ Modifier
+                                            </Link>
                                             <DeleteLeaseButton id={lease.id} />
                                         </div>
                                     </div>

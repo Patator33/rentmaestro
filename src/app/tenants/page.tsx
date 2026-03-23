@@ -22,7 +22,7 @@ export default async function TenantsPage({ searchParams }: { searchParams: Prom
                 include: { apartment: true }
             }
         },
-        orderBy: { createdAt: 'desc' }
+        orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }]
     });
 
     const tenants = query

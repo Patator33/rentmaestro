@@ -5,7 +5,7 @@ import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
 import GlobalSearch from "@/components/GlobalSearch";
 import BottomNav from "@/components/BottomNav";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 const NAV_ITEMS = [
@@ -22,7 +22,12 @@ const NAV_ITEMS = [
 
 export default function NavBar() {
     const [menuOpen, setMenuOpen] = useState(false);
+    const [dateStr, setDateStr] = useState('');
     const router = useRouter();
+
+    useEffect(() => {
+        setDateStr(new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }));
+    }, []);
 
     const handleLogout = async () => {
         await fetch('/api/auth/logout', { method: 'POST' });
@@ -33,10 +38,17 @@ export default function NavBar() {
         <>
             <nav className="main-nav">
                 <div className="nav-content">
-                    <Link href="/" className="nav-home-link">
-                        <Logo size={32} />
-                        <span>Rentmaestro</span>
-                    </Link>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
+                        <Link href="/" className="nav-home-link">
+                            <Logo size={32} />
+                            <span>Rentmaestro</span>
+                        </Link>
+                        {dateStr && (
+                            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', paddingLeft: '0.25rem', textTransform: 'capitalize' }}>
+                                {dateStr}
+                            </span>
+                        )}
+                    </div>
 
                     <div className="desktop-nav">
                         {NAV_ITEMS.map((item) => (
