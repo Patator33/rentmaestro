@@ -32,7 +32,7 @@ export async function createTenant(formData: FormData) {
         throw new Error("Impossible de créer le locataire. Vérifiez les données saisies.");
     }
 
-    revalidatePath("/tenants");
+    revalidatePath("/", "layout");
     redirect("/tenants");
 }
 
@@ -75,8 +75,7 @@ export async function updateTenant(id: string, formData: FormData) {
         throw new Error("Impossible de mettre à jour le locataire.");
     }
 
-    revalidatePath("/tenants");
-    revalidatePath(`/tenants/${id}`);
+    revalidatePath("/", "layout");
     redirect(`/tenants/${id}`);
 }
 

@@ -32,7 +32,7 @@ export async function createApartment(formData: FormData) {
         throw new Error("Impossible de créer l'appartement. Vérifiez les données saisies.");
     }
 
-    revalidatePath("/apartments");
+    revalidatePath("/", "layout");
     redirect("/apartments");
 }
 
@@ -79,7 +79,6 @@ export async function updateApartment(id: string, formData: FormData) {
         throw new Error("Impossible de mettre à jour l'appartement.");
     }
 
-    revalidatePath("/apartments");
-    revalidatePath(`/apartments/${id}`);
+    revalidatePath("/", "layout");
     redirect(`/apartments/${id}`);
 }

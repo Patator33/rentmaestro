@@ -4,6 +4,7 @@ import { useState, ChangeEvent } from 'react'
 import Link from 'next/link'
 import { createLease } from '@/actions/leases'
 import styles from './page.module.css'
+import DateInput from '@/components/DateInput'
 import type { Apartment, Tenant, Lease } from '@prisma/client'
 
 // Define extended apartment type with leases relation
@@ -156,8 +157,7 @@ export default function LeaseForm({ apartments, tenants }: LeaseFormProps) {
 
                 <div className={styles.formGroup}>
                     <label htmlFor="startDate" className={styles.label}>Date de début *</label>
-                    <input
-                        type="date"
+                    <DateInput
                         id="startDate"
                         name="startDate"
                         required

@@ -109,8 +109,8 @@ export default async function ApartmentDetailsPage({ params }: { params: Promise
                 {(apartment.mortgageAmount || apartment.insuranceAmount || apartment.taxAmount) ? (
                     <div className={styles.detailItem}>
                         <span className={styles.label}>Cash Flow Net Net</span>
-                        <span className={styles.value} style={{ color: ((apartment.rent + apartment.charges) - (apartment.mortgageAmount || 0) - (apartment.insuranceAmount || 0) - (apartment.taxAmount || 0)) >= 0 ? 'var(--success)' : 'var(--error)' }}>
-                            {((apartment.rent + apartment.charges) - (apartment.mortgageAmount || 0) - (apartment.insuranceAmount || 0) - (apartment.taxAmount || 0)).toFixed(2)} €
+                        <span className={styles.value} style={{ color: (apartment.rent - (apartment.mortgageAmount || 0) - (apartment.insuranceAmount || 0) - (apartment.taxAmount || 0)) >= 0 ? 'var(--success)' : 'var(--error)' }}>
+                            {(apartment.rent - (apartment.mortgageAmount || 0) - (apartment.insuranceAmount || 0) - (apartment.taxAmount || 0)).toFixed(2)} €
                         </span>
                     </div>
                 ) : null}

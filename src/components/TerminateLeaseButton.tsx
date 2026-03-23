@@ -3,6 +3,7 @@
 import { terminateLease } from "@/actions/leases";
 import { useState } from "react";
 import { formatDate } from "@/lib/utils";
+import DateInput from "@/components/DateInput";
 
 export default function TerminateLeaseButton({
     leaseId,
@@ -83,8 +84,8 @@ export default function TerminateLeaseButton({
                 boxShadow: 'var(--shadow-sm)',
                 border: '1px solid var(--border-color)'
             }}>
-                <input
-                    type="date"
+                <DateInput
+                    name="_terminateDate"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
                     style={{

@@ -50,8 +50,7 @@ export async function createLease(formData: FormData) {
         throw new Error("Impossible de créer le contrat. Veuillez réessayer.");
     }
 
-    revalidatePath("/leases");
-    revalidatePath("/apartments");
+    revalidatePath("/", "layout");
     redirect("/leases");
 }
 
@@ -77,8 +76,7 @@ export async function terminateLease(id: string, endDateStr?: string | null) {
         throw new Error("Impossible de modifier le contrat.");
     }
 
-    revalidatePath("/apartments");
-    revalidatePath("/leases");
+    revalidatePath("/", "layout");
 }
 
 export async function deleteLease(id: string) {
@@ -131,8 +129,7 @@ export async function updateLease(id: string, formData: FormData) {
         throw new Error("Impossible de modifier le contrat.");
     }
 
-    revalidatePath("/leases");
-    revalidatePath("/apartments");
+    revalidatePath("/", "layout");
     redirect("/leases");
 }
 

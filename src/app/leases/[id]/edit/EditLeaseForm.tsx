@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { updateLease } from '@/actions/leases'
 import styles from '@/app/leases/new/page.module.css'
+import DateInput from '@/components/DateInput'
 import type { Apartment, Tenant, Lease } from '@prisma/client'
 
 type LeaseWithRelations = Lease & { apartment: Apartment; tenant: Tenant }
@@ -30,8 +31,7 @@ export default function EditLeaseForm({ lease }: { lease: LeaseWithRelations }) 
                 <div className={styles.row}>
                     <div className={styles.formGroup}>
                         <label htmlFor="startDate" className={styles.label}>Date de début *</label>
-                        <input
-                            type="date"
+                        <DateInput
                             id="startDate"
                             name="startDate"
                             required
@@ -41,8 +41,7 @@ export default function EditLeaseForm({ lease }: { lease: LeaseWithRelations }) 
                     </div>
                     <div className={styles.formGroup}>
                         <label htmlFor="endDate" className={styles.label}>Date de fin</label>
-                        <input
-                            type="date"
+                        <DateInput
                             id="endDate"
                             name="endDate"
                             defaultValue={endDateStr}
