@@ -3,17 +3,20 @@ import { prisma } from "@/lib/prisma";
 import styles from "./page.module.css";
 import DeleteTenantButton from "@/components/DeleteTenantButton";
 import SearchBar from "@/components/SearchBar";
+import ViewToggle from "@/components/ViewToggle";
 import { formatDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
 interface SearchParams {
     q?: string;
+    view?: string;
 }
 
 export default async function TenantsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
     const params = await searchParams;
     const query = params.q?.toLowerCase() || '';
+    const view = params.view === 'list' ? 'list' : 'grid';
 
     const allTenants = await prisma.tenant.findMany({
         include: {
@@ -37,9 +40,12 @@ export default async function TenantsPage({ searchParams }: { searchParams: Prom
         <div className={styles.container}>
             <header className={styles.header}>
                 <h1 className={styles.title}>Mes Locataires</h1>
-                <Link href="/tenants/new" className="std-add-button">
-                    + Nouveau Locataire
-                </Link>
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                    <ViewToggle currentView={view} />
+                    <Link href="/tenants/new" className="std-add-button">
+                        + Nouveau Locataire
+                    </Link>
+                </div>
             </header>
 
             <SearchBar
@@ -51,7 +57,61 @@ export default async function TenantsPage({ searchParams }: { searchParams: Prom
                 <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>
                     <p>{query ? 'Aucun locataire trouvé pour cette recherche.' : 'Aucun locataire enregistré. Commencez par en ajouter un.'}</p>
                 </div>
+            ) : view === 'list' ? (
+                /* ── TABLE VIEW ── */
+                <div className="table-container">
+                    <table className="std-table">
+                        <thead>
+                            <tr>
+                                <th>Nom</th>
+                                <th>Email</th>
+                                <th>Téléphone</th>
+                                <th>Colocataire</th>
+                                <th>Appartement</th>
+                                <th>Bail depuis</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {tenants.map((tenant) => {
+                                const activeLease = tenant.leases[0];
+                                const hasCoTenant = tenant.coTenantFirstName || tenant.coTenantLastName;
+
+                                return (
+                                    <tr key={tenant.id}>
+                                        <td>
+                                            <Link href={`/tenants/${tenant.id}`} style={{ fontWeight: 600, color: 'var(--primary-color)' }}>
+                                                {tenant.lastName.toUpperCase()} {tenant.firstName}
+                                            </Link>
+                                        </td>
+                                        <td style={{ fontSize: '0.9rem' }}>{tenant.email}</td>
+                                        <td style={{ fontSize: '0.9rem' }}>{tenant.phone || '—'}</td>
+                                        <td style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                                            {hasCoTenant ? `${tenant.coTenantFirstName || ''} ${tenant.coTenantLastName || ''}`.trim() : '—'}
+                                        </td>
+                                        <td>
+                                            {activeLease ? (
+                                                <Link href={`/apartments/${activeLease.apartment.id}`} style={{ color: 'var(--text-main)', fontSize: '0.9rem' }}>
+                                                    {activeLease.apartment.name || activeLease.apartment.address}
+                                                </Link>
+                                            ) : (
+                                                <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>—</span>
+                                            )}
+                                        </td>
+                                        <td style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                                            {activeLease ? formatDate(activeLease.startDate) : '—'}
+                                        </td>
+                                        <td>
+                                            <DeleteTenantButton id={tenant.id} />
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
             ) : (
+                /* ── GRID VIEW ── */
                 <div className={styles.grid}>
                     {tenants.map((tenant) => {
                         const activeLease = tenant.leases[0];

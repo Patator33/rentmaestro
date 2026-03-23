@@ -9,7 +9,7 @@ interface BottomNavProps {
 
 const TABS = [
     { href: '/',            icon: '🏠', label: 'Accueil' },
-    { href: '/apartments',  icon: '🏢', label: 'Biens' },
+    { href: '/apartments',  icon: '🏢', label: 'Appartements' },
     { href: '/rents',       icon: '💰', label: 'Loyers' },
     { href: '/tenants',     icon: '👥', label: 'Locataires' },
 ];

@@ -4,18 +4,24 @@ import { formatDate } from "@/lib/utils";
 import styles from "./page.module.css";
 import DeleteApartmentButton from "@/components/DeleteApartmentButton";
 import SearchBar from "@/components/SearchBar";
+import ViewToggle from "@/components/ViewToggle";
 
 export const dynamic = "force-dynamic";
 
 interface SearchParams {
     q?: string;
     filter?: string;
+    view?: string;
 }
 
 export default async function ApartmentsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
     const params = await searchParams;
     const query = params.q?.toLowerCase() || '';
     const filter = params.filter || '';
+    const view = params.view === 'list' ? 'list' : 'grid';
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
     const allApartments = await prisma.apartment.findMany({
         include: {
@@ -29,7 +35,6 @@ export default async function ApartmentsPage({ searchParams }: { searchParams: P
 
     let apartments = allApartments;
 
-    // Text search
     if (query) {
         apartments = apartments.filter(apt =>
             apt.address.toLowerCase().includes(query) ||
@@ -39,20 +44,34 @@ export default async function ApartmentsPage({ searchParams }: { searchParams: P
         );
     }
 
-    // Status filter
     if (filter === 'occupied') {
         apartments = apartments.filter(apt => apt.leases.some(l => l.isActive));
     } else if (filter === 'vacant') {
         apartments = apartments.filter(apt => !apt.leases.some(l => l.isActive));
     }
 
+    // Returns the lease that is actually ongoing today (not future)
+    const getCurrentLease = (apt: typeof apartments[0]) => apt.leases.find(l => {
+        const start = new Date(l.startDate);
+        const end = l.endDate ? new Date(l.endDate) : null;
+        return start <= today && (!end || end >= today);
+    });
+
+    // Returns a future lease (not yet started)
+    const getFutureLease = (apt: typeof apartments[0]) => apt.leases.find(l => {
+        return new Date(l.startDate) > today;
+    });
+
     return (
         <div className={styles.container}>
             <header className={styles.header}>
                 <h1 className={styles.title}>Mes Appartements</h1>
-                <Link href="/apartments/new" className="std-add-button">
-                    + Ajouter un bien
-                </Link>
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                    <ViewToggle currentView={view} />
+                    <Link href="/apartments/new" className="std-add-button">
+                        + Ajouter un bien
+                    </Link>
+                </div>
             </header>
 
             <SearchBar
@@ -70,9 +89,88 @@ export default async function ApartmentsPage({ searchParams }: { searchParams: P
                 <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>
                     <p>{query || filter ? 'Aucun appartement trouvé pour ces critères.' : 'Aucun appartement enregistré. Commencez par en ajouter un.'}</p>
                 </div>
+            ) : view === 'list' ? (
+                /* ── TABLE VIEW ── */
+                <div className="table-container">
+                    <table className="std-table">
+                        <thead>
+                            <tr>
+                                <th>Bien</th>
+                                <th>Ville</th>
+                                <th>Loyer HC</th>
+                                <th>Charges</th>
+                                <th>CC</th>
+                                <th>Locataire</th>
+                                <th>Bail depuis</th>
+                                <th>Statut</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {apartments.map((apt) => {
+                                const currentLease = getCurrentLease(apt);
+                                const futureLease = getFutureLease(apt);
+                                const isOccupied = !!currentLease;
+
+                                return (
+                                    <tr key={apt.id}>
+                                        <td>
+                                            <Link href={`/apartments/${apt.id}`} style={{ fontWeight: 600, color: 'var(--primary-color)' }}>
+                                                {apt.name || apt.address}
+                                            </Link>
+                                            {apt.name && (
+                                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{apt.address}</div>
+                                            )}
+                                        </td>
+                                        <td>{apt.city} {apt.zipCode}</td>
+                                        <td>{apt.rent.toFixed(2)} €</td>
+                                        <td>{apt.charges.toFixed(2)} €</td>
+                                        <td style={{ fontWeight: 600 }}>
+                                            {isOccupied
+                                                ? `${(currentLease.rentAmount + currentLease.chargesAmount).toFixed(2)} €`
+                                                : '—'
+                                            }
+                                        </td>
+                                        <td>
+                                            {currentLease ? (
+                                                <Link href={`/tenants/${currentLease.tenant.id}`} style={{ color: 'var(--text-main)' }}>
+                                                    {currentLease.tenant.firstName} {currentLease.tenant.lastName}
+                                                </Link>
+                                            ) : futureLease ? (
+                                                <span style={{ color: 'var(--accent-color)', fontSize: '0.85rem' }}>
+                                                    À venir · {futureLease.tenant.firstName} {futureLease.tenant.lastName}
+                                                </span>
+                                            ) : (
+                                                <span style={{ color: 'var(--text-muted)' }}>—</span>
+                                            )}
+                                        </td>
+                                        <td style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                                            {currentLease ? formatDate(currentLease.startDate) : '—'}
+                                        </td>
+                                        <td>
+                                            {isOccupied ? (
+                                                <span style={{ background: 'rgba(16,185,129,0.12)', color: 'var(--success)', padding: '0.2rem 0.6rem', borderRadius: '9999px', fontSize: '0.8rem', fontWeight: 600 }}>Occupé</span>
+                                            ) : futureLease ? (
+                                                <span style={{ background: 'rgba(255,165,0,0.12)', color: 'var(--accent-color)', padding: '0.2rem 0.6rem', borderRadius: '9999px', fontSize: '0.8rem', fontWeight: 600 }}>À venir</span>
+                                            ) : (
+                                                <span style={{ background: 'rgba(245,158,11,0.12)', color: 'var(--warning)', padding: '0.2rem 0.6rem', borderRadius: '9999px', fontSize: '0.8rem', fontWeight: 600 }}>Vacant</span>
+                                            )}
+                                        </td>
+                                        <td>
+                                            <DeleteApartmentButton id={apt.id} />
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
             ) : (
+                /* ── GRID VIEW ── */
                 <div className={styles.grid}>
                     {apartments.map((apt) => {
+                        const currentLease = getCurrentLease(apt);
+                        const futureLease = getFutureLease(apt);
                         const activeLease = apt.leases.find(l => l.isActive);
                         const lastLease = apt.leases[0];
                         const isVacant = !activeLease;
@@ -113,19 +211,26 @@ export default async function ApartmentsPage({ searchParams }: { searchParams: P
                                                 </span>
                                             )}
                                         </div>
-                                    ) : (
+                                    ) : currentLease ? (
                                         <div className={styles.tenantBadge}>
                                             👤
-                                            <Link href={`/tenants/${activeLease?.tenant.id}`}>
-                                                {activeLease?.tenant.firstName} {activeLease?.tenant.lastName}
+                                            <Link href={`/tenants/${currentLease.tenant.id}`}>
+                                                {currentLease.tenant.firstName} {currentLease.tenant.lastName}
                                             </Link>
-                                            {activeLease && (
-                                                <span style={{ fontSize: '0.8em', opacity: 0.8, fontWeight: 400, marginLeft: 'auto' }}>
-                                                    Du {formatDate(activeLease.startDate)}
-                                                    {activeLease.endDate ? ` au ${formatDate(activeLease.endDate)}` : ' (En cours)'}
-                                                </span>
-                                            )}
+                                            <span style={{ fontSize: '0.8em', opacity: 0.8, fontWeight: 400, marginLeft: 'auto' }}>
+                                                Du {formatDate(currentLease.startDate)}
+                                                {currentLease.endDate ? ` au ${formatDate(currentLease.endDate)}` : ' (En cours)'}
+                                            </span>
                                         </div>
+                                    ) : futureLease ? (
+                                        <div className={styles.vacantBadge} style={{ borderColor: 'rgba(255,165,0,0.3)', color: 'var(--accent-color)', background: 'rgba(255,165,0,0.08)' }}>
+                                            🕐 À venir · {futureLease.tenant.firstName} {futureLease.tenant.lastName}
+                                            <span style={{ fontSize: '0.8em', opacity: 0.8, fontWeight: 400, marginLeft: 'auto' }}>
+                                                dès le {formatDate(futureLease.startDate)}
+                                            </span>
+                                        </div>
+                                    ) : (
+                                        <div className={styles.vacantBadge}>🔓 Vacant</div>
                                     )}
                                 </div>
                                 <div className={styles.cardFooter}>
