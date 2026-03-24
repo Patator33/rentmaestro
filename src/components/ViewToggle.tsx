@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { useTransition } from 'react';
+import { useTransition, type CSSProperties } from 'react';
 
 export default function ViewToggle({ currentView }: { currentView: 'grid' | 'list' }) {
     const router = useRouter();
@@ -22,7 +22,7 @@ export default function ViewToggle({ currentView }: { currentView: 'grid' | 'lis
         });
     };
 
-    const btnBase: React.CSSProperties = {
+    const btnBase: CSSProperties = {
         padding: '0.35rem 0.65rem',
         border: 'none',
         borderRadius: 'var(--radius-sm)',

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 interface User {
     id: string;
@@ -15,7 +15,7 @@ export default function UserManagement({ currentUserId }: { currentUserId: strin
     const [showForm, setShowForm] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [confirm, setConfirm] = useState('');
+    const [confirmPwd, setConfirmPwd] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
@@ -36,7 +36,7 @@ export default function UserManagement({ currentUserId }: { currentUserId: strin
         e.preventDefault();
         setError('');
         setSuccess('');
-        if (password !== confirm) { setError('Les mots de passe ne correspondent pas.'); return; }
+        if (password !== confirmPwd) { setError('Les mots de passe ne correspondent pas.'); return; }
         if (password.length < 8) { setError('Le mot de passe doit faire au moins 8 caractères.'); return; }
         setSubmitting(true);
         try {
@@ -48,7 +48,7 @@ export default function UserManagement({ currentUserId }: { currentUserId: strin
             const data = await res.json();
             if (!res.ok) { setError(data.error || 'Erreur lors de la création.'); return; }
             setSuccess(`Utilisateur ${data.email} créé avec succès.`);
-            setEmail(''); setPassword(''); setConfirm('');
+            setEmail(''); setPassword(''); setConfirmPwd('');
             setShowForm(false);
             loadUsers();
         } finally {
@@ -57,7 +57,7 @@ export default function UserManagement({ currentUserId }: { currentUserId: strin
     };
 
     const handleDelete = async (id: string, userEmail: string) => {
-        if (!confirm(`Supprimer l'utilisateur ${userEmail} ?`)) return;
+        if (!window.confirm(`Supprimer l'utilisateur ${userEmail} ?`)) return;
         const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
         const data = await res.json();
         if (!res.ok) { setError(data.error); return; }
@@ -66,7 +66,7 @@ export default function UserManagement({ currentUserId }: { currentUserId: strin
     };
 
     const handleResetTotp = async (id: string, userEmail: string) => {
-        if (!confirm(`Désactiver le TOTP pour ${userEmail} ?`)) return;
+        if (!window.confirm(`Désactiver le TOTP pour ${userEmail} ?`)) return;
         const res = await fetch(`/api/users/${id}/reset-totp`, { method: 'POST' });
         const data = await res.json();
         if (!res.ok) { setError(data.error); return; }
@@ -135,7 +135,7 @@ export default function UserManagement({ currentUserId }: { currentUserId: strin
                     </div>
                     <div>
                         <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.35rem' }}>Confirmer le mot de passe *</label>
-                        <input type="password" required value={confirm} onChange={e => setConfirm(e.target.value)} style={inputStyle} placeholder="••••••••" />
+                        <input type="password" required value={confirmPwd} onChange={e => setConfirmPwd(e.target.value)} style={inputStyle} placeholder="••••••••" />
                     </div>
                     <button type="submit" disabled={submitting} style={{ background: 'var(--primary-color)', color: 'white', border: 'none', padding: '0.65rem', borderRadius: 'var(--radius-md)', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer', opacity: submitting ? 0.7 : 1 }}>
                         {submitting ? 'Création...' : 'Créer le compte'}
