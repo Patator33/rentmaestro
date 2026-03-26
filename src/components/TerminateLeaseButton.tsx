@@ -190,18 +190,8 @@ export default function TerminateLeaseButton({
     return (
         <button
             onClick={handleInitialClick}
-            className={className}
-            style={style || {
-                background: 'rgba(239, 68, 68, 0.1)',
-                color: 'var(--error)',
-                border: '1px solid rgba(239, 68, 68, 0.3)',
-                padding: '0.25rem 0.75rem',
-                borderRadius: 'var(--radius-md)',
-                fontSize: '0.8rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-            }}
+            className={className || 'terminate-btn'}
+            style={style}
         >
             {isLoading ? "..." : (label || "Terminer")}
         </button>

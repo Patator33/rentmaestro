@@ -97,10 +97,11 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
             <TerminateLeaseButton
                 leaseId={lease.id}
                 currentEndDate={lease.endDate ? lease.endDate.toISOString().split('T')[0] : undefined}
-                style={{ background: 'transparent', color: lease.endDate ? 'var(--text-main)' : 'var(--error)', border: '1px solid var(--border-color)', padding: '0.3rem 0.6rem', borderRadius: 'var(--radius-sm)', fontSize: '0.8rem', cursor: 'pointer' }}
+                className="std-add-button"
+                style={{ fontSize: '0.8rem', padding: '0.3rem 0.6rem' }}
                 label={lease.endDate ? "📅" : "🚪"}
             />
-            <DeleteLeaseButton id={lease.id} />
+            <DeleteLeaseButton id={lease.id} className="std-add-button" style={{ fontSize: '0.8rem', padding: '0.3rem 0.6rem' }} />
         </div>
     );
 
@@ -143,7 +144,11 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                     <tbody>
                                         {futureLeases.map((lease) => (
                                             <tr key={lease.id}>
-                                                <td style={{ fontWeight: 600 }}>{lease.apartment.name || lease.apartment.address}</td>
+                                                <td style={{ fontWeight: 600 }}>
+                                                    <Link href={`/apartments/${lease.apartment.id}`} style={{ color: 'var(--primary-color)' }}>
+                                                        {lease.apartment.name || lease.apartment.address}
+                                                    </Link>
+                                                </td>
                                                 <td>
                                                     <Link href={`/tenants/${lease.tenant.id}`} style={{ color: 'var(--text-main)' }}>
                                                         {lease.tenant.firstName} {lease.tenant.lastName}
@@ -187,7 +192,11 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                 <tbody>
                                     {activeLeases.map((lease) => (
                                         <tr key={lease.id}>
-                                            <td style={{ fontWeight: 600 }}>{lease.apartment.name || lease.apartment.address}</td>
+                                            <td style={{ fontWeight: 600 }}>
+                                                <Link href={`/apartments/${lease.apartment.id}`} style={{ color: 'var(--primary-color)' }}>
+                                                    {lease.apartment.name || lease.apartment.address}
+                                                </Link>
+                                            </td>
                                             <td>
                                                 <Link href={`/tenants/${lease.tenant.id}`} style={{ color: 'var(--text-main)' }}>
                                                     {lease.tenant.firstName} {lease.tenant.lastName}
@@ -239,7 +248,11 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                     <tbody>
                                         {pastLeases.map((lease) => (
                                             <tr key={lease.id} style={{ opacity: 0.7 }}>
-                                                <td style={{ fontWeight: 600 }}>{lease.apartment.name || lease.apartment.address}</td>
+                                                <td style={{ fontWeight: 600 }}>
+                                                    <Link href={`/apartments/${lease.apartment.id}`} style={{ color: 'var(--primary-color)' }}>
+                                                        {lease.apartment.name || lease.apartment.address}
+                                                    </Link>
+                                                </td>
                                                 <td>{lease.tenant.firstName} {lease.tenant.lastName}</td>
                                                 <td style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{formatDate(lease.startDate)}</td>
                                                 <td style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{lease.endDate ? formatDate(lease.endDate) : '—'}</td>

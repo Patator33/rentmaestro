@@ -67,19 +67,35 @@ async function getCashflowData() {
 async function getStats() {
   const apartmentCount = await prisma.apartment.count();
   const tenantCount = await prisma.tenant.count();
-  const leaseCount = await prisma.lease.count({ where: { isActive: true } });
+
+  const now = new Date();
+  const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+  const leaseCount = await prisma.lease.count({
+    where: {
+      startDate: { lte: today },
+      OR: [{ endDate: null }, { endDate: { gte: today } }]
+    }
+  });
 
   const occupancyRate = apartmentCount > 0 ? ((leaseCount / apartmentCount) * 100).toFixed(0) : "0";
 
-  const now = new Date();
-  const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const currentMonthStart = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
+  const nextMonthStart = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 1));
+
+  // Count active leases this period
+  const activeLeasesThisMonth = await prisma.lease.count({
+    where: {
+      startDate: { lt: nextMonthStart },
+      OR: [{ endDate: null }, { endDate: { gte: currentMonthStart } }]
+    }
+  });
 
   const paymentsThisMonth = await prisma.rentPayment.findMany({
-    where: { period: { gte: currentMonthStart } }
+    where: { period: { gte: currentMonthStart, lt: nextMonthStart } }
   });
 
   const paidPayments = paymentsThisMonth.filter((p: RentPayment) => p.status === 'PAID').length;
-  const totalPayments = paymentsThisMonth.length;
+  const totalPayments = activeLeasesThisMonth;
   const paymentRate = totalPayments > 0 ? ((paidPayments / totalPayments) * 100).toFixed(0) : "0";
 
   const totalRevenue = paymentsThisMonth
@@ -153,16 +169,6 @@ export default async function Home() {
         <h1 className={styles.title}>Rentmaestro</h1>
         <p className={styles.subtitle}>Gérez vos investissements locatifs avec élégance.</p>
       </header>
-
-      {/* Financial Projection Section */}
-      <section style={{ marginBottom: '5rem', animation: 'fadeIn 1s ease-out' }}>
-        <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1.5rem', color: 'var(--text-main)', letterSpacing: '0.05em' }}>
-          📊 Projection de Trésorerie Annuelle
-        </h2>
-        <div style={{ background: 'var(--surface)', padding: '2rem', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-lg)' }}>
-          <CashflowChart data={cashflowData} />
-        </div>
-      </section>
 
       {/* Rent Review Alert Section */}
       {rentReviews.length > 0 && (
@@ -284,6 +290,16 @@ export default async function Home() {
 
       <UnpaidRents />
       <UpcomingExpirations />
+
+      {/* Financial Projection Section */}
+      <section style={{ marginTop: '3rem', animation: 'fadeIn 1s ease-out' }}>
+        <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1.5rem', color: 'var(--text-main)', letterSpacing: '0.05em' }}>
+          📊 Projection de Trésorerie Annuelle
+        </h2>
+        <div style={{ background: 'var(--surface)', padding: '2rem', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-lg)' }}>
+          <CashflowChart data={cashflowData} />
+        </div>
+      </section>
     </div>
   );
 }

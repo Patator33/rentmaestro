@@ -24,8 +24,13 @@ export default function TenantMessaging({ tenantId, initialMessages, portalToken
     const [sending, setSending] = useState(false);
     const bottomRef = useRef<HTMLDivElement>(null);
     const isPortal = !!portalToken;
+    const mountedRef = useRef(false);
 
     useEffect(() => {
+        if (!mountedRef.current) {
+            mountedRef.current = true;
+            return;
+        }
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 

@@ -1,12 +1,12 @@
 'use client';
 
 import { deleteLease } from "@/actions/leases";
-import { useState } from "react";
+import React, { useState } from "react";
 import { useToast } from "./Toast";
 import ConfirmModal from "./ConfirmModal";
 import styles from "./DeleteButton.module.css";
 
-export default function DeleteLeaseButton({ id, label = "Supprimer" }: { id: string; label?: string }) {
+export default function DeleteLeaseButton({ id, label = "Supprimer", className, style }: { id: string; label?: string; className?: string; style?: React.CSSProperties }) {
     const [isDeleting, setIsDeleting] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
     const { addToast } = useToast();
@@ -29,7 +29,8 @@ export default function DeleteLeaseButton({ id, label = "Supprimer" }: { id: str
             <button
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowConfirm(true); }}
                 disabled={isDeleting}
-                className={styles.deleteButton}
+                className={className || styles.deleteButton}
+                style={style}
             >
                 {isDeleting ? "Suppression..." : label}
             </button>
