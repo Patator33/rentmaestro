@@ -415,6 +415,9 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                             )}
                                         </div>
                                         <div className={styles.cardFooter} style={{ gap: '0.5rem' }}>
+                                            <Link href={`/leases/${lease.id}`} className="std-add-button" style={{ fontSize: '0.85rem', padding: '0.4rem 0.75rem' }} title="Documents du bail">
+                                                📎
+                                            </Link>
                                             <Link href={`/leases/${lease.id}/edit`} className="std-add-button" style={{ fontSize: '0.85rem', padding: '0.4rem 0.75rem' }}>
                                                 ✏️ Modifier
                                             </Link>
