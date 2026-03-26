@@ -65,11 +65,22 @@ async function getCashflowData() {
 }
 
 async function getStats() {
-  const apartmentCount = await prisma.apartment.count();
-  const tenantCount = await prisma.tenant.count();
-
   const now = new Date();
   const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+
+  const apartmentCount = await prisma.apartment.count();
+  // Count tenants with an active lease today
+  const tenantCount = await prisma.tenant.count({
+    where: {
+      leases: {
+        some: {
+          startDate: { lte: today },
+          OR: [{ endDate: null }, { endDate: { gte: today } }]
+        }
+      }
+    }
+  });
+
   const leaseCount = await prisma.lease.count({
     where: {
       startDate: { lte: today },

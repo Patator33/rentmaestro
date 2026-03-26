@@ -78,7 +78,10 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
         if (item) item.depenses += expense.amount;
     });
 
-    let totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
+    let totalVarExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
+    let totalMortgage = 0;
+    let totalInsurance = 0;
+    let totalTax = 0;
 
     // KPIs
     const totalRevenue = payments.reduce((acc, p) => acc + p.amount, 0);
@@ -122,8 +125,11 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
 
         totalVacancyDays += (daysInPeriod - occupiedDays);
 
-        // Add mortgage, insurance, and tax expenses
-        const fixedCosts = (apt.mortgageAmount || 0) + (apt.insuranceAmount || 0) + (apt.taxAmount || 0);
+        // Add mortgage, insurance, and tax expenses per month
+        const aptMortgage = apt.mortgageAmount || 0;
+        const aptInsurance = apt.insuranceAmount || 0;
+        const aptTax = apt.taxAmount || 0;
+        const fixedCosts = aptMortgage + aptInsurance + aptTax;
 
         if (fixedCosts > 0) {
             for (let i = 0; i < Math.min(monthsDiff, 12); i++) {
@@ -135,7 +141,9 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
                     const item = rechartsData.find(d => d.month === key);
                     if (item) {
                         item.depenses += fixedCosts;
-                        totalExpenses += fixedCosts;
+                        totalMortgage += aptMortgage;
+                        totalInsurance += aptInsurance;
+                        totalTax += aptTax;
                     }
                 }
             }
@@ -143,6 +151,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
     });
 
     const vacancyRate = totalPossibleDays > 0 ? ((totalVacancyDays / totalPossibleDays) * 100).toFixed(1) : 0;
+    const totalExpenses = totalVarExpenses + totalMortgage + totalInsurance + totalTax;
 
     // Average rent
     const activeLeases = await prisma.lease.findMany({
@@ -222,6 +231,20 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
                 <div className={styles.kpiCard}>
                     <div className={styles.kpiTitle}>📉 Dépenses Totales</div>
                     <div className={styles.kpiValue} style={{ color: 'var(--error)' }}>{totalExpenses.toFixed(2)} €</div>
+                    <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                        {totalMortgage > 0 && (
+                            <span>🏦 Crédits : <strong style={{ color: 'var(--text-main)' }}>{totalMortgage.toFixed(2)} €</strong></span>
+                        )}
+                        {totalInsurance > 0 && (
+                            <span>🛡️ PNO : <strong style={{ color: 'var(--text-main)' }}>{totalInsurance.toFixed(2)} €</strong></span>
+                        )}
+                        {totalTax > 0 && (
+                            <span>🏛️ Taxes foncières : <strong style={{ color: 'var(--text-main)' }}>{totalTax.toFixed(2)} €</strong></span>
+                        )}
+                        {totalVarExpenses > 0 && (
+                            <span>🔧 Travaux/Divers : <strong style={{ color: 'var(--text-main)' }}>{totalVarExpenses.toFixed(2)} €</strong></span>
+                        )}
+                    </div>
                 </div>
                 <div className={styles.kpiCard}>
                     <div className={styles.kpiTitle}>📈 Bénéfice Net</div>

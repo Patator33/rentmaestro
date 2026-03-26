@@ -301,7 +301,11 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                         <div key={lease.id} className={styles.card} style={{ borderColor: 'var(--accent-color)', background: 'rgba(255, 165, 0, 0.05)' }}>
                                             <div className={styles.cardHeader}>
                                                 <span className={styles.statusBadge} style={{ background: 'rgba(255, 165, 0, 0.15)', color: 'var(--accent-color)' }}>À VENIR</span>
-                                                <h3 className={styles.cardTitle}>{lease.apartment.name || lease.apartment.address}</h3>
+                                                <h3 className={styles.cardTitle}>
+                                                    <Link href={`/apartments/${lease.apartment.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+                                                        {lease.apartment.name || lease.apartment.address}
+                                                    </Link>
+                                                </h3>
                                                 <p className={styles.cardSubtitle}>
                                                     Locataire : <Link href={`/tenants/${lease.tenant.id}`} className="hover:underline">{lease.tenant.firstName} {lease.tenant.lastName}</Link>
                                                 </p>
@@ -321,9 +325,10 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                                     leaseId={lease.id}
                                                     currentEndDate={lease.endDate ? lease.endDate.toISOString().split('T')[0] : undefined}
                                                     label="Dates"
-                                                    style={{ background: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border-color)' }}
+                                                    className="std-add-button"
+                                                    style={{ fontSize: '0.85rem', padding: '0.4rem 0.75rem' }}
                                                 />
-                                                <DeleteLeaseButton id={lease.id} />
+                                                <DeleteLeaseButton id={lease.id} className="std-add-button" style={{ fontSize: '0.85rem', padding: '0.4rem 0.75rem' }} />
                                             </div>
                                         </div>
                                     );
@@ -381,7 +386,11 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                                     </span>
                                                 )}
                                             </div>
-                                            <h3 className={styles.cardTitle} style={{ marginTop: '0.5rem' }}>{lease.apartment.name || lease.apartment.address}</h3>
+                                            <h3 className={styles.cardTitle} style={{ marginTop: '0.5rem' }}>
+                                                <Link href={`/apartments/${lease.apartment.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+                                                    {lease.apartment.name || lease.apartment.address}
+                                                </Link>
+                                            </h3>
                                             <p className={styles.cardSubtitle}>
                                                 <Link href={`/tenants/${lease.tenant.id}`} className="hover:underline">
                                                     {lease.tenant.firstName} {lease.tenant.lastName}
@@ -406,7 +415,8 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                             <TerminateLeaseButton
                                                 leaseId={lease.id}
                                                 currentEndDate={lease.endDate ? lease.endDate.toISOString().split('T')[0] : undefined}
-                                                style={{ background: 'transparent', color: lease.endDate ? 'var(--text-main)' : 'var(--error)', border: '1px solid var(--border-color)', padding: '0.5rem 1rem', borderRadius: 'var(--radius-sm)', fontSize: '0.875rem', cursor: 'pointer' }}
+                                                className="std-add-button"
+                                                style={{ fontSize: '0.85rem', padding: '0.4rem 0.75rem' }}
                                                 label={lease.endDate ? "Modifier fin" : "Terminer"}
                                             />
                                         </div>
@@ -425,7 +435,11 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                     <div key={lease.id} className={styles.historyCard}>
                                         <div className={styles.cardHeader}>
                                             <span className={`${styles.statusBadge} ${styles.statusInactive}`}>TERMINÉ</span>
-                                            <h3 className={styles.cardTitle}>{lease.apartment.name || lease.apartment.address}</h3>
+                                            <h3 className={styles.cardTitle}>
+                                                <Link href={`/apartments/${lease.apartment.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+                                                    {lease.apartment.name || lease.apartment.address}
+                                                </Link>
+                                            </h3>
                                             <p className={styles.cardSubtitle}>
                                                 {lease.tenant.firstName} {lease.tenant.lastName}
                                             </p>
