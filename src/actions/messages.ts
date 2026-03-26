@@ -14,9 +14,38 @@ export async function getMessages(tenantId: string) {
 
 export async function sendAdminMessage(tenantId: string, content: string) {
     if (!content.trim()) return { success: false, error: 'Message vide' };
+
+    const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+    if (!tenant) return { success: false, error: 'Locataire introuvable' };
+
     const message = await prisma.message.create({
         data: { tenantId, content: content.trim(), fromTenant: false },
     });
+
+    // Notify tenant by email
+    if (tenant.email && process.env.SMTP_USER) {
+        const baseUrl = process.env.APP_BASE_URL || 'http://localhost:3000';
+        const portalUrl = `${baseUrl}/portal/${tenant.portalToken}`;
+        sendEmail({
+            to: tenant.email,
+            subject: `💬 Vous avez un nouveau message de votre propriétaire`,
+            html: `
+                <div style="font-family:sans-serif;color:#333;max-width:500px;">
+                    <h2 style="color:#1e293b;">Message de votre propriétaire</h2>
+                    <p>Bonjour <strong>${tenant.firstName}</strong>,</p>
+                    <p>Votre propriétaire vous a envoyé un message :</p>
+                    <blockquote style="border-left:3px solid #2b8cee;padding:0.75rem 1rem;margin:1rem 0;background:#f8fafc;color:#334155;">
+                        ${content.trim().replace(/\n/g, '<br>')}
+                    </blockquote>
+                    <a href="${portalUrl}" style="display:inline-block;margin-top:0.5rem;padding:0.6rem 1.2rem;background:#2b8cee;color:white;text-decoration:none;border-radius:8px;font-weight:600;font-size:0.9rem;">
+                        Voir et répondre sur mon espace →
+                    </a>
+                    <p style="margin-top:1rem;color:#94a3b8;font-size:0.8rem;">${portalUrl}</p>
+                </div>
+            `,
+        }).catch(() => {});
+    }
+
     revalidatePath(`/tenants/${tenantId}`);
     return { success: true, message };
 }
