@@ -11,12 +11,16 @@ export const dynamic = "force-dynamic";
 interface SearchParams {
     q?: string;
     view?: string;
+    sort?: string;
+    dir?: string;
 }
 
 export default async function TenantsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
     const params = await searchParams;
     const query = params.q?.toLowerCase() || '';
     const view = params.view === 'list' ? 'list' : 'grid';
+    const sort = params.sort || 'name';
+    const dir = params.dir === 'desc' ? 'desc' : 'asc';
 
     const allTenants = await prisma.tenant.findMany({
         include: {
@@ -28,13 +32,57 @@ export default async function TenantsPage({ searchParams }: { searchParams: Prom
         orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }]
     });
 
-    const tenants = query
+    let tenants = query
         ? allTenants.filter(t =>
             `${t.firstName} ${t.lastName}`.toLowerCase().includes(query) ||
             t.email.toLowerCase().includes(query) ||
             (t.phone && t.phone.includes(query))
         )
-        : allTenants;
+        : [...allTenants];
+
+    tenants = tenants.sort((a, b) => {
+        const al = a.leases[0], bl = b.leases[0];
+        let av: string | number = '', bv: string | number = '';
+        switch (sort) {
+            case 'email': av = a.email; bv = b.email; break;
+            case 'phone': av = a.phone || ''; bv = b.phone || ''; break;
+            case 'cotenant':
+                av = a.coTenantLastName || '';
+                bv = b.coTenantLastName || '';
+                break;
+            case 'apartment':
+                av = al ? (al.apartment.name || al.apartment.address).toLowerCase() : 'zzz';
+                bv = bl ? (bl.apartment.name || bl.apartment.address).toLowerCase() : 'zzz';
+                break;
+            case 'since':
+                av = al ? new Date(al.startDate).getTime() : 0;
+                bv = bl ? new Date(bl.startDate).getTime() : 0;
+                break;
+            default:
+                av = `${a.lastName} ${a.firstName}`.toLowerCase();
+                bv = `${b.lastName} ${b.firstName}`.toLowerCase();
+        }
+        if (typeof av === 'string' && typeof bv === 'string')
+            return dir === 'asc' ? av.localeCompare(bv, 'fr') : bv.localeCompare(av, 'fr');
+        return dir === 'asc' ? (av as number) - (bv as number) : (bv as number) - (av as number);
+    });
+
+    const Th = (field: string, label: string) => {
+        const isActive = sort === field;
+        const nextDir = isActive && dir === 'asc' ? 'desc' : 'asc';
+        const p = new URLSearchParams();
+        if (query) p.set('q', query);
+        p.set('view', 'list');
+        p.set('sort', field);
+        p.set('dir', nextDir);
+        return (
+            <th>
+                <a href={`?${p.toString()}`} style={{ color: 'inherit', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', whiteSpace: 'nowrap' }}>
+                    {label} <span style={{ fontSize: '0.65rem', opacity: isActive ? 1 : 0.3 }}>{isActive ? (dir === 'asc' ? '↑' : '↓') : '↕'}</span>
+                </a>
+            </th>
+        );
+    };
 
     return (
         <div className={styles.container}>
@@ -63,12 +111,12 @@ export default async function TenantsPage({ searchParams }: { searchParams: Prom
                     <table className="std-table">
                         <thead>
                             <tr>
-                                <th>Nom</th>
-                                <th>Email</th>
-                                <th>Téléphone</th>
-                                <th>Colocataire</th>
-                                <th>Appartement</th>
-                                <th>Bail depuis</th>
+                                {Th('name', 'Nom')}
+                                {Th('email', 'Email')}
+                                {Th('phone', 'Téléphone')}
+                                {Th('cotenant', 'Colocataire')}
+                                {Th('apartment', 'Appartement')}
+                                {Th('since', 'Bail depuis')}
                                 <th></th>
                             </tr>
                         </thead>

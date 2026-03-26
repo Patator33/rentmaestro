@@ -12,6 +12,8 @@ interface SearchParams {
     q?: string;
     filter?: string;
     view?: string;
+    sort?: string;
+    dir?: string;
 }
 
 export default async function ApartmentsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
@@ -19,6 +21,8 @@ export default async function ApartmentsPage({ searchParams }: { searchParams: P
     const query = params.q?.toLowerCase() || '';
     const filter = params.filter || '';
     const view = params.view === 'list' ? 'list' : 'grid';
+    const sort = params.sort || 'name';
+    const dir = params.dir === 'desc' ? 'desc' : 'asc';
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -31,6 +35,18 @@ export default async function ApartmentsPage({ searchParams }: { searchParams: P
             }
         },
         orderBy: { address: 'asc' }
+    });
+
+    // Returns the lease that is actually ongoing today (not future)
+    const getCurrentLease = (apt: typeof allApartments[0]) => apt.leases.find(l => {
+        const start = new Date(l.startDate);
+        const end = l.endDate ? new Date(l.endDate) : null;
+        return start <= today && (!end || end >= today);
+    });
+
+    // Returns a future lease (not yet started)
+    const getFutureLease = (apt: typeof allApartments[0]) => apt.leases.find(l => {
+        return new Date(l.startDate) > today;
     });
 
     let apartments = allApartments;
@@ -50,17 +66,55 @@ export default async function ApartmentsPage({ searchParams }: { searchParams: P
         apartments = apartments.filter(apt => !apt.leases.some(l => l.isActive));
     }
 
-    // Returns the lease that is actually ongoing today (not future)
-    const getCurrentLease = (apt: typeof apartments[0]) => apt.leases.find(l => {
-        const start = new Date(l.startDate);
-        const end = l.endDate ? new Date(l.endDate) : null;
-        return start <= today && (!end || end >= today);
+    apartments = [...apartments].sort((a, b) => {
+        const al = getCurrentLease(a), bl = getCurrentLease(b);
+        let av: string | number = '', bv: string | number = '';
+        switch (sort) {
+            case 'city': av = a.city; bv = b.city; break;
+            case 'rent': av = a.rent; bv = b.rent; break;
+            case 'charges': av = a.charges; bv = b.charges; break;
+            case 'cc':
+                av = al ? al.rentAmount + al.chargesAmount : -1;
+                bv = bl ? bl.rentAmount + bl.chargesAmount : -1;
+                break;
+            case 'tenant':
+                av = al ? `${al.tenant.lastName} ${al.tenant.firstName}`.toLowerCase() : 'zzz';
+                bv = bl ? `${bl.tenant.lastName} ${bl.tenant.firstName}`.toLowerCase() : 'zzz';
+                break;
+            case 'since':
+                av = al ? new Date(al.startDate).getTime() : 0;
+                bv = bl ? new Date(bl.startDate).getTime() : 0;
+                break;
+            case 'status':
+                av = al ? 0 : getFutureLease(a) ? 1 : 2;
+                bv = bl ? 0 : getFutureLease(b) ? 1 : 2;
+                break;
+            default:
+                av = (a.name || a.address).toLowerCase();
+                bv = (b.name || b.address).toLowerCase();
+        }
+        if (typeof av === 'string' && typeof bv === 'string')
+            return dir === 'asc' ? av.localeCompare(bv, 'fr') : bv.localeCompare(av, 'fr');
+        return dir === 'asc' ? (av as number) - (bv as number) : (bv as number) - (av as number);
     });
 
-    // Returns a future lease (not yet started)
-    const getFutureLease = (apt: typeof apartments[0]) => apt.leases.find(l => {
-        return new Date(l.startDate) > today;
-    });
+    const Th = (field: string, label: string) => {
+        const isActive = sort === field;
+        const nextDir = isActive && dir === 'asc' ? 'desc' : 'asc';
+        const p = new URLSearchParams();
+        if (query) p.set('q', query);
+        if (filter) p.set('filter', filter);
+        p.set('view', 'list');
+        p.set('sort', field);
+        p.set('dir', nextDir);
+        return (
+            <th>
+                <a href={`?${p.toString()}`} style={{ color: 'inherit', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', whiteSpace: 'nowrap' }}>
+                    {label} <span style={{ fontSize: '0.65rem', opacity: isActive ? 1 : 0.3 }}>{isActive ? (dir === 'asc' ? '↑' : '↓') : '↕'}</span>
+                </a>
+            </th>
+        );
+    };
 
     return (
         <div className={styles.container}>
@@ -95,14 +149,14 @@ export default async function ApartmentsPage({ searchParams }: { searchParams: P
                     <table className="std-table">
                         <thead>
                             <tr>
-                                <th>Bien</th>
-                                <th>Ville</th>
-                                <th>Loyer HC</th>
-                                <th>Charges</th>
-                                <th>CC</th>
-                                <th>Locataire</th>
-                                <th>Bail depuis</th>
-                                <th>Statut</th>
+                                {Th('name', 'Bien')}
+                                {Th('city', 'Ville')}
+                                {Th('rent', 'Loyer HC')}
+                                {Th('charges', 'Charges')}
+                                {Th('cc', 'CC')}
+                                {Th('tenant', 'Locataire')}
+                                {Th('since', 'Bail depuis')}
+                                {Th('status', 'Statut')}
                                 <th></th>
                             </tr>
                         </thead>

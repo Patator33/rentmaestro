@@ -12,10 +12,12 @@ export const dynamic = "force-dynamic";
 export default async function RentsPage({
     searchParams,
 }: {
-    searchParams: Promise<{ month?: string }>;
+    searchParams: Promise<{ month?: string; sort?: string; dir?: string }>;
 }) {
     const now = new Date();
-    const { month: monthParam } = await searchParams; // YYYY-MM
+    const { month: monthParam, sort: sortParam, dir: dirParam } = await searchParams; // YYYY-MM
+    const sort = sortParam || 'apartment';
+    const dir = dirParam === 'desc' ? 'desc' : 'asc';
 
     let currentDate = now;
     if (monthParam) {
@@ -36,7 +38,7 @@ export default async function RentsPage({
 
     // Find active leases for this period
     // Active if startDate < end of this month AND (no endDate OR endDate > start of this month)
-    const leases = await prisma.lease.findMany({
+    const rawLeases = await prisma.lease.findMany({
         where: {
             startDate: { lt: nextMonth },
             OR: [
@@ -54,6 +56,48 @@ export default async function RentsPage({
             }
         }
     });
+
+    const leases = [...rawLeases].sort((a, b) => {
+        const pa = a.payments[0], pb = b.payments[0];
+        let av: string | number = '', bv: string | number = '';
+        switch (sort) {
+            case 'tenant':
+                av = `${a.tenant.lastName} ${a.tenant.firstName}`.toLowerCase();
+                bv = `${b.tenant.lastName} ${b.tenant.firstName}`.toLowerCase();
+                break;
+            case 'amount':
+                av = a.rentAmount + a.chargesAmount;
+                bv = b.rentAmount + b.chargesAmount;
+                break;
+            case 'status': {
+                const rank = (p: typeof pa) => p?.status === 'PAID' ? 0 : p ? 1 : 2;
+                av = rank(pa); bv = rank(pb);
+                break;
+            }
+            default:
+                av = (a.apartment.name || a.apartment.address).toLowerCase();
+                bv = (b.apartment.name || b.apartment.address).toLowerCase();
+        }
+        if (typeof av === 'string' && typeof bv === 'string')
+            return dir === 'asc' ? av.localeCompare(bv, 'fr') : bv.localeCompare(av, 'fr');
+        return dir === 'asc' ? (av as number) - (bv as number) : (bv as number) - (av as number);
+    });
+
+    const Th = (field: string, label: string) => {
+        const isActive = sort === field;
+        const nextDir = isActive && dir === 'asc' ? 'desc' : 'asc';
+        const p = new URLSearchParams();
+        if (monthParam) p.set('month', monthParam);
+        p.set('sort', field);
+        p.set('dir', nextDir);
+        return (
+            <th>
+                <a href={`?${p.toString()}`} style={{ color: 'inherit', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', whiteSpace: 'nowrap' }}>
+                    {label} <span style={{ fontSize: '0.65rem', opacity: isActive ? 1 : 0.3 }}>{isActive ? (dir === 'asc' ? '↑' : '↓') : '↕'}</span>
+                </a>
+            </th>
+        );
+    };
 
     return (
         <div className={styles.container}>
@@ -75,10 +119,10 @@ export default async function RentsPage({
                 <table className="std-table">
                     <thead>
                         <tr>
-                            <th>Appartement</th>
-                            <th>Locataire</th>
-                            <th>Montant</th>
-                            <th>Statut</th>
+                            {Th('apartment', 'Appartement')}
+                            {Th('tenant', 'Locataire')}
+                            {Th('amount', 'Montant')}
+                            {Th('status', 'Statut')}
                             <th>Actions</th>
                         </tr>
                     </thead>

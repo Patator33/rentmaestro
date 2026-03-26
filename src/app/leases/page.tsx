@@ -11,13 +11,17 @@ export const dynamic = "force-dynamic";
 
 interface SearchParams {
     view?: string;
+    sort?: string;
+    dir?: string;
 }
 
 export default async function LeasesPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
     const params = await searchParams;
     const view = params.view === 'list' ? 'list' : 'grid';
+    const sort = params.sort || 'apartment';
+    const dir = params.dir === 'desc' ? 'desc' : 'asc';
 
-    const leases = await prisma.lease.findMany({
+    const allLeases = await prisma.lease.findMany({
         include: {
             apartment: true,
             tenant: true,
@@ -28,6 +32,36 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    const sortLeases = (arr: typeof allLeases) => [...arr].sort((a, b) => {
+        let av: string | number = '', bv: string | number = '';
+        switch (sort) {
+            case 'tenant':
+                av = `${a.tenant.lastName} ${a.tenant.firstName}`.toLowerCase();
+                bv = `${b.tenant.lastName} ${b.tenant.firstName}`.toLowerCase();
+                break;
+            case 'start':
+                av = new Date(a.startDate).getTime();
+                bv = new Date(b.startDate).getTime();
+                break;
+            case 'end':
+                av = a.endDate ? new Date(a.endDate).getTime() : Infinity;
+                bv = b.endDate ? new Date(b.endDate).getTime() : Infinity;
+                break;
+            case 'rent': av = a.rentAmount; bv = b.rentAmount; break;
+            case 'charges': av = a.chargesAmount; bv = b.chargesAmount; break;
+            case 'cc': av = a.rentAmount + a.chargesAmount; bv = b.rentAmount + b.chargesAmount; break;
+            case 'deposit': av = a.depositAmount ?? 0; bv = b.depositAmount ?? 0; break;
+            default:
+                av = (a.apartment.name || a.apartment.address).toLowerCase();
+                bv = (b.apartment.name || b.apartment.address).toLowerCase();
+        }
+        if (typeof av === 'string' && typeof bv === 'string')
+            return dir === 'asc' ? av.localeCompare(bv, 'fr') : bv.localeCompare(av, 'fr');
+        const na = av as number, nb = bv as number;
+        return dir === 'asc' ? na - nb : nb - na;
+    });
+
+    const leases = sortLeases(allLeases);
     const futureLeases = leases.filter(l => new Date(l.startDate) > today);
     const activeLeases = leases.filter(l => {
         const start = new Date(l.startDate);
@@ -38,6 +72,22 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
         const end = l.endDate ? new Date(l.endDate) : null;
         return end !== null && end < today && new Date(l.startDate) <= today;
     });
+
+    const Th = (field: string, label: string) => {
+        const isActive = sort === field;
+        const nextDir = isActive && dir === 'asc' ? 'desc' : 'asc';
+        const p = new URLSearchParams();
+        p.set('view', 'list');
+        p.set('sort', field);
+        p.set('dir', nextDir);
+        return (
+            <th>
+                <a href={`?${p.toString()}`} style={{ color: 'inherit', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', whiteSpace: 'nowrap' }}>
+                    {label} <span style={{ fontSize: '0.65rem', opacity: isActive ? 1 : 0.3 }}>{isActive ? (dir === 'asc' ? '↑' : '↓') : '↕'}</span>
+                </a>
+            </th>
+        );
+    };
 
     const actionButtons = (lease: typeof leases[0]) => (
         <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', justifyContent: 'flex-end' }}>
@@ -80,13 +130,13 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                 <table className="std-table">
                                     <thead>
                                         <tr>
-                                            <th>Bien</th>
-                                            <th>Locataire</th>
-                                            <th>Début</th>
-                                            <th>Fin</th>
+                                            {Th('apartment', 'Bien')}
+                                            {Th('tenant', 'Locataire')}
+                                            {Th('start', 'Début')}
+                                            {Th('end', 'Fin')}
                                             <th>Loyer HC</th>
                                             <th>Charges</th>
-                                            <th>Caution</th>
+                                            {Th('deposit', 'Caution')}
                                             <th></th>
                                         </tr>
                                     </thead>
@@ -123,14 +173,14 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                             <table className="std-table">
                                 <thead>
                                     <tr>
-                                        <th>Bien</th>
-                                        <th>Locataire</th>
-                                        <th>Début</th>
-                                        <th>Fin prévue</th>
-                                        <th>Loyer HC</th>
-                                        <th>Charges</th>
-                                        <th>CC</th>
-                                        <th>Caution</th>
+                                        {Th('apartment', 'Bien')}
+                                        {Th('tenant', 'Locataire')}
+                                        {Th('start', 'Début')}
+                                        {Th('end', 'Fin prévue')}
+                                        {Th('rent', 'Loyer HC')}
+                                        {Th('charges', 'Charges')}
+                                        {Th('cc', 'CC')}
+                                        {Th('deposit', 'Caution')}
                                         <th></th>
                                     </tr>
                                 </thead>
@@ -176,13 +226,13 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                 <table className="std-table">
                                     <thead>
                                         <tr>
-                                            <th>Bien</th>
-                                            <th>Locataire</th>
-                                            <th>Début</th>
-                                            <th>Fin</th>
-                                            <th>Loyer HC</th>
-                                            <th>Charges</th>
-                                            <th>CC</th>
+                                            {Th('apartment', 'Bien')}
+                                            {Th('tenant', 'Locataire')}
+                                            {Th('start', 'Début')}
+                                            {Th('end', 'Fin')}
+                                            {Th('rent', 'Loyer HC')}
+                                            {Th('charges', 'Charges')}
+                                            {Th('cc', 'CC')}
                                             <th></th>
                                         </tr>
                                     </thead>
