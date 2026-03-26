@@ -1,5 +1,6 @@
 interface Company {
     name: string;
+    address: string | null;
 }
 
 interface Apartment {
@@ -27,6 +28,7 @@ interface Lease {
 }
 
 const PROPRIETAIRE_NOM_PROPRE = 'Céline et Nicolas Rigaud';
+const PROPRIETAIRE_ADRESSE = 'ADRESSE_A_RENSEIGNER'; // TODO: remplacer par l'adresse LMNP
 const LIEU_SIGNATURE = 'Saint André de Cubzac';
 
 function formatDateFR(date: Date): string {
@@ -41,6 +43,10 @@ function getBailleurName(apartment: Apartment): string {
     return apartment.company?.name || PROPRIETAIRE_NOM_PROPRE;
 }
 
+function getBailleurAddress(apartment: Apartment): string {
+    return apartment.company?.address || PROPRIETAIRE_ADRESSE;
+}
+
 function getFullAddress(apartment: Apartment): string {
     const parts = [apartment.address];
     if (apartment.complement) parts.push(apartment.complement);
@@ -51,6 +57,7 @@ function getFullAddress(apartment: Apartment): string {
 export function generateQuittanceHtml(lease: Lease, period: Date, verifyUrl?: string): string {
     const totalAmount = lease.rentAmount + lease.chargesAmount;
     const bailleurName = getBailleurName(lease.apartment);
+    const bailleurAddress = getBailleurAddress(lease.apartment);
     const fullAddress = getFullAddress(lease.apartment);
 
     const qrBlock = verifyUrl ? `
@@ -112,12 +119,11 @@ export function generateQuittanceHtml(lease: Lease, period: Date, verifyUrl?: st
         <div class="info-box">
             <h3>🏠 Bailleur</h3>
             <p><strong>${bailleurName}</strong></p>
+            <p style="margin-top: 0.25rem; font-size: 13px; color: #555;">${bailleurAddress}</p>
         </div>
         <div class="info-box">
             <h3>👤 Locataire</h3>
             <p><strong>${lease.tenant.firstName} ${lease.tenant.lastName}</strong></p>
-            <p>${lease.tenant.email}</p>
-            ${lease.tenant.phone ? `<p>${lease.tenant.phone}</p>` : ''}
         </div>
     </div>
 
