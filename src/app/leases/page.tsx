@@ -91,6 +91,9 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
 
     const actionButtons = (lease: typeof leases[0]) => (
         <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', justifyContent: 'flex-end' }}>
+            <Link href={`/leases/${lease.id}`} className="std-add-button" style={{ fontSize: '0.8rem', padding: '0.3rem 0.6rem' }} title="Documents du bail">
+                📎
+            </Link>
             <Link href={`/leases/${lease.id}/edit`} className="std-add-button" style={{ fontSize: '0.8rem', padding: '0.3rem 0.6rem' }}>
                 ✏️
             </Link>
@@ -318,6 +321,9 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                                 )}
                                             </div>
                                             <div className={styles.cardFooter} style={{ gap: '0.5rem' }}>
+                                                <Link href={`/leases/${lease.id}`} className="std-add-button" style={{ fontSize: '0.85rem', padding: '0.4rem 0.75rem' }} title="Documents du bail">
+                                                    📎
+                                                </Link>
                                                 <Link href={`/leases/${lease.id}/edit`} className="std-add-button" style={{ fontSize: '0.85rem', padding: '0.4rem 0.75rem' }}>
                                                     ✏️ Modifier
                                                 </Link>
