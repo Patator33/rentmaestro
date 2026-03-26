@@ -286,7 +286,7 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
 
                                     if (start.getDate() > 1) {
                                         const daysInMonth = new Date(start.getFullYear(), start.getMonth() + 1, 0).getDate();
-                                        const daysRemaining = daysInMonth - start.getDate() + 1;
+                                        const daysRemaining = daysInMonth - start.getDate();
                                         const totalRent = lease.rentAmount + lease.chargesAmount;
                                         const prorata = (totalRent / daysInMonth) * daysRemaining;
 

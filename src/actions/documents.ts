@@ -82,3 +82,36 @@ export async function deleteApartmentDocument(id: string, apartmentId: string) {
     });
     revalidatePath(`/apartments/${apartmentId}`);
 }
+
+export async function uploadLeaseDocument(formData: FormData) {
+    const file = formData.get("file") as File;
+    const leaseId = formData.get("leaseId") as string;
+
+    if (!file || !leaseId) throw new Error("File and lease ID are required");
+
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+
+    const uploadDir = path.join(process.cwd(), "public", "uploads");
+    const filename = `${Date.now()}-${file.name}`;
+    const filepath = path.join(uploadDir, filename);
+
+    await writeFile(filepath, buffer);
+
+    await prisma.leaseDocument.create({
+        data: {
+            name: file.name,
+            url: `/uploads/${filename}`,
+            type: file.type,
+            size: file.size,
+            leaseId,
+        },
+    });
+
+    revalidatePath(`/leases/${leaseId}`);
+}
+
+export async function deleteLeaseDocument(id: string, leaseId: string) {
+    await prisma.leaseDocument.delete({ where: { id } });
+    revalidatePath(`/leases/${leaseId}`);
+}

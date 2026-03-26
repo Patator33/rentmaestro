@@ -144,7 +144,7 @@ export default async function RentsPage({
                                 const startDay = leaseStart.getUTCDate();
                                 const isFirstMonth = leaseStart >= startOfMonth && leaseStart < nextMonth;
                                 const daysInMonth = new Date(Date.UTC(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)).getUTCDate();
-                                const daysRemaining = daysInMonth - startDay + 1;
+                                const daysRemaining = daysInMonth - startDay;
                                 const displayAmount = isFirstMonth && startDay > 1
                                     ? Math.round((totalAmount / daysInMonth) * daysRemaining * 100) / 100
                                     : totalAmount;

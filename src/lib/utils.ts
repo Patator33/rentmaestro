@@ -33,7 +33,7 @@ export function calculateProrata(
         start.getDate() > 1
     ) {
         const daysInMonth = new Date(start.getFullYear(), start.getMonth() + 1, 0).getDate();
-        const daysRemaining = daysInMonth - start.getDate() + 1;
+        const daysRemaining = daysInMonth - start.getDate();
         const prorata = (totalRent / daysInMonth) * daysRemaining;
         return { amount: prorata, days: daysRemaining, type: 'start' };
     }

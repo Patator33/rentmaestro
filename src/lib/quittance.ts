@@ -17,6 +17,8 @@ interface Tenant {
     lastName: string;
     email: string;
     phone: string | null;
+    coTenantFirstName: string | null;
+    coTenantLastName: string | null;
 }
 
 interface Lease {
@@ -124,6 +126,9 @@ export function generateQuittanceHtml(lease: Lease, period: Date, verifyUrl?: st
         <div class="info-box">
             <h3>👤 Locataire</h3>
             <p><strong>${lease.tenant.firstName} ${lease.tenant.lastName}</strong></p>
+            ${lease.tenant.coTenantFirstName && lease.tenant.coTenantLastName
+                ? `<p><strong>${lease.tenant.coTenantFirstName} ${lease.tenant.coTenantLastName}</strong></p>`
+                : ''}
         </div>
     </div>
 
@@ -153,7 +158,7 @@ export function generateQuittanceHtml(lease: Lease, period: Date, verifyUrl?: st
 
     <p style="margin-top: 1.5rem; font-style: italic; font-size: 13px; color: #555;">
         Je soussigné(e), bailleur du logement désigné ci-dessus, déclare avoir reçu de
-        <strong>${lease.tenant.firstName} ${lease.tenant.lastName}</strong>
+        <strong>${lease.tenant.firstName} ${lease.tenant.lastName}${lease.tenant.coTenantFirstName && lease.tenant.coTenantLastName ? ` et ${lease.tenant.coTenantFirstName} ${lease.tenant.coTenantLastName}` : ''}</strong>
         la somme de <strong>${totalAmount.toFixed(2)} euros</strong>
         au titre du paiement du loyer et des charges pour la période de
         <strong>${getMonthYear(period)}</strong>

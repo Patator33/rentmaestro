@@ -93,6 +93,7 @@ model Lease {
   tenant             Tenant        @relation(fields: [tenantId], references: [id])
   payments           RentPayment[]
   inspections        Inspection[]
+  documents          LeaseDocument[]
 }
 
 model RentPayment {
@@ -144,6 +145,17 @@ model ApartmentDocument {
   size        Int
   createdAt   DateTime  @default(now())
   apartment   Apartment @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
+}
+
+model LeaseDocument {
+  id        String   @id @default(uuid())
+  leaseId   String
+  name      String
+  url       String
+  type      String
+  size      Int
+  createdAt DateTime @default(now())
+  lease     Lease    @relation(fields: [leaseId], references: [id], onDelete: Cascade)
 }
 
 model Company {

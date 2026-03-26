@@ -61,7 +61,7 @@ export default function LeaseForm({ apartments, tenants }: LeaseFormProps) {
             // m is 1-indexed from split. So m is correct for monthIndex + 1? 
             // Example: 2024-02-15. m=2. new Date(2024, 2, 0) -> last day of Feb 2024 (29). Correct.
             const daysInMonth = new Date(y, m, 0).getDate();
-            const daysRemaining = daysInMonth - d + 1; // Inclusive of start date
+            const daysRemaining = daysInMonth - d; // Exclusive of start date
 
             const totalMonthly = Number(rent) + Number(charges);
             const prorataAmount = (totalMonthly / daysInMonth) * daysRemaining;
