@@ -27,7 +27,9 @@ export async function sendQuittanceEmail(paymentId: string) {
         if (payment.status !== "PAID") throw new Error("La quittance ne peut être envoyée que pour un loyer payé.");
         if (!payment.lease.tenant.email) throw new Error("Le locataire n'a pas d'adresse email renseignée.");
 
-        const html = generateQuittanceHtml(payment.lease, payment.period);
+        const baseUrl = process.env.APP_BASE_URL || 'https://rentmaestro.nico33.net';
+        const verifyUrl = `${baseUrl}/api/verify/${paymentId}`;
+        const html = generateQuittanceHtml(payment.lease, payment.period, verifyUrl);
         const subject = `Quittance de loyer - ${getMonthYear(payment.period)} - Rentmaestro`;
 
         await sendEmail({
