@@ -3,9 +3,10 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import styles from "./page.module.css";
 import { formatDate } from "@/lib/utils";
-import { markRentAsPaid, sendRentReminder } from "@/actions/rents";
+import { sendRentReminder } from "@/actions/rents";
 import GenerateRentsButton from "@/components/GenerateRentsButton";
 import PaymentEmailActions from "@/components/PaymentEmailActions";
+import MarkRentPaidButton from "@/components/MarkRentPaidButton";
 
 export const dynamic = "force-dynamic";
 
@@ -161,11 +162,12 @@ export default async function RentsPage({
                                         <td>
                                             <div style={{ display: 'flex', alignItems: 'center' }}>
                                                 {!isPaid && (
-                                                    <form action={markRentAsPaid.bind(null, lease.id, currentMonthStr, totalAmount)}>
-                                                        <button type="submit" className={`${styles.actionButton} ${styles.paidButton}`}>
-                                                            Marquer Payé
-                                                        </button>
-                                                    </form>
+                                                    <MarkRentPaidButton
+                                                        leaseId={lease.id}
+                                                        periodStr={currentMonthStr}
+                                                        defaultAmount={totalAmount}
+                                                        buttonStyle={`${styles.actionButton} ${styles.paidButton}`}
+                                                    />
                                                 )}
 
                                                 {!isPaid && (

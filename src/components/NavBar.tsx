@@ -6,7 +6,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import GlobalSearch from "@/components/GlobalSearch";
 import BottomNav from "@/components/BottomNav";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 const NAV_ITEMS = [
     { href: "/", label: "🏠 Accueil" },
@@ -24,6 +24,9 @@ export default function NavBar() {
     const [menuOpen, setMenuOpen] = useState(false);
     const [dateStr, setDateStr] = useState('');
     const router = useRouter();
+    const pathname = usePathname();
+
+    const isActive = (href: string) => href === '/' ? pathname === '/' : pathname.startsWith(href);
 
     useEffect(() => {
         setDateStr(new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }));
@@ -52,7 +55,7 @@ export default function NavBar() {
 
                     <div className="desktop-nav">
                         {NAV_ITEMS.map((item) => (
-                            <Link key={item.href} href={item.href} className="nav-link">
+                            <Link key={item.href} href={item.href} className={`nav-link${isActive(item.href) ? ' nav-link-active' : ''}`}>
                                 {item.label}
                             </Link>
                         ))}
@@ -91,7 +94,7 @@ export default function NavBar() {
                     <Link
                         key={item.href}
                         href={item.href}
-                        className="mobile-nav-link"
+                        className={`mobile-nav-link${isActive(item.href) ? ' mobile-nav-link-active' : ''}`}
                         onClick={() => setMenuOpen(false)}
                     >
                         {item.label}

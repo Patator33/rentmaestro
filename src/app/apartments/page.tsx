@@ -11,6 +11,7 @@ export const dynamic = "force-dynamic";
 interface SearchParams {
     q?: string;
     filter?: string;
+    company?: string;
     view?: string;
     sort?: string;
     dir?: string;
@@ -20,6 +21,7 @@ export default async function ApartmentsPage({ searchParams }: { searchParams: P
     const params = await searchParams;
     const query = params.q?.toLowerCase() || '';
     const filter = params.filter || '';
+    const companyFilter = params.company || '';
     const view = params.view === 'list' ? 'list' : 'grid';
     const sort = params.sort || 'name';
     const dir = params.dir === 'desc' ? 'desc' : 'asc';
@@ -27,15 +29,19 @@ export default async function ApartmentsPage({ searchParams }: { searchParams: P
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const allApartments = await prisma.apartment.findMany({
-        include: {
-            leases: {
-                orderBy: { endDate: 'desc' },
-                include: { tenant: true }
-            }
-        },
-        orderBy: { address: 'asc' }
-    });
+    const [allApartments, companies] = await Promise.all([
+        prisma.apartment.findMany({
+            include: {
+                leases: {
+                    orderBy: { endDate: 'desc' },
+                    include: { tenant: true }
+                },
+                company: true,
+            },
+            orderBy: { address: 'asc' }
+        }),
+        prisma.company.findMany({ orderBy: { name: 'asc' } }),
+    ]);
 
     // Returns the lease that is actually ongoing today (not future)
     const getCurrentLease = (apt: typeof allApartments[0]) => apt.leases.find(l => {
@@ -64,6 +70,10 @@ export default async function ApartmentsPage({ searchParams }: { searchParams: P
         apartments = apartments.filter(apt => apt.leases.some(l => l.isActive));
     } else if (filter === 'vacant') {
         apartments = apartments.filter(apt => !apt.leases.some(l => l.isActive));
+    }
+
+    if (companyFilter) {
+        apartments = apartments.filter(apt => apt.companyId === companyFilter);
     }
 
     apartments = [...apartments].sort((a, b) => {
@@ -104,6 +114,7 @@ export default async function ApartmentsPage({ searchParams }: { searchParams: P
         const p = new URLSearchParams();
         if (query) p.set('q', query);
         if (filter) p.set('filter', filter);
+        if (companyFilter) p.set('company', companyFilter);
         p.set('view', 'list');
         p.set('sort', field);
         p.set('dir', nextDir);
@@ -131,12 +142,17 @@ export default async function ApartmentsPage({ searchParams }: { searchParams: P
             <SearchBar
                 placeholder="Rechercher un bien (adresse, ville, code postal)..."
                 filterOptions={[
-                    { value: '', label: '🏢 Tous' },
+                    { value: '', label: '🏠 Tous statuts' },
                     { value: 'occupied', label: '🟢 Occupés' },
                     { value: 'vacant', label: '🔴 Vacants' },
                 ]}
                 filterParamName="filter"
-                resultCount={query || filter ? apartments.length : undefined}
+                filterOptions2={[
+                    { value: '', label: '🏢 Toutes sociétés' },
+                    ...companies.map((c: typeof companies[0]) => ({ value: c.id, label: c.name })),
+                ]}
+                filterParamName2="company"
+                resultCount={query || filter || companyFilter ? apartments.length : undefined}
             />
 
             {apartments.length === 0 ? (
