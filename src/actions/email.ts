@@ -17,7 +17,7 @@ export async function sendQuittanceEmail(paymentId: string) {
                 lease: {
                     include: {
                         tenant: true,
-                        apartment: true
+                        apartment: { include: { company: true } }
                     }
                 }
             }
