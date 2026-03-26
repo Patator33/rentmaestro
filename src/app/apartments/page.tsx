@@ -72,7 +72,9 @@ export default async function ApartmentsPage({ searchParams }: { searchParams: P
         apartments = apartments.filter(apt => !apt.leases.some(l => l.isActive));
     }
 
-    if (companyFilter) {
+    if (companyFilter === 'none') {
+        apartments = apartments.filter(apt => !apt.companyId);
+    } else if (companyFilter) {
         apartments = apartments.filter(apt => apt.companyId === companyFilter);
     }
 
@@ -149,6 +151,7 @@ export default async function ApartmentsPage({ searchParams }: { searchParams: P
                 filterParamName="filter"
                 filterOptions2={[
                     { value: '', label: '🏢 Toutes sociétés' },
+                    { value: 'none', label: '👤 Nom propre' },
                     ...companies.map((c: typeof companies[0]) => ({ value: c.id, label: c.name })),
                 ]}
                 filterParamName2="company"

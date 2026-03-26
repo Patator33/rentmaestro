@@ -7,6 +7,7 @@ import { sendRentReminder } from "@/actions/rents";
 import GenerateRentsButton from "@/components/GenerateRentsButton";
 import PaymentEmailActions from "@/components/PaymentEmailActions";
 import MarkRentPaidButton from "@/components/MarkRentPaidButton";
+import UnmarkRentPaidButton from "@/components/UnmarkRentPaidButton";
 
 export const dynamic = "force-dynamic";
 
@@ -138,11 +139,29 @@ export default async function RentsPage({
                                 const isPaid = payment?.status === 'PAID';
                                 const totalAmount = lease.rentAmount + lease.chargesAmount;
 
+                                // Prorata for first month
+                                const leaseStart = new Date(lease.startDate);
+                                const startDay = leaseStart.getUTCDate();
+                                const isFirstMonth = leaseStart >= startOfMonth && leaseStart < nextMonth;
+                                const daysInMonth = new Date(Date.UTC(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)).getUTCDate();
+                                const daysRemaining = daysInMonth - startDay + 1;
+                                const displayAmount = isFirstMonth && startDay > 1
+                                    ? Math.round((totalAmount / daysInMonth) * daysRemaining * 100) / 100
+                                    : totalAmount;
+
                                 return (
                                     <tr key={lease.id}>
-                                        <td>{lease.apartment.name || lease.apartment.address}</td>
-                                        <td>{lease.tenant.firstName} {lease.tenant.lastName}</td>
-                                        <td>{totalAmount.toFixed(2)} €</td>
+                                        <td>
+                                            <Link href={`/apartments/${lease.apartment.id}`} style={{ color: 'var(--text-main)' }}>
+                                                {lease.apartment.name || lease.apartment.address}
+                                            </Link>
+                                        </td>
+                                        <td>
+                                            <Link href={`/tenants/${lease.tenant.id}`} style={{ color: 'var(--text-main)' }}>
+                                                {lease.tenant.firstName} {lease.tenant.lastName}
+                                            </Link>
+                                        </td>
+                                        <td>{displayAmount.toFixed(2)} €</td>
                                         <td>
                                             {isPaid ? (
                                                 <span className={styles.statusPaid}>✓ Payé {formatDate(payment.paidAt)}</span>
@@ -165,8 +184,15 @@ export default async function RentsPage({
                                                     <MarkRentPaidButton
                                                         leaseId={lease.id}
                                                         periodStr={currentMonthStr}
-                                                        defaultAmount={totalAmount}
+                                                        defaultAmount={displayAmount}
                                                         buttonStyle={`${styles.actionButton} ${styles.paidButton}`}
+                                                    />
+                                                )}
+
+                                                {isPaid && payment?.id && (
+                                                    <UnmarkRentPaidButton
+                                                        paymentId={payment.id}
+                                                        buttonStyle={styles.actionButton}
                                                     />
                                                 )}
 

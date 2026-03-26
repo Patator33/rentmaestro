@@ -55,6 +55,16 @@ export async function markRentAsPaid(leaseId: string, periodStr: string, amount:
     revalidatePath("/");
 }
 
+export async function cancelRentPayment(paymentId: string) {
+    if (!paymentId) throw new Error("ID de paiement manquant.");
+    await prisma.rentPayment.update({
+        where: { id: paymentId },
+        data: { status: "PENDING", paidAt: null }
+    });
+    revalidatePath("/rents");
+    revalidatePath("/");
+}
+
 export async function sendRentReminder(leaseId: string, periodStr: string) {
     if (!leaseId || !periodStr) {
         throw new Error("Données de relance invalides.");

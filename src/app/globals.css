@@ -230,6 +230,8 @@ button {
   background: transparent;
   border: 1px solid transparent;
   transition: all 0.3s ease;
+  min-width: 7rem;
+  text-align: center;
 }
 
 .nav-link:hover {
