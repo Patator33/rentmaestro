@@ -29,10 +29,16 @@ export async function GET(request: Request) {
         }
 
         const period = new Date(periodStr);
-        const totalAmount = lease.rentAmount + lease.chargesAmount;
+
+        const payment = await prisma.rentPayment.findFirst({
+            where: { leaseId, period, status: 'PAID' }
+        });
+
+        const baseUrl = process.env.APP_BASE_URL || new URL(request.url).origin;
+        const verifyUrl = payment ? `${baseUrl}/api/verify/${payment.id}` : undefined;
 
         // Generate a clean HTML-based PDF-printable quittance
-        const html = generateQuittanceHtml(lease, period);
+        const html = generateQuittanceHtml(lease, period, verifyUrl);
 
         return new NextResponse(html, {
             headers: {

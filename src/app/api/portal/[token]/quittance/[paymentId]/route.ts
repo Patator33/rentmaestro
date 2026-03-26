@@ -76,7 +76,7 @@ export async function GET(
         }
 
         // Generate PDF
-        const baseUrl = new URL(_request.url).origin;
+        const baseUrl = process.env.APP_BASE_URL || new URL(_request.url).origin;
         const verifyUrl = `${baseUrl}/api/verify/${paymentId}`;
         const htmlContent = generateQuittanceHtml(payment.lease, payment.period, verifyUrl);
         const browser = await puppeteer.launch({

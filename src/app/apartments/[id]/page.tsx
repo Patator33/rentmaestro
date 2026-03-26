@@ -7,7 +7,7 @@ import { formatDate } from "@/lib/utils";
 import ExpenseForm from "@/components/ExpenseForm";
 import TaskBoard from "@/components/TaskBoard";
 import InspectionBoard from "@/components/InspectionBoard";
-import { uploadApartmentDocument, deleteApartmentDocument } from "@/actions/documents";
+import ApartmentDocumentUpload from "@/components/ApartmentDocumentUpload";
 
 export const dynamic = "force-dynamic";
 
@@ -207,49 +207,10 @@ export default async function ApartmentDetailsPage({ params }: { params: Promise
 
             <div style={{ marginTop: '2rem' }}>
                 <h2 className={styles.sectionTitle}>Documents (GED)</h2>
-
-                <form action={uploadApartmentDocument} className={styles.uploadForm}>
-                    <input type="hidden" name="apartmentId" value={apartment.id} />
-                    <div className={styles.fileInputWrapper}>
-                        <input
-                            type="file"
-                            name="file"
-                            id="file"
-                            required
-                            className={styles.fileInput}
-                        />
-                        <label htmlFor="file" className={styles.fileLabel}>
-                            Choisir un fichier (DPE, Assurance, Acte...)
-                        </label>
-                    </div>
-                    <button type="submit" className={styles.uploadButton}>
-                        📤 Téléverser
-                    </button>
-                </form>
-
-                {apartment.documents.length === 0 ? (
-                    <p className={styles.emptyState}>Aucun document pour cet appartement.</p>
-                ) : (
-                    <ul className={styles.documentList}>
-                        {apartment.documents.map((doc) => (
-                            <li key={doc.id} className={styles.documentItem}>
-                                <div className={styles.docInfo}>
-                                    <a href={doc.url} target="_blank" rel="noopener noreferrer" className={styles.docName}>
-                                        📄 {doc.name}
-                                    </a>
-                                    <span className={styles.docSize}>
-                                        {(doc.size / 1024).toFixed(1)} Ko
-                                    </span>
-                                </div>
-                                <form action={deleteApartmentDocument.bind(null, doc.id, apartment.id)}>
-                                    <button type="submit" className={styles.deleteButton}>
-                                        🗑️
-                                    </button>
-                                </form>
-                            </li>
-                        ))}
-                    </ul>
-                )}
+                <ApartmentDocumentUpload
+                    apartmentId={apartment.id}
+                    initialDocuments={apartment.documents}
+                />
             </div>
 
             <div style={{ marginTop: '2rem' }}>
