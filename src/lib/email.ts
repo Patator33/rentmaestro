@@ -1,15 +1,5 @@
 import nodemailer from 'nodemailer';
 
-const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.SMTP_PORT || '465'),
-    secure: true, // true for 465, false for other ports
-    auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-    },
-});
-
 interface EmailOptions {
     to: string;
     subject: string;
@@ -18,8 +8,18 @@ interface EmailOptions {
 
 export async function sendEmail({ to, subject, html }: EmailOptions) {
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-        throw new Error("Configuration SMTP manquante dans le fichier .env (SMTP_USER et SMTP_PASS requis)");
+        throw new Error("Configuration SMTP manquante (SMTP_USER et SMTP_PASS requis)");
     }
+
+    const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST || 'smtp.gmail.com',
+        port: parseInt(process.env.SMTP_PORT || '465'),
+        secure: true,
+        auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS,
+        },
+    });
 
     try {
         const info = await transporter.sendMail({
