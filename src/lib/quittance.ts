@@ -28,7 +28,7 @@ interface Lease {
 }
 
 const PROPRIETAIRE_NOM_PROPRE = 'Céline et Nicolas Rigaud';
-const PROPRIETAIRE_ADRESSE = 'ADRESSE_A_RENSEIGNER'; // TODO: remplacer par l'adresse LMNP
+const PROPRIETAIRE_ADRESSE = '2 Rue Max Linder, 33240 Saint André de Cubzac';
 const LIEU_SIGNATURE = 'Saint André de Cubzac';
 
 function formatDateFR(date: Date): string {
