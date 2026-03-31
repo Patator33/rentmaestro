@@ -109,7 +109,12 @@ export async function updateLease(id: string, formData: FormData) {
     const rentAmount = parseFloat(rentAmountStr);
     const chargesAmount = parseFloat(chargesAmountStr);
     const depositAmount = depositAmountStr ? parseFloat(depositAmountStr) : null;
-    const effectiveDate = rentEffectiveDateStr ? new Date(rentEffectiveDateStr) : null;
+    // Force UTC 1st of month to match how periods are stored in generate-rents
+    let effectiveDate: Date | null = null;
+    if (rentEffectiveDateStr) {
+        const [y, m] = rentEffectiveDateStr.split('-').map(Number);
+        effectiveDate = new Date(Date.UTC(y, m - 1, 1));
+    }
 
     if (isNaN(rentAmount) || isNaN(chargesAmount)) {
         throw new Error("Montants invalides.");
