@@ -139,15 +139,17 @@ export default async function RentsPage({
                                 const isPaid = payment?.status === 'PAID';
                                 const totalAmount = lease.rentAmount + lease.chargesAmount;
 
-                                // Prorata for first month
+                                // Prorata for first month (used when no payment record yet)
                                 const leaseStart = new Date(lease.startDate);
                                 const startDay = leaseStart.getUTCDate();
                                 const isFirstMonth = leaseStart >= startOfMonth && leaseStart < nextMonth;
                                 const daysInMonth = new Date(Date.UTC(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)).getUTCDate();
                                 const daysRemaining = daysInMonth - startDay;
-                                const displayAmount = isFirstMonth && startDay > 1
+                                const fallbackAmount = isFirstMonth && startDay > 1
                                     ? Math.round((totalAmount / daysInMonth) * daysRemaining * 100) / 100
                                     : totalAmount;
+                                // Use the frozen payment.amount when a record exists, not the live lease amount
+                                const displayAmount = payment ? payment.amount : fallbackAmount;
 
                                 return (
                                     <tr key={lease.id}>
@@ -184,7 +186,7 @@ export default async function RentsPage({
                                                     <MarkRentPaidButton
                                                         leaseId={lease.id}
                                                         periodStr={currentMonthStr}
-                                                        defaultAmount={displayAmount}
+                                                        defaultAmount={payment?.amount ?? fallbackAmount}
                                                         buttonStyle={`${styles.actionButton} ${styles.paidButton}`}
                                                     />
                                                 )}
