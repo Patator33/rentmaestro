@@ -12,10 +12,9 @@ export default function EditLeaseForm({ lease }: { lease: LeaseWithRelations }) 
     const startDateStr = lease.startDate.toISOString().split('T')[0];
     const endDateStr = lease.endDate ? lease.endDate.toISOString().split('T')[0] : '';
 
-    const nextMonth = new Date();
-    nextMonth.setDate(1);
-    nextMonth.setMonth(nextMonth.getMonth() + 1);
-    const defaultEffectiveDate = nextMonth.toISOString().split('T')[0];
+    const now = new Date();
+    const nextMonthUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+    const defaultEffectiveDate = `${nextMonthUTC.getUTCFullYear()}-${String(nextMonthUTC.getUTCMonth() + 1).padStart(2, '0')}`;
 
     const action = updateLease.bind(null, lease.id);
 
@@ -86,7 +85,8 @@ export default function EditLeaseForm({ lease }: { lease: LeaseWithRelations }) 
                     <label htmlFor="rentEffectiveDate" className={styles.label}>
                         Date d'effet de la révision du loyer
                     </label>
-                    <DateInput
+                    <input
+                        type="month"
                         id="rentEffectiveDate"
                         name="rentEffectiveDate"
                         defaultValue={defaultEffectiveDate}
