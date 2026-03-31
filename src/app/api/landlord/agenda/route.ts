@@ -14,6 +14,7 @@ interface AgendaEvent {
     sublabel?: string;
     daysUntil: number;
     urgency: Urgency;
+    leaseId?: string;
 }
 
 function diffDays(a: Date, b: Date) {
@@ -61,6 +62,7 @@ export async function GET(request: Request) {
                     sublabel: lease.apartment.name || lease.apartment.address,
                     daysUntil: days,
                     urgency: days <= 30 ? 'high' : days <= 60 ? 'medium' : 'low',
+                    leaseId: lease.id,
                 });
             }
         }
@@ -81,6 +83,7 @@ export async function GET(request: Request) {
                 sublabel: `${lease.apartment.name || lease.apartment.address} · ${(lease.rentAmount + lease.chargesAmount).toFixed(0)} €/mois`,
                 daysUntil: days,
                 urgency: days <= 30 ? 'high' : days <= 60 ? 'medium' : 'low',
+                leaseId: lease.id,
             });
         }
     }
@@ -94,6 +97,7 @@ export async function GET(request: Request) {
             sublabel: lease.apartment.name || lease.apartment.address,
             daysUntil: diffDays(new Date(lease.startDate), now),
             urgency: 'low',
+            leaseId: lease.id,
         });
     }
 
@@ -123,6 +127,7 @@ export async function GET(request: Request) {
         date: string;
         daysUntil: number;
         urgency: Urgency;
+        leaseId?: string;
     }>> = {};
 
     for (const ev of events) {
@@ -135,6 +140,7 @@ export async function GET(request: Request) {
             date: ev.date.toISOString().split('T')[0],
             daysUntil: ev.daysUntil,
             urgency: ev.urgency,
+            leaseId: ev.leaseId,
         });
     }
 
