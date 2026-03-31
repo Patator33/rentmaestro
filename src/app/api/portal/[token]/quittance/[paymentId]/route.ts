@@ -78,7 +78,7 @@ export async function GET(
         // Generate PDF
         const baseUrl = process.env.APP_BASE_URL || new URL(_request.url).origin;
         const verifyUrl = `${baseUrl}/api/verify/${paymentId}`;
-        const htmlContent = generateQuittanceHtml(payment.lease, payment.period, verifyUrl);
+        const htmlContent = generateQuittanceHtml(payment.lease, payment.period, verifyUrl, payment.amount);
         const browser = await puppeteer.launch({
             args: ['--no-sandbox', '--disable-setuid-sandbox'],
             executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,

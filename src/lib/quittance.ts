@@ -56,8 +56,14 @@ function getFullAddress(apartment: Apartment): string {
     return parts.join(', ');
 }
 
-export function generateQuittanceHtml(lease: Lease, period: Date, verifyUrl?: string): string {
-    const totalAmount = lease.rentAmount + lease.chargesAmount;
+export function generateQuittanceHtml(lease: Lease, period: Date, verifyUrl?: string, paidAmount?: number): string {
+    const refTotal = lease.rentAmount + lease.chargesAmount;
+    const totalAmount = paidAmount ?? refTotal;
+    // Proportional breakdown when using a payment override
+    const displayRent = refTotal > 0 && paidAmount !== undefined
+        ? Math.round(totalAmount * lease.rentAmount / refTotal * 100) / 100
+        : lease.rentAmount;
+    const displayCharges = paidAmount !== undefined ? totalAmount - displayRent : lease.chargesAmount;
     const bailleurName = getBailleurName(lease.apartment);
     const bailleurAddress = getBailleurAddress(lease.apartment);
     const fullAddress = getFullAddress(lease.apartment);
@@ -148,8 +154,8 @@ export function generateQuittanceHtml(lease: Lease, period: Date, verifyUrl?: st
             <tr><th>Désignation</th><th style="text-align:right">Montant</th></tr>
         </thead>
         <tbody>
-            <tr><td>Loyer (hors charges)</td><td>${lease.rentAmount.toFixed(2)} €</td></tr>
-            <tr><td>Charges locatives</td><td>${lease.chargesAmount.toFixed(2)} €</td></tr>
+            <tr><td>Loyer (hors charges)</td><td>${displayRent.toFixed(2)} €</td></tr>
+            <tr><td>Charges locatives</td><td>${displayCharges.toFixed(2)} €</td></tr>
         </tbody>
         <tfoot>
             <tr><td>Total</td><td>${totalAmount.toFixed(2)} €</td></tr>

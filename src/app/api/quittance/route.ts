@@ -38,7 +38,7 @@ export async function GET(request: Request) {
         const verifyUrl = payment ? `${baseUrl}/api/verify/${payment.id}` : undefined;
 
         // Generate a clean HTML-based PDF-printable quittance
-        const html = generateQuittanceHtml(lease, period, verifyUrl);
+        const html = generateQuittanceHtml(lease, period, verifyUrl, payment?.amount);
 
         return new NextResponse(html, {
             headers: {
