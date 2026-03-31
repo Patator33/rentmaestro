@@ -12,6 +12,11 @@ export default function EditLeaseForm({ lease }: { lease: LeaseWithRelations }) 
     const startDateStr = lease.startDate.toISOString().split('T')[0];
     const endDateStr = lease.endDate ? lease.endDate.toISOString().split('T')[0] : '';
 
+    const nextMonth = new Date();
+    nextMonth.setDate(1);
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+    const defaultEffectiveDate = nextMonth.toISOString().split('T')[0];
+
     const action = updateLease.bind(null, lease.id);
 
     return (
@@ -75,6 +80,21 @@ export default function EditLeaseForm({ lease }: { lease: LeaseWithRelations }) 
                             className={styles.input}
                         />
                     </div>
+                </div>
+
+                <div className={styles.formGroup}>
+                    <label htmlFor="rentEffectiveDate" className={styles.label}>
+                        Date d'effet de la révision du loyer
+                    </label>
+                    <DateInput
+                        id="rentEffectiveDate"
+                        name="rentEffectiveDate"
+                        defaultValue={defaultEffectiveDate}
+                        className={styles.input}
+                    />
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.3rem' }}>
+                        Si le loyer est modifié, les paiements <strong>non payés</strong> à partir de cette date seront mis à jour au nouveau montant. Les loyers déjà payés (et leurs quittances) ne sont pas modifiés.
+                    </p>
                 </div>
 
                 <div className={styles.formGroup}>

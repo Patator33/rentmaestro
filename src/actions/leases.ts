@@ -98,6 +98,7 @@ export async function updateLease(id: string, formData: FormData) {
     const rentAmountStr = formData.get("rentAmount") as string;
     const chargesAmountStr = formData.get("chargesAmount") as string;
     const depositAmountStr = formData.get("depositAmount") as string;
+    const rentEffectiveDateStr = formData.get("rentEffectiveDate") as string;
 
     if (!startDateStr) {
         throw new Error("La date de début est obligatoire.");
@@ -108,6 +109,7 @@ export async function updateLease(id: string, formData: FormData) {
     const rentAmount = parseFloat(rentAmountStr);
     const chargesAmount = parseFloat(chargesAmountStr);
     const depositAmount = depositAmountStr ? parseFloat(depositAmountStr) : null;
+    const effectiveDate = rentEffectiveDateStr ? new Date(rentEffectiveDateStr) : null;
 
     if (isNaN(rentAmount) || isNaN(chargesAmount)) {
         throw new Error("Montants invalides.");
@@ -122,8 +124,20 @@ export async function updateLease(id: string, formData: FormData) {
                 rentAmount,
                 chargesAmount,
                 depositAmount: depositAmount !== null && !isNaN(depositAmount) ? depositAmount : null,
+                ...(effectiveDate ? { lastRentReviewDate: effectiveDate } : {}),
             }
         });
+
+        if (effectiveDate) {
+            await prisma.rentPayment.updateMany({
+                where: {
+                    leaseId: id,
+                    period: { gte: effectiveDate },
+                    status: { in: ['PENDING', 'LATE'] },
+                },
+                data: { amount: rentAmount + chargesAmount },
+            });
+        }
     } catch (error) {
         console.error("Erreur lors de la modification du bail:", error);
         throw new Error("Impossible de modifier le contrat.");
