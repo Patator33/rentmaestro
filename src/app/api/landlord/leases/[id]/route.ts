@@ -31,7 +31,13 @@ export async function PUT(
     if (!verifyMobileToken(request)) return unauthorized();
     const { id } = await params;
     const body = await request.json();
-    const { startDate, endDate, rentAmount, chargesAmount, depositAmount, isActive } = body;
+    const { startDate, endDate, rentAmount, chargesAmount, depositAmount, isActive, rentEffectiveDate } = body;
+
+    let effectiveDate: Date | null = null;
+    if (rentEffectiveDate) {
+        const [y, m] = (rentEffectiveDate as string).split('-').map(Number);
+        effectiveDate = new Date(Date.UTC(y, m - 1, 1));
+    }
 
     const lease = await prisma.lease.update({
         where: { id },
@@ -42,8 +48,22 @@ export async function PUT(
             chargesAmount: chargesAmount != null ? parseFloat(chargesAmount) : undefined,
             depositAmount: depositAmount != null ? parseFloat(depositAmount) : undefined,
             isActive: isActive != null ? Boolean(isActive) : undefined,
+            ...(effectiveDate ? { lastRentReviewDate: effectiveDate } : {}),
         },
     });
+
+    if (effectiveDate && (rentAmount != null || chargesAmount != null)) {
+        const newRent = rentAmount != null ? parseFloat(rentAmount) : lease.rentAmount;
+        const newCharges = chargesAmount != null ? parseFloat(chargesAmount) : lease.chargesAmount;
+        await prisma.rentPayment.updateMany({
+            where: {
+                leaseId: id,
+                period: { gte: effectiveDate },
+                status: { not: 'PAID' },
+            },
+            data: { amount: newRent + newCharges },
+        });
+    }
 
     return NextResponse.json(lease);
 }
