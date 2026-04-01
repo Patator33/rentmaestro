@@ -68,8 +68,13 @@ async function getStats() {
   const now = new Date();
   const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
 
-  // Exclude sold apartments from occupancy count
-  const apartmentCount = await prisma.apartment.count({ where: { soldAt: null } });
+  // Exclude sold apartments and not-yet-available apartments from occupancy count
+  const apartmentCount = await prisma.apartment.count({
+    where: {
+      soldAt: null,
+      OR: [{ availableFrom: null }, { availableFrom: { lte: today } }],
+    },
+  });
   // Count tenants with an active lease today
   const tenantCount = await prisma.tenant.count({
     where: {

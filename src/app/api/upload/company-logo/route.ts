@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { writeFile } from 'fs/promises';
+import { mkdir, writeFile } from 'fs/promises';
 import { join } from 'path';
 
 export const dynamic = 'force-dynamic';
@@ -22,6 +22,7 @@ export async function POST(request: Request) {
         const uploadDir = join(process.cwd(), 'public', 'uploads', 'company-logos');
         const filePath = join(uploadDir, filename);
 
+        await mkdir(uploadDir, { recursive: true });
         const buffer = Buffer.from(await file.arrayBuffer());
         await writeFile(filePath, buffer);
 

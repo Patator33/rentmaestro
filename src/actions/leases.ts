@@ -161,6 +161,22 @@ export async function markDepositReceived(leaseId: string, amount: number) {
     revalidatePath(`/leases/${leaseId}`);
 }
 
+export async function payDepositPartial(leaseId: string, paidAmount: number) {
+    const lease = await prisma.lease.findUnique({ where: { id: leaseId } });
+    if (!lease) throw new Error('Bail introuvable');
+    const total = lease.depositAmount ?? 0;
+    const isComplete = paidAmount >= total;
+    await prisma.lease.update({
+        where: { id: leaseId },
+        data: {
+            depositPaidAmount: paidAmount,
+            depositStatus: isComplete ? 'RECEIVED' : 'PARTIAL_RECEIVED',
+        },
+    });
+    revalidatePath('/leases');
+    revalidatePath(`/leases/${leaseId}`);
+}
+
 export async function markDepositReturned(leaseId: string, amount: number) {
     await prisma.lease.update({
         where: { id: leaseId },
