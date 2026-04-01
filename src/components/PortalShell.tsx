@@ -41,7 +41,7 @@ interface Task {
     id: string;
     title: string;
     description: string | null;
-    status: 'TODO' | 'IN_PROGRESS' | 'DONE';
+    status: string;
     createdAt: Date;
 }
 interface Message {
@@ -153,7 +153,7 @@ export default function PortalShell({
                 id: '_' + Date.now(),
                 title: incTitle.trim(),
                 description: incDesc.trim() || null,
-                status: 'TODO' as const,
+                status: 'TODO',
                 createdAt: new Date(),
             }, ...prev]);
             setIncTitle('');
