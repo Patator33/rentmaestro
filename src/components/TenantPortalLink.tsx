@@ -106,6 +106,21 @@ export default function TenantPortalLink({ tenantId, existingToken }: Props) {
                     Attention : Régénérer le lien révoquera l'accès à l'ancien lien.
                 </p>
             )}
+
+            <div style={{ marginTop: '1.5rem', paddingTop: '1.25rem', borderTop: '1px solid var(--border-color)' }}>
+                <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>📱 Application mobile Android</h4>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>
+                    Partagez l'application avec votre locataire pour qu'il puisse suivre ses paiements et vous contacter.
+                    L'envoi par email ci-dessus inclut automatiquement le lien de téléchargement.
+                </p>
+                <a
+                    href="/downloads/rentmaestro-tenant.apk"
+                    download="RentMaestro.apk"
+                    style={{ display: 'inline-block', padding: '0.6rem 1.2rem', background: '#10b981', color: 'white', textDecoration: 'none', borderRadius: '6px', fontWeight: 500, fontSize: '0.9rem' }}
+                >
+                    ⬇️ Télécharger l'APK Android
+                </a>
+            </div>
         </div>
     );
 }

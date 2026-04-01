@@ -107,6 +107,7 @@ export async function sendPortalInvite(tenantId: string) {
 
         const baseUrl = process.env.APP_BASE_URL || 'http://localhost:3000';
         const portalUrl = `${baseUrl}/portal/${tenant.portalToken}`;
+        const apkUrl = `${baseUrl}/downloads/rentmaestro-tenant.apk`;
 
         await sendEmail({
             to: tenant.email,
@@ -129,8 +130,14 @@ export async function sendPortalInvite(tenantId: string) {
                     </a>
                     <p style="color: #64748b; font-size: 0.85rem; margin-top: 0.5rem;">${portalUrl}</p>
 
-                    <h3 style="color: #1e293b; margin-top: 2rem;">📱 Accès via l'application mobile</h3>
-                    <p>Si vous utilisez l'application mobile RentMaestro, copiez ce code d'accès lors du premier lancement :</p>
+                    <h3 style="color: #1e293b; margin-top: 2rem;">📱 Application mobile Android</h3>
+                    <p>Téléchargez l'application RentMaestro sur votre smartphone Android :</p>
+                    <a href="${apkUrl}" style="display: inline-block; padding: 0.7rem 1.4rem; background: #10b981; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
+                        ⬇️ Télécharger l'application Android
+                    </a>
+                    <p style="color: #64748b; font-size: 0.85rem; margin-top: 0.5rem;">
+                        Après installation, entrez ce code d'accès lors du premier lancement :
+                    </p>
                     <div style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; font-family: monospace; font-size: 1rem; letter-spacing: 0.05em; word-break: break-all; color: #0f172a;">
                         ${tenant.portalToken}
                     </div>
