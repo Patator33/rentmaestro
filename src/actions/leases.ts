@@ -67,7 +67,7 @@ export async function terminateLease(id: string, endDateStr?: string | null) {
         await prisma.lease.update({
             where: { id },
             data: {
-                isActive: true,
+                isActive: false,
                 endDate: endDate,
             },
         });

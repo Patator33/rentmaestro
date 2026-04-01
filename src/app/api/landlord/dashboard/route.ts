@@ -72,12 +72,15 @@ export async function GET(request: Request) {
         }));
 
     // Upcoming rents: leases active this month with PENDING/LATE payment
-    const unpaidThisMonth = await prisma.rentPayment.findMany({
+    const unpaidThisMonthRaw = await prisma.rentPayment.findMany({
         where: { period: startOfMonth, status: { in: ['PENDING', 'LATE'] } },
         include: { lease: { include: { tenant: true, apartment: true } } },
-        take: 5,
+        take: 10,
         orderBy: { createdAt: 'asc' },
     });
+    // Don't alert before the tenant's usual payment day for the current month
+    const currentDay = now.getUTCDate();
+    const unpaidThisMonth = unpaidThisMonthRaw.filter(p => currentDay >= (p.lease.tenant.paymentDay || 5)).slice(0, 5);
 
     // Pending rents for next month (not yet generated = active leases without payment for next month)
     const nextMonthStart = endOfMonth;

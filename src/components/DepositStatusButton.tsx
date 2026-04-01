@@ -5,11 +5,12 @@ import { updateDepositStatus } from '@/actions/management';
 import { useToast } from './Toast';
 
 const STATUS_LABELS: Record<string, { label: string; color: string; icon: string }> = {
-    PENDING: { label: 'En attente', color: '#f59e0b', icon: '⏳' },
-    RECEIVED: { label: 'Caution reçue', color: '#22c55e', icon: '✅' },
-    TO_RETURN: { label: 'À restituer', color: '#3b82f6', icon: '↩️' },
-    RETURNED: { label: 'Restitué', color: '#8b5cf6', icon: '💸' },
-    DEDUCTED: { label: 'Retenu', color: '#ef4444', icon: '🚫' },
+    PENDING:          { label: 'En attente',      color: '#f59e0b', icon: '⏳' },
+    PARTIAL_RECEIVED: { label: 'Partiel. perçue', color: '#f97316', icon: '💰' },
+    RECEIVED:         { label: 'Caution reçue',   color: '#22c55e', icon: '✅' },
+    TO_RETURN:        { label: 'À restituer',      color: '#3b82f6', icon: '↩️' },
+    RETURNED:         { label: 'Restitué',         color: '#8b5cf6', icon: '💸' },
+    DEDUCTED:         { label: 'Retenu',           color: '#ef4444', icon: '🚫' },
 };
 
 interface DepositStatusButtonProps {

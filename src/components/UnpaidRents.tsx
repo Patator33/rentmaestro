@@ -7,7 +7,7 @@ export default async function UnpaidRents() {
     const now = new Date();
     const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    const unpaidPayments = await prisma.rentPayment.findMany({
+    const allUnpaid = await prisma.rentPayment.findMany({
         where: {
             period: { gte: currentMonthStart },
             status: { in: ['PENDING', 'LATE'] }
@@ -21,6 +21,14 @@ export default async function UnpaidRents() {
             }
         },
         orderBy: { period: 'asc' }
+    });
+
+    const currentDay = now.getDate();
+    // Don't alert before the tenant's usual payment day for the current month
+    const unpaidPayments = allUnpaid.filter(payment => {
+        const paymentDay = payment.lease.tenant.paymentDay || 5;
+        const isPastPeriod = new Date(payment.period).getTime() < currentMonthStart.getTime();
+        return isPastPeriod || currentDay >= paymentDay;
     });
 
     if (unpaidPayments.length === 0) {

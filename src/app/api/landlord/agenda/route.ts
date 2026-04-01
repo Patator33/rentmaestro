@@ -118,7 +118,9 @@ export async function GET(request: Request) {
         }
     }
 
-    events.sort((a, b) => a.date.getTime() - b.date.getTime());
+    // Exclude past events (daysUntil < 0) — today's events (daysUntil == 0) are kept
+    const filteredEvents = events.filter(ev => ev.daysUntil >= 0);
+    filteredEvents.sort((a, b) => a.date.getTime() - b.date.getTime());
 
     // Group by month
     const grouped: Record<string, Array<{
@@ -131,7 +133,7 @@ export async function GET(request: Request) {
         leaseId?: string;
     }>> = {};
 
-    for (const ev of events) {
+    for (const ev of filteredEvents) {
         const key = monthKey(ev.date);
         if (!grouped[key]) grouped[key] = [];
         grouped[key].push({
@@ -145,7 +147,7 @@ export async function GET(request: Request) {
         });
     }
 
-    return NextResponse.json({ grouped, total: events.length });
+    return NextResponse.json({ grouped, total: filteredEvents.length });
 }
 
 export async function OPTIONS() {
