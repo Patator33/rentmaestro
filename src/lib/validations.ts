@@ -39,6 +39,8 @@ export const taskSchema = z.object({
     status: z.enum(["TODO", "IN_PROGRESS", "DONE"]).default("TODO"),
     cost: z.number().min(0, "Le coût doit être positif").optional().nullable(),
     dueDate: z.date().optional().nullable(),
+    scheduledAt: z.date().optional().nullable(),
+    tenantId: z.string().optional().nullable(),
 });
 
 export const companySchema = z.object({

@@ -12,11 +12,12 @@ export async function createCompany(formData: FormData) {
         siret: formData.get("siret") as string || null,
         address: formData.get("address") as string || null,
     };
+    const logoUrl = formData.get("logoUrl") as string || null;
 
     try {
         const validatedData = companySchema.parse(rawData);
         await prisma.company.create({
-            data: validatedData,
+            data: { ...validatedData, ...(logoUrl !== null ? { logoUrl } : {}) },
         });
     } catch (error) {
         console.error("Erreur lors de la création de la société:", error);
@@ -46,12 +47,13 @@ export async function updateCompany(id: string, formData: FormData) {
         siret: formData.get("siret") as string || null,
         address: formData.get("address") as string || null,
     };
+    const logoUrl = formData.get("logoUrl") as string || null;
 
     try {
         const validatedData = companySchema.parse(rawData);
         await prisma.company.update({
             where: { id },
-            data: validatedData,
+            data: { ...validatedData, logoUrl },
         });
     } catch (error) {
         console.error("Erreur lors de la mise à jour de la société:", error);

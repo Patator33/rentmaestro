@@ -4,8 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { notifyN8n } from "@/lib/n8n";
 
-export async function markRentAsPaid(leaseId: string, periodStr: string, amount: number) {
-    if (!leaseId || !periodStr || isNaN(amount) || amount <= 0) {
+export async function markRentAsPaid(leaseId: string, periodStr: string, paidAmount: number) {
+    if (!leaseId || !periodStr || isNaN(paidAmount) || paidAmount <= 0) {
         throw new Error("Données de paiement invalides.");
     }
 
@@ -16,13 +16,25 @@ export async function markRentAsPaid(leaseId: string, periodStr: string, amount:
             where: { leaseId, period }
         });
 
+        // Determine expected full amount
+        let expectedAmount: number;
+        if (existing) {
+            expectedAmount = existing.amount;
+        } else {
+            const lease = await prisma.lease.findUnique({ where: { id: leaseId } });
+            if (!lease) throw new Error("Bail introuvable.");
+            expectedAmount = lease.rentAmount + lease.chargesAmount;
+        }
+
+        const isPartial = paidAmount < expectedAmount - 0.01;
+
         if (existing) {
             await prisma.rentPayment.update({
                 where: { id: existing.id },
                 data: {
-                    status: "PAID",
+                    status: isPartial ? "PARTIAL" : "PAID",
                     paidAt: new Date(),
-                    amount,
+                    paidAmount: isPartial ? paidAmount : null,
                 }
             });
         } else {
@@ -30,9 +42,10 @@ export async function markRentAsPaid(leaseId: string, periodStr: string, amount:
                 data: {
                     leaseId,
                     period,
-                    amount,
-                    status: "PAID",
+                    amount: expectedAmount,
+                    status: isPartial ? "PARTIAL" : "PAID",
                     paidAt: new Date(),
+                    paidAmount: isPartial ? paidAmount : null,
                 }
             });
         }

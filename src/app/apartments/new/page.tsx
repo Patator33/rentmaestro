@@ -95,6 +95,11 @@ export default async function NewApartmentPage() {
                     <textarea id="comment" name="comment" className={styles.textarea} placeholder="Notes sur le propriétaire, code d'entrée..." />
                 </div>
 
+                <div className={styles.formGroup}>
+                    <label htmlFor="availableFrom" className={styles.label}>Disponible à la location depuis *</label>
+                    <input type="date" id="availableFrom" name="availableFrom" required className={styles.input} />
+                </div>
+
                 <button type="submit" className={styles.submitButton}>Enregistrer</button>
             </form>
         </div>

@@ -25,6 +25,8 @@ model Apartment {
   insuranceAmount Float?
   taxAmount       Float?
   defaultDeposit  Float?
+  availableFrom   DateTime?
+  soldAt          DateTime?
   companyId       String?
   company         Company?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
   leases          Lease[]
@@ -48,6 +50,7 @@ model Tenant {
   updatedAt         DateTime         @updatedAt
   paymentDay        Int?             @default(5)
   portalToken       String?          @unique
+  isArchived        Boolean          @default(false)
   leases            Lease[]
   documents         TenantDocument[]
   notes             TenantNote[]
@@ -102,7 +105,8 @@ model RentPayment {
   leaseId         String
   period          DateTime
   amount          Float
-  status          String // PAID, PENDING, LATE
+  paidAmount      Float?
+  status          String // PAID, PENDING, LATE, PARTIAL
   paidAt          DateTime?
   sentAt          DateTime? // Used for LATE/PENDING reminders
   receiptSentAt   DateTime? // Used for PAID receipts
@@ -131,6 +135,7 @@ model Task {
   status      String     @default("TODO") // TODO, IN_PROGRESS, DONE
   cost        Float?
   dueDate     DateTime?
+  scheduledAt DateTime?
   tenantId    String?
   tenant      Tenant?    @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   createdAt   DateTime   @default(now())
@@ -165,6 +170,7 @@ model Company {
   type        String      // SCI, LMNP, NOM_PROPRE, etc.
   siret       String?
   address     String?
+  logoUrl     String?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   apartments  Apartment[]

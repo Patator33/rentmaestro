@@ -13,16 +13,28 @@ interface Task {
     status: string;
     cost: number | null;
     dueDate: Date | null;
+    scheduledAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
 }
 
 interface TaskBoardProps {
     apartmentId: string;
+    apartmentAddress?: string;
     initialTasks: Task[];
 }
 
-export default function TaskBoard({ apartmentId, initialTasks }: TaskBoardProps) {
+function formatGCalDate(d: Date): string {
+    return d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+}
+
+function buildGCalUrl(task: Task, address: string): string {
+    const start = formatGCalDate(new Date(task.scheduledAt!));
+    const end = formatGCalDate(new Date(new Date(task.scheduledAt!).getTime() + 3600000));
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(task.title)}&dates=${start}/${end}&details=${encodeURIComponent(task.description || '')}&location=${encodeURIComponent(address)}`;
+}
+
+export default function TaskBoard({ apartmentId, apartmentAddress = '', initialTasks }: TaskBoardProps) {
     const [tasks, setTasks] = useState<Task[]>(initialTasks);
     const [loading, setLoading] = useState(false);
 
@@ -30,6 +42,7 @@ export default function TaskBoard({ apartmentId, initialTasks }: TaskBoardProps)
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [cost, setCost] = useState('');
+    const [scheduledAt, setScheduledAt] = useState('');
 
     // Edit state
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -37,6 +50,8 @@ export default function TaskBoard({ apartmentId, initialTasks }: TaskBoardProps)
     const [editDesc, setEditDesc] = useState('');
     const [editCost, setEditCost] = useState('');
     const [editStatus, setEditStatus] = useState('');
+    const [editScheduledAt, setEditScheduledAt] = useState('');
+    const [editNotify, setEditNotify] = useState(false);
 
     const handleAddTask = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -46,13 +61,15 @@ export default function TaskBoard({ apartmentId, initialTasks }: TaskBoardProps)
             title,
             description: description || null,
             cost: cost ? parseFloat(cost) : null,
-            status: 'TODO'
+            status: 'TODO',
+            scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
         });
         if (res.success && res.task) {
-            setTasks([res.task, ...tasks]);
+            setTasks([res.task as Task, ...tasks]);
             setTitle('');
             setDescription('');
             setCost('');
+            setScheduledAt('');
         } else {
             alert(res.error || "Erreur lors de l'ajout");
         }
@@ -65,6 +82,8 @@ export default function TaskBoard({ apartmentId, initialTasks }: TaskBoardProps)
         setEditDesc(task.description || '');
         setEditCost(task.cost !== null ? String(task.cost) : '');
         setEditStatus(task.status);
+        setEditScheduledAt(task.scheduledAt ? new Date(task.scheduledAt).toISOString().slice(0, 16) : '');
+        setEditNotify(false);
     };
 
     const handleSaveEdit = async (taskId: string) => {
@@ -74,9 +93,11 @@ export default function TaskBoard({ apartmentId, initialTasks }: TaskBoardProps)
             description: editDesc || null,
             cost: editCost ? parseFloat(editCost) : null,
             status: editStatus,
+            scheduledAt: editScheduledAt ? new Date(editScheduledAt) : null,
+            notifyTenant: editNotify,
         });
         if (res.success && res.task) {
-            setTasks(tasks.map(t => t.id === taskId ? res.task! : t));
+            setTasks(tasks.map(t => t.id === taskId ? res.task! as Task : t));
             setEditingId(null);
         } else {
             alert(res.error || "Erreur lors de la modification");
@@ -168,6 +189,24 @@ export default function TaskBoard({ apartmentId, initialTasks }: TaskBoardProps)
                                 </select>
                             </div>
                         </div>
+                        <div className={styles.formGroup} style={{ marginBottom: '0.6rem' }}>
+                            <label>Date d'intervention</label>
+                            <input
+                                type="datetime-local"
+                                value={editScheduledAt}
+                                onChange={e => setEditScheduledAt(e.target.value)}
+                            />
+                        </div>
+                        {task.tenantId && (
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.9rem', marginBottom: '0.6rem', cursor: 'pointer' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={editNotify}
+                                    onChange={e => setEditNotify(e.target.checked)}
+                                />
+                                Notifier le locataire par email
+                            </label>
+                        )}
                         <div className={styles.actions}>
                             <button onClick={() => handleSaveEdit(task.id)} disabled={loading || !editTitle.trim()} className={`${styles.btn} ${styles.btnPrimary}`}>
                                 {loading ? '...' : '✓ Enregistrer'}
@@ -191,6 +230,21 @@ export default function TaskBoard({ apartmentId, initialTasks }: TaskBoardProps)
                             </div>
                         </div>
                         {task.description && <div className={styles.taskDesc}>{task.description}</div>}
+
+                        {task.scheduledAt && (
+                            <div style={{ fontSize: '0.8rem', color: 'var(--primary-color)', marginTop: '0.3rem' }}>
+                                📅 {new Date(task.scheduledAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                {' '}
+                                <a
+                                    href={buildGCalUrl(task, apartmentAddress)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{ fontSize: '0.75rem', color: '#22c55e', marginLeft: '0.3rem' }}
+                                >
+                                    + Google Agenda
+                                </a>
+                            </div>
+                        )}
 
                         <div className={styles.taskFooter}>
                             <span>{new Date(task.createdAt).toLocaleDateString('fr-FR')}</span>
@@ -260,6 +314,14 @@ export default function TaskBoard({ apartmentId, initialTasks }: TaskBoardProps)
                             value={cost}
                             onChange={e => setCost(e.target.value)}
                             placeholder="Optionnel"
+                        />
+                    </div>
+                    <div className={styles.formGroup}>
+                        <label>Date d'intervention</label>
+                        <input
+                            type="datetime-local"
+                            value={scheduledAt}
+                            onChange={e => setScheduledAt(e.target.value)}
                         />
                     </div>
                     <div className={`${styles.formGroup} ${styles.fullWidth}`}>

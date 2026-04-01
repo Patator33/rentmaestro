@@ -1,3 +1,4 @@
+import React from "react";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import styles from "./page.module.css";
@@ -73,7 +74,7 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
         return end !== null && end < today && new Date(l.startDate) <= today;
     });
 
-    const Th = (field: string, label: string) => {
+    const Th = (field: string, label: string, thStyle?: React.CSSProperties) => {
         const isActive = sort === field;
         const nextDir = isActive && dir === 'asc' ? 'desc' : 'asc';
         const p = new URLSearchParams();
@@ -81,7 +82,7 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
         p.set('sort', field);
         p.set('dir', nextDir);
         return (
-            <th>
+            <th style={thStyle}>
                 <a href={`?${p.toString()}`} style={{ color: 'inherit', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', whiteSpace: 'nowrap' }}>
                     {label} <span style={{ fontSize: '0.65rem', opacity: isActive ? 1 : 0.3 }}>{isActive ? (dir === 'asc' ? '↑' : '↓') : '↕'}</span>
                 </a>
@@ -102,7 +103,7 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                 currentEndDate={lease.endDate ? lease.endDate.toISOString().split('T')[0] : undefined}
                 className="std-add-button"
                 style={{ fontSize: '0.8rem', padding: '0.3rem 0.6rem' }}
-                label={lease.endDate ? "📅" : "🚪"}
+                label={lease.endDate ? "Modifier fin" : "🚪"}
             />
             <DeleteLeaseButton id={lease.id} className="std-add-button" style={{ fontSize: '0.8rem', padding: '0.3rem 0.6rem' }} />
         </div>
@@ -193,7 +194,7 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                         {Th('end', 'Fin prévue')}
                                         {Th('rent', 'Loyer HC')}
                                         {Th('charges', 'Charges')}
-                                        {Th('cc', 'CC')}
+                                        {Th('cc', 'CC', { minWidth: '90px' })}
                                         {Th('deposit', 'Caution')}
                                         <th></th>
                                     </tr>
@@ -217,7 +218,7 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                             </td>
                                             <td style={{ fontWeight: 600 }}>{lease.rentAmount.toFixed(2)} €</td>
                                             <td>{lease.chargesAmount.toFixed(2)} €</td>
-                                            <td style={{ fontWeight: 700, color: 'var(--primary-color)' }}>
+                                            <td style={{ fontWeight: 700, color: 'var(--primary-color)', minWidth: '90px' }}>
                                                 {(lease.rentAmount + lease.chargesAmount).toFixed(2)} €
                                             </td>
                                             <td>
@@ -250,7 +251,7 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                             {Th('end', 'Fin')}
                                             {Th('rent', 'Loyer HC')}
                                             {Th('charges', 'Charges')}
-                                            {Th('cc', 'CC')}
+                                            {Th('cc', 'CC', { minWidth: '90px' })}
                                             {Th('deposit', 'Caution')}
                                             <th></th>
                                         </tr>
@@ -268,7 +269,7 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                                 <td style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{lease.endDate ? formatDate(lease.endDate) : '—'}</td>
                                                 <td>{lease.rentAmount.toFixed(2)} €</td>
                                                 <td>{lease.chargesAmount.toFixed(2)} €</td>
-                                                <td>{(lease.rentAmount + lease.chargesAmount).toFixed(2)} €</td>
+                                                <td style={{ minWidth: '90px' }}>{(lease.rentAmount + lease.chargesAmount).toFixed(2)} €</td>
                                                 <td>
                                                     {lease.depositAmount ? (
                                                         <DepositStatusButton
@@ -410,9 +411,12 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                                 <span className={`${styles.statusBadge} ${styles.statusActive}`}>ACTIF</span>
                                                 {lease.endDate && (
-                                                    <span style={{ fontSize: '0.75rem', color: 'var(--warning)', fontWeight: 600, background: 'rgba(255, 165, 0, 0.1)', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
-                                                        Fin le {formatDate(lease.endDate)}
-                                                    </span>
+                                                    <TerminateLeaseButton
+                                                        leaseId={lease.id}
+                                                        currentEndDate={lease.endDate.toISOString().split('T')[0]}
+                                                        label={`Fin le ${formatDate(lease.endDate)}`}
+                                                        style={{ fontSize: '0.75rem', color: 'var(--warning)', fontWeight: 600, background: 'rgba(255, 165, 0, 0.1)', padding: '0.25rem 0.5rem', borderRadius: '4px', border: 'none', cursor: 'pointer' }}
+                                                    />
                                                 )}
                                             </div>
                                             <h3 className={styles.cardTitle} style={{ marginTop: '0.5rem' }}>

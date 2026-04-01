@@ -33,6 +33,44 @@ export async function GET(request: Request) {
     // Active leases count
     const activeLeases = await prisma.lease.count({ where: { isActive: true } });
 
+    // Partial payments this month
+    const partialPaymentsRaw = await prisma.rentPayment.findMany({
+        where: { period: startOfMonth, status: 'PARTIAL' },
+        include: { lease: { include: { tenant: true, apartment: true } } },
+    });
+    const partialPayments = partialPaymentsRaw.map(p => ({
+        paymentId: p.id,
+        amount: p.amount,
+        paidAmount: (p as any).paidAmount,
+        remaining: p.amount - ((p as any).paidAmount ?? 0),
+        tenant: { id: p.lease.tenant.id, firstName: p.lease.tenant.firstName, lastName: p.lease.tenant.lastName },
+        apartment: { address: p.lease.apartment.address, name: p.lease.apartment.name },
+        leaseId: p.leaseId,
+    }));
+
+    // Rent review alerts
+    const leasesForReview = await prisma.lease.findMany({
+        where: { isActive: true },
+        include: { tenant: true, apartment: true },
+    });
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    const rentReviews = leasesForReview
+        .filter(lease => {
+            const start = new Date(lease.startDate);
+            const monthsDiff = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+            const isTimeForReview = monthsDiff >= 10 && monthsDiff % 12 === 10;
+            const lastReview = lease.lastRentReviewDate ? new Date(lease.lastRentReviewDate) : null;
+            const wasSentRecently = lastReview && lastReview > sixMonthsAgo;
+            return isTimeForReview && !wasSentRecently;
+        })
+        .map(lease => ({
+            leaseId: lease.id,
+            tenantName: `${lease.tenant.firstName} ${lease.tenant.lastName}`,
+            apartmentName: lease.apartment.name || lease.apartment.address,
+            startDate: lease.startDate.toISOString().split('T')[0],
+        }));
+
     // Upcoming rents: leases active this month with PENDING/LATE payment
     const unpaidThisMonth = await prisma.rentPayment.findMany({
         where: { period: startOfMonth, status: { in: ['PENDING', 'LATE'] } },
@@ -57,6 +95,8 @@ export async function GET(request: Request) {
         unreadMessages,
         activeLeases,
         currentMonth: startOfMonth.toISOString().slice(0, 7),
+        rentReviews,
+        partialPayments,
         unpaidThisMonth: unpaidThisMonth.map(p => ({
             paymentId: p.id,
             amount: p.amount,

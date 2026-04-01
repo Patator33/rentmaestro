@@ -14,6 +14,7 @@ export async function GET(request: Request) {
     const [tenants, apartments, contacts] = await Promise.all([
         prisma.tenant.findMany({
             where: {
+                isArchived: false,
                 OR: [
                     { firstName: { contains: q } },
                     { lastName: { contains: q } },

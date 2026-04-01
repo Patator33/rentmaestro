@@ -1,6 +1,7 @@
 interface Company {
     name: string;
     address: string | null;
+    logoUrl?: string | null;
 }
 
 interface Apartment {
@@ -126,6 +127,7 @@ export function generateQuittanceHtml(lease: Lease, period: Date, verifyUrl?: st
     <div class="info-grid">
         <div class="info-box">
             <h3>🏠 Bailleur</h3>
+            ${lease.apartment.company?.logoUrl ? `<img src="${lease.apartment.company.logoUrl}" style="max-height:60px;max-width:200px;display:block;margin-bottom:0.5rem;object-fit:contain;" alt="Logo">` : ''}
             <p><strong>${bailleurName}</strong></p>
             <p style="margin-top: 0.25rem; font-size: 13px; color: #555;">${bailleurAddress}</p>
         </div>

@@ -112,6 +112,29 @@ export default async function EditApartmentPage({ params }: { params: Promise<{ 
                     <textarea id="comment" name="comment" defaultValue={apartment.comment || ''} className={styles.textarea} placeholder="Notes sur le propriétaire, code d'entrée..." />
                 </div>
 
+                <div className={styles.row}>
+                    <div className={styles.formGroup}>
+                        <label htmlFor="availableFrom" className={styles.label}>Disponible à la location depuis</label>
+                        <input
+                            type="date"
+                            id="availableFrom"
+                            name="availableFrom"
+                            defaultValue={(apartment as any).availableFrom ? new Date((apartment as any).availableFrom).toISOString().split('T')[0] : ''}
+                            className={styles.input}
+                        />
+                    </div>
+                    <div className={styles.formGroup}>
+                        <label htmlFor="soldAt" className={styles.label}>Vendu le (optionnel)</label>
+                        <input
+                            type="date"
+                            id="soldAt"
+                            name="soldAt"
+                            defaultValue={(apartment as any).soldAt ? new Date((apartment as any).soldAt).toISOString().split('T')[0] : ''}
+                            className={styles.input}
+                        />
+                    </div>
+                </div>
+
                 <button type="submit" className={styles.submitButton}>Enregistrer les modifications</button>
             </form>
         </div>

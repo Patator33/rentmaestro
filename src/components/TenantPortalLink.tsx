@@ -6,9 +6,10 @@ import { generatePortalToken, sendPortalInvite } from '@/actions/tenants';
 interface Props {
     tenantId: string;
     existingToken: string | null;
+    isArchived?: boolean;
 }
 
-export default function TenantPortalLink({ tenantId, existingToken }: Props) {
+export default function TenantPortalLink({ tenantId, existingToken, isArchived }: Props) {
     const [loading, setLoading] = useState(false);
     const [sending, setSending] = useState(false);
     const [sent, setSent] = useState(false);
@@ -45,6 +46,17 @@ export default function TenantPortalLink({ tenantId, existingToken }: Props) {
         }
         setSending(false);
     };
+
+    if (isArchived) {
+        return (
+            <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'var(--surface)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Portail Locataire</h3>
+                <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                    🔒 Accès portal révoqué (locataire archivé).
+                </p>
+            </div>
+        );
+    }
 
     return (
         <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'var(--surface)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>

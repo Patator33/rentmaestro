@@ -68,7 +68,8 @@ async function getStats() {
   const now = new Date();
   const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
 
-  const apartmentCount = await prisma.apartment.count();
+  // Exclude sold apartments from occupancy count
+  const apartmentCount = await prisma.apartment.count({ where: { soldAt: null } });
   // Count tenants with an active lease today
   const tenantCount = await prisma.tenant.count({
     where: {
@@ -159,6 +160,11 @@ export default async function Home() {
   });
 
   const now = new Date();
+  const currentMonthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  const partialPayments = await prisma.rentPayment.findMany({
+    where: { period: currentMonthStart, status: 'PARTIAL' },
+    include: { lease: { include: { tenant: true, apartment: true } } },
+  });
 
   const rentReviews = activeLeases.filter((lease: any) => {
     const start = new Date(lease.startDate);
@@ -205,6 +211,31 @@ export default async function Home() {
                     Marquer comme envoyé
                   </button>
                 </form>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Partial Payments Alert */}
+      {partialPayments.length > 0 && (
+        <section style={{ marginBottom: '3rem', padding: '1.5rem', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 'var(--radius-xl)' }}>
+          <h2 style={{ color: '#f59e0b', fontSize: '1.25rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            💰 Paiements partiels ce mois ({partialPayments.length})
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+            {partialPayments.map((p: any) => (
+              <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <span style={{ color: 'var(--text-main)' }}>
+                  <strong>{p.lease.tenant.firstName} {p.lease.tenant.lastName}</strong>
+                  {' · '}
+                  <Link href={`/apartments/${p.lease.apartment.id}`} style={{ color: '#f59e0b', textDecoration: 'underline' }}>
+                    {p.lease.apartment.name || p.lease.apartment.address}
+                  </Link>
+                </span>
+                <span style={{ fontSize: '0.9rem', color: '#f59e0b', fontWeight: 600 }}>
+                  Reçu {p.paidAmount?.toFixed(2)} € — Solde {(p.amount - (p.paidAmount ?? 0)).toFixed(2)} €
+                </span>
               </div>
             ))}
           </div>

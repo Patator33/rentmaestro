@@ -78,7 +78,10 @@ export async function sendReminderEmail(leaseId: string, periodStr: string) {
         if (!payment.lease.tenant.email) throw new Error("Le locataire n'a pas d'adresse email renseignée.");
 
         const formattedPeriod = getMonthYear(payment.period);
-        const amount = payment.amount.toFixed(2);
+        const remainingAmount = payment.status === 'PARTIAL' && (payment as any).paidAmount
+            ? (payment.amount - (payment as any).paidAmount).toFixed(2)
+            : payment.amount.toFixed(2);
+        const amount = remainingAmount;
 
         const html = `
             <div style="font-family: sans-serif; color: #333; line-height: 1.6;">

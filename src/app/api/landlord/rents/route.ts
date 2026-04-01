@@ -42,6 +42,7 @@ export async function GET(request: Request) {
             paymentId: payment?.id ?? null,
             period: startOfMonth.toISOString(),
             amount: payment?.amount ?? (lease.rentAmount + lease.chargesAmount),
+            paidAmount: (payment as any)?.paidAmount ?? null,
             status: payment?.status ?? null,
             paidAt: payment?.paidAt ?? null,
             tenant: { id: lease.tenant.id, firstName: lease.tenant.firstName, lastName: lease.tenant.lastName },

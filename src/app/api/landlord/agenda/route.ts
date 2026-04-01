@@ -29,6 +29,7 @@ export async function GET(request: Request) {
     if (!verifyMobileToken(request)) return unauthorized();
 
     const now = new Date();
+    const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
     const horizon = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 6, 1));
 
     const [activeLeases, upcomingLeases, tasks] = await Promise.all([
@@ -37,7 +38,7 @@ export async function GET(request: Request) {
             include: { tenant: true, apartment: true },
         }),
         prisma.lease.findMany({
-            where: { startDate: { gt: now, lte: horizon } },
+            where: { startDate: { gte: today, lte: horizon } },
             include: { tenant: true, apartment: true },
         }),
         prisma.task.findMany({
@@ -53,7 +54,7 @@ export async function GET(request: Request) {
         // Fin de bail
         if (lease.endDate) {
             const end = new Date(lease.endDate);
-            if (end >= now && end <= horizon) {
+            if (end >= today && end <= horizon) {
                 const days = diffDays(end, now);
                 events.push({
                     date: end,
@@ -74,7 +75,7 @@ export async function GET(request: Request) {
         const nextReview = new Date(refDate);
         nextReview.setFullYear(nextReview.getFullYear() + 1);
 
-        if (nextReview >= now && nextReview <= horizon) {
+        if (nextReview >= today && nextReview <= horizon) {
             const days = diffDays(nextReview, now);
             events.push({
                 date: nextReview,

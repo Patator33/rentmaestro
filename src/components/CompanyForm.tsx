@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { createCompany, updateCompany } from '@/actions/companies';
 import { Company } from '@prisma/client';
 import styles from './CompanyForm.module.css';
@@ -13,6 +13,36 @@ export default function CompanyForm({ company }: Props) {
     const isEdit = !!company;
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [logoUrl, setLogoUrl] = useState<string | null>((company as any)?.logoUrl ?? null);
+    const [logoUploading, setLogoUploading] = useState(false);
+    const [dragging, setDragging] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const uploadLogo = async (file: File) => {
+        setLogoUploading(true);
+        const fd = new FormData();
+        fd.append('file', file);
+        const res = await fetch('/api/upload/company-logo', { method: 'POST', body: fd });
+        setLogoUploading(false);
+        if (res.ok) {
+            const data = await res.json();
+            setLogoUrl(data.url);
+        } else {
+            alert('Erreur lors du téléversement du logo');
+        }
+    };
+
+    const handleDrop = async (e: React.DragEvent) => {
+        e.preventDefault();
+        setDragging(false);
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) await uploadLogo(file);
+    };
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) await uploadLogo(file);
+    };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -20,6 +50,7 @@ export default function CompanyForm({ company }: Props) {
         setError(null);
 
         const formData = new FormData(e.currentTarget);
+        if (logoUrl) formData.set('logoUrl', logoUrl);
 
         try {
             if (isEdit) {
@@ -92,6 +123,53 @@ export default function CompanyForm({ company }: Props) {
                     className={styles.textarea}
                     placeholder="Ex: 10 rue de la Paix, 75000 Paris"
                     rows={3}
+                />
+            </div>
+
+            {/* Logo Upload */}
+            <div className={styles.formGroup}>
+                <label className={styles.label}>Logo (affiché sur les quittances)</label>
+                <div
+                    onDragOver={e => { e.preventDefault(); setDragging(true); }}
+                    onDragLeave={() => setDragging(false)}
+                    onDrop={handleDrop}
+                    onClick={() => fileInputRef.current?.click()}
+                    style={{
+                        border: `2px dashed ${dragging ? '#2b8cee' : '#cbd5e1'}`,
+                        borderRadius: '8px',
+                        padding: '1.5rem',
+                        textAlign: 'center',
+                        cursor: 'pointer',
+                        background: dragging ? 'rgba(43,140,238,0.05)' : 'transparent',
+                        transition: 'all 0.2s',
+                    }}
+                >
+                    {logoUploading ? (
+                        <p style={{ color: '#64748b', fontSize: '0.9rem' }}>⏳ Téléversement...</p>
+                    ) : logoUrl ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+                            <img src={logoUrl} alt="Logo" style={{ maxHeight: '60px', maxWidth: '200px', objectFit: 'contain' }} />
+                            <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Cliquer ou déposer pour remplacer</span>
+                            <button
+                                type="button"
+                                onClick={e => { e.stopPropagation(); setLogoUrl(null); }}
+                                style={{ fontSize: '0.8rem', color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+                            >
+                                Supprimer le logo
+                            </button>
+                        </div>
+                    ) : (
+                        <p style={{ color: '#64748b', fontSize: '0.9rem' }}>
+                            🖼️ Glisser-déposer ou cliquer pour téléverser un logo
+                        </p>
+                    )}
+                </div>
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={handleFileChange}
                 />
             </div>
 

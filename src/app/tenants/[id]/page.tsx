@@ -6,6 +6,7 @@ import styles from "./page.module.css";
 import { formatDate } from "@/lib/utils";
 import TenantNotes from "@/components/TenantNotes";
 import TenantPortalLink from "@/components/TenantPortalLink";
+import { archiveTenant, reactivateTenant } from "@/actions/tenants";
 import TenantMessaging from "@/components/TenantMessaging";
 
 export const dynamic = "force-dynamic";
@@ -48,9 +49,18 @@ export default async function TenantDetailsPage({ params }: { params: Promise<{ 
                     <h1 className={styles.title}>{tenant.firstName} {tenant.lastName}</h1>
                     <p className={styles.subtitle}>Créé le {formatDate(tenant.createdAt)}</p>
                 </div>
-                <Link href={`/tenants/${tenant.id}/edit`} className={styles.editButton}>
-                    ✏️ Modifier
-                </Link>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <a
+                        href={`/api/tenants/${tenant.id}/vcard`}
+                        download
+                        style={{ padding: '0.5rem 1rem', background: 'rgba(16,185,129,0.1)', color: 'var(--success)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '6px', fontWeight: 500, fontSize: '0.9rem', textDecoration: 'none' }}
+                    >
+                        📇 Exporter contact
+                    </a>
+                    <Link href={`/tenants/${tenant.id}/edit`} className={styles.editButton}>
+                        ✏️ Modifier
+                    </Link>
+                </div>
             </header>
 
             <div className={styles.grid}>
@@ -73,7 +83,22 @@ export default async function TenantDetailsPage({ params }: { params: Promise<{ 
                 </section>
 
                 <section className={styles.section} style={{ gridColumn: '1 / -1' }}>
-                    <TenantPortalLink tenantId={tenant.id} existingToken={tenant.portalToken} />
+                    <TenantPortalLink tenantId={tenant.id} existingToken={tenant.portalToken} isArchived={tenant.isArchived} />
+                    {tenant.isArchived ? (
+                        <form action={reactivateTenant.bind(null, tenant.id)} style={{ marginTop: '0.75rem' }}>
+                            <button type="submit" style={{ padding: '0.5rem 1rem', background: 'rgba(43,140,238,0.1)', color: 'var(--primary-color)', border: '1px solid rgba(43,140,238,0.3)', borderRadius: '6px', cursor: 'pointer', fontWeight: 500 }}>
+                                Réactiver ce locataire
+                            </button>
+                        </form>
+                    ) : (
+                        (tenant as any).leases?.every((l: any) => !l.isActive) && (tenant as any).leases?.length > 0 && (
+                            <form action={archiveTenant.bind(null, tenant.id)} style={{ marginTop: '0.75rem' }}>
+                                <button type="submit" style={{ padding: '0.5rem 1rem', background: 'rgba(100,116,139,0.08)', color: 'var(--text-muted)', border: '1px solid rgba(100,116,139,0.2)', borderRadius: '6px', cursor: 'pointer', fontWeight: 500 }}>
+                                    Archiver ce locataire
+                                </button>
+                            </form>
+                        )
+                    )}
                 </section>
 
                 {hasCoTenant && (

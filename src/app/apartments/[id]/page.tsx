@@ -217,7 +217,7 @@ export default async function ApartmentDetailsPage({ params }: { params: Promise
                 <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '1rem' }}>
                     Interventions & Tâches
                 </h2>
-                <TaskBoard key={apartment.id} apartmentId={apartment.id} initialTasks={apartment.tasks} />
+                <TaskBoard key={apartment.id} apartmentId={apartment.id} apartmentAddress={`${apartment.address}, ${apartment.city}`} initialTasks={apartment.tasks as any} />
             </div>
 
             <div style={{ marginTop: '2rem' }}>

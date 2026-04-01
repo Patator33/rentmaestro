@@ -80,6 +80,24 @@ export async function updateTenant(id: string, formData: FormData) {
     redirect(`/tenants/${id}`);
 }
 
+export async function archiveTenant(id: string) {
+    await prisma.tenant.update({
+        where: { id },
+        data: { isArchived: true, portalToken: null },
+    });
+    revalidatePath('/tenants');
+    revalidatePath(`/tenants/${id}`);
+}
+
+export async function reactivateTenant(id: string) {
+    await prisma.tenant.update({
+        where: { id },
+        data: { isArchived: false },
+    });
+    revalidatePath('/tenants');
+    revalidatePath(`/tenants/${id}`);
+}
+
 export async function generatePortalToken(tenantId: string) {
     try {
         const token = crypto.randomUUID();
