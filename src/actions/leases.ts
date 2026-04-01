@@ -152,6 +152,24 @@ export async function updateLease(id: string, formData: FormData) {
     redirect("/leases");
 }
 
+export async function markDepositReceived(leaseId: string, amount: number) {
+    await prisma.lease.update({
+        where: { id: leaseId },
+        data: { depositStatus: 'RECEIVED', depositAmount: amount },
+    });
+    revalidatePath('/leases');
+    revalidatePath(`/leases/${leaseId}`);
+}
+
+export async function markDepositReturned(leaseId: string, amount: number) {
+    await prisma.lease.update({
+        where: { id: leaseId },
+        data: { depositStatus: 'RETURNED', depositReturnedAt: new Date() },
+    });
+    revalidatePath('/leases');
+    revalidatePath(`/leases/${leaseId}`);
+}
+
 export async function markRentReviewAsSent(leaseId: string) {
     try {
         await prisma.lease.update({

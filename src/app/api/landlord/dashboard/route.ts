@@ -11,7 +11,7 @@ export async function GET(request: Request) {
     const startOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
     const endOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
 
-    const [pendingPayments, paidPayments, openIncidents, unreadMessages] = await Promise.all([
+    const [pendingPayments, paidPayments, openIncidents, openTasks, unreadMessages] = await Promise.all([
         prisma.rentPayment.count({
             where: { period: startOfMonth, status: { in: ['PENDING', 'LATE'] } }
         }),
@@ -21,6 +21,9 @@ export async function GET(request: Request) {
         }),
         prisma.task.count({
             where: { status: { in: ['TODO', 'IN_PROGRESS'] }, tenantId: { not: null } }
+        }),
+        prisma.task.count({
+            where: { status: { in: ['TODO', 'IN_PROGRESS'] }, tenantId: null }
         }),
         prisma.message.count({
             where: { fromTenant: true, readAt: null }
@@ -50,6 +53,7 @@ export async function GET(request: Request) {
         monthRevenue: paidPayments._sum.amount ?? 0,
         pendingAmount: totalPendingAmount._sum.amount ?? 0,
         openIncidents,
+        openTasks,
         unreadMessages,
         activeLeases,
         currentMonth: startOfMonth.toISOString().slice(0, 7),
@@ -59,6 +63,8 @@ export async function GET(request: Request) {
             status: p.status,
             tenant: { id: p.lease.tenant.id, firstName: p.lease.tenant.firstName, lastName: p.lease.tenant.lastName },
             apartment: { id: p.lease.apartment.id, address: p.lease.apartment.address, name: p.lease.apartment.name },
+            leaseId: p.leaseId,
+            period: startOfMonth.toISOString().slice(0, 7),
         })),
     });
 }

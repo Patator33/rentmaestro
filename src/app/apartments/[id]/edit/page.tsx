@@ -96,6 +96,10 @@ export default async function EditApartmentPage({ params }: { params: Promise<{ 
                         <label htmlFor="taxAmount" className={styles.label}>Taxe Foncière (Mensuelle)</label>
                         <input type="number" step="0.01" id="taxAmount" name="taxAmount" defaultValue={apartment.taxAmount || ''} className={styles.input} placeholder="80.00" />
                     </div>
+                    <div className={styles.formGroup}>
+                        <label htmlFor="defaultDeposit" className={styles.label}>Caution par défaut (€)</label>
+                        <input type="number" step="0.01" id="defaultDeposit" name="defaultDeposit" defaultValue={(apartment as any).defaultDeposit || ''} className={styles.input} placeholder="800.00" />
+                    </div>
                 </div>
 
                 <div className={styles.formGroup}>
