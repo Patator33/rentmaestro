@@ -69,6 +69,36 @@ export async function PUT(
     return NextResponse.json(lease);
 }
 
+export async function POST(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    if (!verifyMobileToken(request)) return unauthorized();
+    const { id } = await params;
+    const body = await request.json();
+
+    if (body.action === 'depositPay') {
+        const paidAmount = parseFloat(body.paidAmount);
+        if (isNaN(paidAmount) || paidAmount <= 0) {
+            return NextResponse.json({ error: 'Montant invalide' }, { status: 400 });
+        }
+        const lease = await prisma.lease.findUnique({ where: { id } });
+        if (!lease) return NextResponse.json({ error: 'Bail introuvable' }, { status: 404 });
+        const total = lease.depositAmount ?? 0;
+        const isComplete = paidAmount >= total;
+        await prisma.lease.update({
+            where: { id },
+            data: {
+                depositPaidAmount: paidAmount,
+                depositStatus: isComplete ? 'RECEIVED' : 'PARTIAL_RECEIVED',
+            },
+        });
+        return NextResponse.json({ success: true, status: isComplete ? 'RECEIVED' : 'PARTIAL_RECEIVED' });
+    }
+
+    return NextResponse.json({ error: 'Action inconnue' }, { status: 400 });
+}
+
 export async function OPTIONS() {
     return new NextResponse(null, { status: 204 });
 }

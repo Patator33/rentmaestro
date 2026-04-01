@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { mkdir, writeFile } from 'fs/promises';
-import { join } from 'path';
 
 export const dynamic = 'force-dynamic';
+
+const MAX_SIZE = 512 * 1024; // 512 KB
 
 export async function POST(request: Request) {
     try {
@@ -17,18 +17,17 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Le fichier doit être une image' }, { status: 400 });
         }
 
-        const ext = file.name.split('.').pop() ?? 'png';
-        const filename = `logo-${Date.now()}.${ext}`;
-        const uploadDir = join(process.cwd(), 'public', 'uploads', 'company-logos');
-        const filePath = join(uploadDir, filename);
+        if (file.size > MAX_SIZE) {
+            return NextResponse.json({ error: 'Image trop volumineuse (max 512 Ko)' }, { status: 400 });
+        }
 
-        await mkdir(uploadDir, { recursive: true });
         const buffer = Buffer.from(await file.arrayBuffer());
-        await writeFile(filePath, buffer);
+        const base64 = buffer.toString('base64');
+        const dataUrl = `data:${file.type};base64,${base64}`;
 
-        return NextResponse.json({ url: `/uploads/company-logos/${filename}` });
+        return NextResponse.json({ url: dataUrl });
     } catch (error) {
         console.error('Erreur upload logo:', error);
-        return NextResponse.json({ error: 'Erreur lors du téléversement' }, { status: 500 });
+        return NextResponse.json({ error: `Erreur: ${error instanceof Error ? error.message : String(error)}` }, { status: 500 });
     }
 }
