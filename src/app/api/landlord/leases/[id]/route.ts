@@ -31,7 +31,7 @@ export async function PUT(
     if (!verifyMobileToken(request)) return unauthorized();
     const { id } = await params;
     const body = await request.json();
-    const { startDate, endDate, rentAmount, chargesAmount, depositAmount, isActive, rentEffectiveDate } = body;
+    const { startDate, endDate, rentAmount, chargesAmount, depositAmount, depositStatus, isActive, rentEffectiveDate } = body;
 
     let effectiveDate: Date | null = null;
     if (rentEffectiveDate) {
@@ -47,6 +47,7 @@ export async function PUT(
             rentAmount: rentAmount != null ? parseFloat(rentAmount) : undefined,
             chargesAmount: chargesAmount != null ? parseFloat(chargesAmount) : undefined,
             depositAmount: depositAmount != null ? parseFloat(depositAmount) : undefined,
+            depositStatus: depositStatus !== undefined ? depositStatus : undefined,
             isActive: isActive != null ? Boolean(isActive) : undefined,
             ...(effectiveDate ? { lastRentReviewDate: effectiveDate } : {}),
         },

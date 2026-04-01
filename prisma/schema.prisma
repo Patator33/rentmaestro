@@ -24,6 +24,7 @@ model Apartment {
   mortgageAmount  Float?
   insuranceAmount Float?
   taxAmount       Float?
+  defaultDeposit  Float?
   companyId       String?
   company         Company?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
   leases          Lease[]
