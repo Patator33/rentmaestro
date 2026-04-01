@@ -246,8 +246,8 @@ export default function Dashboard() {
                               {ev.sublabel && <p className="text-text-secondary text-xs mt-0.5 truncate">{ev.sublabel}</p>}
                             </div>
                             <div className="shrink-0 text-right flex items-center gap-1">
-                              <p className={`text-xs font-semibold ${ev.daysUntil <= 0 ? 'text-late' : ev.daysUntil <= 30 ? 'text-pending' : 'text-text-muted'}`}>
-                                {ev.daysUntil <= 0 ? 'En retard' : `J−${ev.daysUntil}`}
+                              <p className={`text-xs font-semibold ${ev.daysUntil < 0 ? 'text-late' : ev.daysUntil === 0 ? 'text-paid' : ev.daysUntil <= 30 ? 'text-pending' : 'text-text-muted'}`}>
+                                {ev.daysUntil < 0 ? 'En retard' : ev.daysUntil === 0 ? "Aujourd'hui" : `J−${ev.daysUntil}`}
                               </p>
                               {ev.leaseId && <span className="text-text-muted text-sm">›</span>}
                             </div>
