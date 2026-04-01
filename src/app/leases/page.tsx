@@ -161,8 +161,14 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                                 <td style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{lease.endDate ? formatDate(lease.endDate) : '—'}</td>
                                                 <td style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>—</td>
                                                 <td style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>—</td>
-                                                <td style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                                                    {lease.depositAmount ? `${lease.depositAmount.toFixed(2)} €` : '—'}
+                                                <td>
+                                                    {lease.depositAmount ? (
+                                                        <DepositStatusButton
+                                                            leaseId={lease.id}
+                                                            currentStatus={lease.depositStatus}
+                                                            amount={lease.depositAmount}
+                                                        />
+                                                    ) : '—'}
                                                 </td>
                                                 <td>{actionButtons(lease)}</td>
                                             </tr>
@@ -245,6 +251,7 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                             {Th('rent', 'Loyer HC')}
                                             {Th('charges', 'Charges')}
                                             {Th('cc', 'CC')}
+                                            {Th('deposit', 'Caution')}
                                             <th></th>
                                         </tr>
                                     </thead>
@@ -262,6 +269,15 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                                 <td>{lease.rentAmount.toFixed(2)} €</td>
                                                 <td>{lease.chargesAmount.toFixed(2)} €</td>
                                                 <td>{(lease.rentAmount + lease.chargesAmount).toFixed(2)} €</td>
+                                                <td>
+                                                    {lease.depositAmount ? (
+                                                        <DepositStatusButton
+                                                            leaseId={lease.id}
+                                                            currentStatus={lease.depositStatus}
+                                                            amount={lease.depositAmount}
+                                                        />
+                                                    ) : '—'}
+                                                </td>
                                                 <td>{actionButtons(lease)}</td>
                                             </tr>
                                         ))}
@@ -318,6 +334,13 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                                 <span className={styles.date}>Début : {formatDate(lease.startDate)}</span>
                                                 {lease.endDate && (
                                                     <span className={styles.date} style={{ opacity: 0.8 }}>Fin : {formatDate(lease.endDate)}</span>
+                                                )}
+                                                {lease.depositAmount && (
+                                                    <DepositStatusButton
+                                                        leaseId={lease.id}
+                                                        currentStatus={lease.depositStatus}
+                                                        amount={lease.depositAmount}
+                                                    />
                                                 )}
                                             </div>
                                             <div className={styles.cardFooter} style={{ gap: '0.5rem' }}>
@@ -460,8 +483,18 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                             <span className={styles.date}>
                                                 Du {formatDate(lease.startDate)} au {lease.endDate ? formatDate(lease.endDate) : '?'}
                                             </span>
+                                            {lease.depositAmount && (
+                                                <DepositStatusButton
+                                                    leaseId={lease.id}
+                                                    currentStatus={lease.depositStatus}
+                                                    amount={lease.depositAmount}
+                                                />
+                                            )}
                                         </div>
                                         <div className={styles.cardFooter} style={{ gap: '0.5rem' }}>
+                                            <Link href={`/leases/${lease.id}`} className="std-add-button" style={{ fontSize: '0.85rem', padding: '0.4rem 0.75rem', opacity: 0.7 }} title="Documents du bail">
+                                                📎
+                                            </Link>
                                             <Link href={`/leases/${lease.id}/edit`} className="std-add-button" style={{ fontSize: '0.85rem', padding: '0.4rem 0.75rem', opacity: 0.7 }}>
                                                 ✏️ Modifier
                                             </Link>
