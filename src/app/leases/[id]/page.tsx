@@ -29,8 +29,8 @@ export default async function LeaseDetailPage({ params }: { params: Promise<{ id
     if (!lease) notFound();
 
     const depositStatus = lease.depositStatus || (lease.depositAmount ? 'PENDING' : null);
-    const canMarkReceived = depositStatus === 'PENDING' || depositStatus === null;
-    const canMarkReturned = depositStatus === 'RECEIVED';
+    const canMarkReceived = depositStatus !== 'RECEIVED' && depositStatus !== 'TO_RETURN' && depositStatus !== 'RETURNED' && depositStatus !== 'DEDUCTED';
+    const canMarkReturned = depositStatus === 'RECEIVED' || depositStatus === 'TO_RETURN' || depositStatus === 'PENDING' || depositStatus === null;
 
     const markReceivedAction = async (formData: FormData) => {
         'use server';
@@ -66,13 +66,13 @@ export default async function LeaseDetailPage({ params }: { params: Promise<{ id
             </div>
 
             {/* Deposit actions */}
-            {lease.depositAmount && canMarkReceived && (
+            {canMarkReceived && (
                 <section style={{ background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '1.25rem', marginBottom: '1.5rem' }}>
                     <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.75rem' }}>💰 Marquer la caution comme perçue</h2>
                     <form action={markReceivedAction} style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end' }}>
                         <div>
                             <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.25rem' }}>Montant perçu (€)</label>
-                            <input type="number" name="amount" step="0.01" defaultValue={lease.depositAmount} required
+                            <input type="number" name="amount" step="0.01" defaultValue={lease.depositAmount ?? ''} required
                                 style={{ background: 'var(--bg)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.5rem 0.75rem', color: 'var(--text-main)', width: '140px' }} />
                         </div>
                         <button type="submit" style={{ background: 'var(--primary-color)', color: '#fff', border: 'none', borderRadius: '8px', padding: '0.5rem 1rem', cursor: 'pointer', fontWeight: 600 }}>
@@ -82,13 +82,13 @@ export default async function LeaseDetailPage({ params }: { params: Promise<{ id
                 </section>
             )}
 
-            {lease.depositAmount && canMarkReturned && (
+            {canMarkReturned && (
                 <section style={{ background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '1.25rem', marginBottom: '1.5rem' }}>
                     <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.75rem' }}>↩️ Restituer la caution</h2>
                     <form action={markReturnedAction} style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end' }}>
                         <div>
                             <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.25rem' }}>Montant restitué (€)</label>
-                            <input type="number" name="amount" step="0.01" defaultValue={lease.depositAmount} required
+                            <input type="number" name="amount" step="0.01" defaultValue={lease.depositAmount ?? ''} required
                                 style={{ background: 'var(--bg)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.5rem 0.75rem', color: 'var(--text-main)', width: '140px' }} />
                         </div>
                         <button type="submit" style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: '8px', padding: '0.5rem 1rem', cursor: 'pointer', fontWeight: 600 }}>
