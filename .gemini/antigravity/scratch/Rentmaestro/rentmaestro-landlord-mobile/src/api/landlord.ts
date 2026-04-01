@@ -180,9 +180,9 @@ export const api = {
   },
 
   payDeposit: async (leaseId: string, paidAmount: number) => {
-    const res = await apiFetch(`/api/landlord/leases/${leaseId}/deposit-pay`, {
+    const res = await apiFetch(`/api/landlord/leases/${leaseId}`, {
       method: 'POST',
-      body: JSON.stringify({ paidAmount }),
+      body: JSON.stringify({ action: 'depositPay', paidAmount }),
     });
     return res.json();
   },

@@ -26,6 +26,9 @@ export default function Rents() {
   const [rents, setRents] = useState<RentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [payModal, setPayModal] = useState<RentItem | null>(null);
+  const [payInput, setPayInput] = useState('');
+  const [payMsg, setPayMsg] = useState('');
 
   const load = (m: string) => {
     setLoading(true);
@@ -40,11 +43,28 @@ export default function Rents() {
     setMonth(d.toISOString().slice(0, 7));
   };
 
-  const handlePay = async (item: RentItem) => {
-    setActionLoading(item.leaseId);
+  const openPayModal = (item: RentItem) => {
+    // Pre-fill with remaining balance for PARTIAL, full amount otherwise
+    const defaultAmount = item.status === 'PARTIAL' && item.paidAmount != null
+      ? (item.amount - item.paidAmount).toFixed(2)
+      : item.amount.toFixed(2);
+    setPayInput(defaultAmount);
+    setPayMsg('');
+    setPayModal(item);
+  };
+
+  const handlePayConfirm = async () => {
+    if (!payModal) return;
+    const amount = parseFloat(payInput);
+    if (isNaN(amount) || amount <= 0) return;
+    setActionLoading(payModal.leaseId);
     try {
-      await api.markPaid(item.leaseId, new Date(item.period).toISOString().split('T')[0], item.amount);
+      const period = new Date(payModal.period).toISOString().split('T')[0];
+      await api.markPaid(payModal.leaseId, period, amount);
+      setPayModal(null);
       load(month);
+    } catch (e: any) {
+      setPayMsg(`Erreur : ${e.message}`);
     } finally {
       setActionLoading(null);
     }
@@ -65,7 +85,10 @@ export default function Rents() {
   const unpaidRents = rents.filter(r => r.status !== 'PAID');
   const paidRents = rents.filter(r => r.status === 'PAID');
 
+  const isPartialInput = payModal && parseFloat(payInput) > 0 && parseFloat(payInput) < payModal.amount - 0.01;
+
   return (
+    <>
     <PullToRefresh onRefresh={() => load(month)}>
       <div className="pb-nav safe-top" style={{ minHeight: '100%' }}>
       <div className="px-4 py-4">
@@ -94,7 +117,7 @@ export default function Rents() {
               ) : (
                 <div className="space-y-2">
                   {unpaidRents.map(item => (
-                    <RentCard key={item.leaseId} item={item} actionLoading={actionLoading} onPay={handlePay} onUnpay={handleUnpay} />
+                    <RentCard key={item.leaseId} item={item} actionLoading={actionLoading} onPay={openPayModal} onUnpay={handleUnpay} />
                   ))}
                 </div>
               )}
@@ -109,7 +132,7 @@ export default function Rents() {
               ) : (
                 <div className="space-y-2">
                   {paidRents.map(item => (
-                    <RentCard key={item.leaseId} item={item} actionLoading={actionLoading} onPay={handlePay} onUnpay={handleUnpay} />
+                    <RentCard key={item.leaseId} item={item} actionLoading={actionLoading} onPay={openPayModal} onUnpay={handleUnpay} />
                   ))}
                 </div>
               )}
@@ -119,6 +142,54 @@ export default function Rents() {
       </div>
       </div>
     </PullToRefresh>
+
+    {/* Pay modal */}
+    {payModal && (
+      <div
+        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'flex-end', zIndex: 50 }}
+        onClick={e => e.target === e.currentTarget && setPayModal(null)}
+      >
+        <div style={{ background: '#1e293b', borderRadius: '20px 20px 0 0', padding: '1.5rem', paddingBottom: 'calc(1.5rem + 72px)', width: '100%' }}>
+          <h3 className="text-text-main font-bold text-base mb-0.5">Enregistrer un paiement</h3>
+          <p className="text-text-muted text-sm mb-4">
+            {payModal.tenant.firstName} {payModal.tenant.lastName} · Attendu : {payModal.amount.toFixed(2)} €
+          </p>
+          <label className="text-text-muted text-xs block mb-1">Montant reçu (€)</label>
+          <input
+            type="number"
+            step="0.01"
+            min="0.01"
+            value={payInput}
+            onChange={e => { setPayInput(e.target.value); setPayMsg(''); }}
+            className="w-full mb-2 px-3 py-2 rounded-xl border border-border bg-surface text-text-main text-sm"
+            placeholder="0.00"
+            autoFocus
+          />
+          {isPartialInput && (
+            <p className="text-xs mb-3 font-semibold" style={{ color: '#f59e0b' }}>
+              💰 Paiement partiel — solde restant : {(payModal.amount - parseFloat(payInput)).toFixed(2)} €
+            </p>
+          )}
+          {payMsg && (
+            <p className="text-late text-sm text-center mb-3">{payMsg}</p>
+          )}
+          <div className="flex gap-3">
+            <button onClick={() => setPayModal(null)} className="flex-1 py-3 rounded-xl border border-border text-text-secondary text-sm">
+              Annuler
+            </button>
+            <button
+              onClick={handlePayConfirm}
+              disabled={actionLoading === payModal.leaseId || !payInput}
+              className="flex-1 py-3 rounded-xl font-semibold text-sm text-white disabled:opacity-50"
+              style={{ background: isPartialInput ? '#f59e0b' : '#22c55e' }}
+            >
+              {actionLoading === payModal.leaseId ? '...' : isPartialInput ? '💰 Partiel' : '✓ Payé'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 
