@@ -4,6 +4,23 @@ import { api } from '../api/landlord';
 import { clearAuth } from '../lib/storage';
 import PullToRefresh from '../components/PullToRefresh';
 
+interface RentReview {
+  leaseId: string;
+  tenantName: string;
+  apartmentName: string;
+  startDate: string;
+}
+
+interface PartialPayment {
+  paymentId: string;
+  amount: number;
+  paidAmount: number | null;
+  remaining: number;
+  leaseId: string;
+  tenant: { id: string; firstName: string; lastName: string };
+  apartment: { address: string; name: string | null };
+}
+
 interface DashboardData {
   pendingRents: number;
   monthRevenue: number;
@@ -13,6 +30,8 @@ interface DashboardData {
   unreadMessages: number;
   activeLeases: number;
   currentMonth: string;
+  rentReviews: RentReview[];
+  partialPayments: PartialPayment[];
   unpaidThisMonth: Array<{
     paymentId: string;
     amount: number;
@@ -163,6 +182,44 @@ export default function Dashboard() {
               </div>
             )}
 
+            {data.partialPayments?.length > 0 && (
+              <div className="rounded-xl p-3 mb-3" style={{ background: 'rgba(245,158,11,0.08)', border: '2px solid #f59e0b' }}>
+                <p className="text-xs uppercase tracking-wide mb-2 font-semibold" style={{ color: '#f59e0b' }}>💰 Paiements partiels ce mois</p>
+                {data.partialPayments.map(p => (
+                  <div key={p.paymentId} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                    <div>
+                      <p className="text-text-main text-sm font-medium">{p.tenant.firstName} {p.tenant.lastName}</p>
+                      <p className="text-text-muted text-xs">{p.apartment.name || p.apartment.address}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs font-semibold" style={{ color: '#f59e0b' }}>Reçu {p.paidAmount?.toFixed(2)} €</p>
+                      <p className="text-xs" style={{ color: '#f59e0b' }}>Solde {p.remaining.toFixed(2)} €</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {data.rentReviews?.length > 0 && (
+              <div className="rounded-xl p-3 mb-3" style={{ background: 'rgba(34,197,94,0.08)', border: '2px solid #22c55e' }}>
+                <p className="text-xs uppercase tracking-wide mb-2 font-semibold" style={{ color: '#22c55e' }}>📈 Révisions de loyer à prévoir</p>
+                {data.rentReviews.map(r => (
+                  <div
+                    key={r.leaseId}
+                    className="flex items-center justify-between py-2 border-b border-border last:border-0 active:opacity-70"
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => navigate(`/leases/${r.leaseId}/edit`)}
+                  >
+                    <div>
+                      <p className="text-text-main text-sm font-medium">{r.tenantName}</p>
+                      <p className="text-text-muted text-xs">{r.apartmentName}</p>
+                    </div>
+                    <p className="text-text-secondary text-xs">depuis {new Date(r.startDate).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {agenda && agenda.total > 0 && (
               <div className="mb-3">
                 <p className="text-text-muted text-xs uppercase tracking-wide mb-3">Agenda & Échéancier — 6 prochains mois</p>
@@ -177,7 +234,7 @@ export default function Dashboard() {
                           <div
                             key={i}
                             className={`flex items-center gap-3 rounded-xl p-3${ev.leaseId ? ' active:opacity-70' : ''}`}
-                            style={{ background: cfg.bg, border: URGENCY_BORDER[ev.urgency], cursor: ev.leaseId ? 'pointer' : undefined, ...(ev.type === 'RENT_REVIEW' ? { boxShadow: '0 0 14px rgba(34,197,94,0.45)' } : {}) }}
+                            style={{ background: cfg.bg, border: ev.type === 'RENT_REVIEW' ? `2px solid ${TYPE_CONFIG.RENT_REVIEW.color}` : URGENCY_BORDER[ev.urgency], cursor: ev.leaseId ? 'pointer' : undefined, ...(ev.type === 'RENT_REVIEW' ? { boxShadow: '0 0 14px rgba(34,197,94,0.45)' } : {}) }}
                             onClick={() => ev.leaseId && navigate(`/leases/${ev.leaseId}/edit`)}
                           >
                             <div className="text-center shrink-0 w-10">
