@@ -476,3 +476,25 @@ button {
 [data-theme="light"] .std-table th {
   background: rgba(0, 0, 0, 0.02);
 }
+
+/* ─── Portal Mobile Shell ─────────────────────────────────────────── */
+.portal-mobile {
+  display: none;
+}
+
+.portal-desktop {
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .portal-mobile {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    height: 100vh; /* fallback */
+  }
+
+  .portal-desktop {
+    display: none;
+  }
+}
