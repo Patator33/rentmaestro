@@ -24,21 +24,48 @@ export default function Tenants() {
 
         {loading ? (
           <p className="text-text-muted text-sm text-center py-8">Chargement...</p>
-        ) : (
-          <div className="space-y-2">
-            {tenants.map((t: any) => (
+        ) : (() => {
+          const activeTenants = tenants.filter((t: any) => t.leases.some((l: any) => l.isActive));
+          const formerTenants = tenants.filter((t: any) => !t.leases.some((l: any) => l.isActive) && t.leases.length > 0);
+          const noLeaseTenants = tenants.filter((t: any) => t.leases.length === 0);
+          const allActive = [...activeTenants, ...noLeaseTenants];
+
+          const renderCard = (t: any, dimmed = false) => {
+            const activeLease = t.leases.find((l: any) => l.isActive);
+            const lastLease = t.leases[0];
+            const displayLease = activeLease || lastLease;
+            return (
               <button
                 key={t.id}
                 onClick={() => navigate(`/tenants/${t.id}`)}
                 className="w-full bg-surface rounded-xl border border-border p-3 text-left active:opacity-80"
+                style={dimmed ? { opacity: 0.55 } : undefined}
               >
                 <p className="text-text-main font-medium text-sm">{t.firstName} {t.lastName}</p>
                 <p className="text-text-muted text-xs">{t.email}</p>
-                {t.leases[0] && <p className="text-text-secondary text-xs mt-0.5">{t.leases[0].apartment?.name || t.leases[0].apartment?.address}</p>}
+                {displayLease && <p className="text-text-secondary text-xs mt-0.5">{displayLease.apartment?.name || displayLease.apartment?.address}</p>}
               </button>
-            ))}
-          </div>
-        )}
+            );
+          };
+
+          return (
+            <>
+              {allActive.length > 0 && (
+                <div className="space-y-2">
+                  {allActive.map((t: any) => renderCard(t))}
+                </div>
+              )}
+              {formerTenants.length > 0 && (
+                <div className="mt-6">
+                  <p className="text-text-muted text-xs font-semibold uppercase tracking-wide mb-2 px-1">Anciens locataires</p>
+                  <div className="space-y-2">
+                    {formerTenants.map((t: any) => renderCard(t, true))}
+                  </div>
+                </div>
+              )}
+            </>
+          );
+        })()}
       </div>
     </div>
   );
