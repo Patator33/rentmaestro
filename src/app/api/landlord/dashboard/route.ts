@@ -9,7 +9,6 @@ export async function GET(request: Request) {
 
     const now = new Date();
     const startOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-    const endOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
 
     const [pendingPayments, paidPayments, openIncidents, openTasks, unreadMessages] = await Promise.all([
         prisma.rentPayment.count({
@@ -30,8 +29,14 @@ export async function GET(request: Request) {
         }),
     ]);
 
-    // Active leases count
-    const activeLeases = await prisma.lease.count({ where: { isActive: true } });
+    // Active leases count (by date, excludes future leases)
+    const todayMidnight = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    const activeLeases = await prisma.lease.count({
+        where: {
+            startDate: { lte: todayMidnight },
+            OR: [{ endDate: null }, { endDate: { gte: todayMidnight } }],
+        },
+    });
 
     // Partial payments this month
     const partialPaymentsRaw = await prisma.rentPayment.findMany({
@@ -80,10 +85,8 @@ export async function GET(request: Request) {
     });
     // Don't alert before the tenant's usual payment day for the current month
     const currentDay = now.getUTCDate();
-    const unpaidThisMonth = unpaidThisMonthRaw.filter(p => currentDay >= (p.lease.tenant.paymentDay || 5)).slice(0, 5);
+    const unpaidThisMonth = unpaidThisMonthRaw.filter(p => currentDay > (p.lease.tenant.paymentDay || 5) + 4).slice(0, 5);
 
-    // Pending rents for next month (not yet generated = active leases without payment for next month)
-    const nextMonthStart = endOfMonth;
     const totalPendingAmount = await prisma.rentPayment.aggregate({
         where: { period: startOfMonth, status: { in: ['PENDING', 'LATE'] } },
         _sum: { amount: true }

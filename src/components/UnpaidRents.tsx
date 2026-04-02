@@ -28,7 +28,7 @@ export default async function UnpaidRents() {
     const unpaidPayments = allUnpaid.filter(payment => {
         const paymentDay = payment.lease.tenant.paymentDay || 5;
         const isPastPeriod = new Date(payment.period).getTime() < currentMonthStart.getTime();
-        return isPastPeriod || currentDay >= paymentDay;
+        return isPastPeriod || currentDay > paymentDay + 4;
     });
 
     if (unpaidPayments.length === 0) {

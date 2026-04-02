@@ -19,7 +19,17 @@ export async function GET(request: Request) {
         orderBy: { lastName: 'asc' },
     });
 
-    return NextResponse.json(tenants);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tenantsWithStatus = tenants.map(t => ({
+        ...t,
+        leases: t.leases.map(l => ({
+            ...l,
+            isActive: new Date(l.startDate) <= today && (!l.endDate || new Date(l.endDate) >= today),
+        })),
+    }));
+
+    return NextResponse.json(tenantsWithStatus);
 }
 
 export async function POST(request: Request) {

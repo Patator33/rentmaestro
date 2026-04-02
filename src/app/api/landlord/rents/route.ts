@@ -35,8 +35,14 @@ export async function GET(request: Request) {
         orderBy: [{ apartment: { address: 'asc' } }],
     });
 
+    const currentDay = now.getUTCDate();
+    const isCurrentMonth = year === now.getUTCFullYear() && month === now.getUTCMonth();
+    const isPastMonth = year < now.getUTCFullYear() || (year === now.getUTCFullYear() && month < now.getUTCMonth());
+
     const result = leases.map(lease => {
         const payment = lease.payments[0] ?? null;
+        const paymentDay = lease.tenant.paymentDay || 5;
+        const isLate = isPastMonth || (isCurrentMonth && currentDay > paymentDay + 4);
         return {
             leaseId: lease.id,
             paymentId: payment?.id ?? null,
@@ -45,6 +51,7 @@ export async function GET(request: Request) {
             paidAmount: (payment as any)?.paidAmount ?? null,
             status: payment?.status ?? null,
             paidAt: payment?.paidAt ?? null,
+            isLate,
             tenant: { id: lease.tenant.id, firstName: lease.tenant.firstName, lastName: lease.tenant.lastName },
             apartment: { id: lease.apartment.id, address: lease.apartment.address, name: lease.apartment.name },
         };

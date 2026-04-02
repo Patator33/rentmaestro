@@ -256,7 +256,7 @@ export default async function RentsPage({
                             <>
                                 <tr>
                                     <td colSpan={5} style={{ background: 'rgba(239,68,68,0.06)', padding: '0.4rem 0.75rem', fontWeight: 700, fontSize: '0.8rem', color: '#ef4444', borderBottom: '1px solid rgba(239,68,68,0.2)' }}>
-                                        ⚠ Non payés — {unpaidLeases.length} bail{unpaidLeases.length !== 1 ? 's' : ''}
+                                        ⚠ Non payés — {unpaidLeases.length} {unpaidLeases.length > 1 ? 'baux' : 'bail'}
                                     </td>
                                 </tr>
                                 {unpaidLeases.length === 0 ? (
@@ -268,7 +268,7 @@ export default async function RentsPage({
                                     <>
                                         <tr>
                                             <td colSpan={5} style={{ background: 'rgba(34,197,94,0.06)', padding: '0.4rem 0.75rem', fontWeight: 700, fontSize: '0.8rem', color: '#22c55e', borderBottom: '1px solid rgba(34,197,94,0.2)', borderTop: '2px solid rgba(34,197,94,0.1)' }}>
-                                                ✓ Payés — {paidLeases.length} bail{paidLeases.length !== 1 ? 's' : ''}
+                                                ✓ Payés — {paidLeases.length} {paidLeases.length > 1 ? 'baux' : 'bail'}
                                             </td>
                                         </tr>
                                         {paidLeases.map(renderRow)}
