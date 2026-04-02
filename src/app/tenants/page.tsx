@@ -41,8 +41,14 @@ export default async function TenantsPage({ searchParams }: { searchParams: Prom
         )
         : [...allTenants];
 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const isLeaseActive = (l: { startDate: Date; endDate: Date | null }) =>
+        new Date(l.startDate) <= today && (!l.endDate || new Date(l.endDate) >= today);
+    const isLeaseFuture = (l: { startDate: Date }) => new Date(l.startDate) > today;
+
     tenants = tenants.sort((a, b) => {
-        const al = a.leases.find(l => l.isActive), bl = b.leases.find(l => l.isActive);
+        const al = a.leases.find(isLeaseActive), bl = b.leases.find(isLeaseActive);
         let av: string | number = '', bv: string | number = '';
         switch (sort) {
             case 'email': av = a.email; bv = b.email; break;
@@ -103,12 +109,13 @@ export default async function TenantsPage({ searchParams }: { searchParams: Prom
             />
 
             {(() => {
-                const activeTenants = tenants.filter(t => !t.isArchived && t.leases.some(l => l.isActive));
-                const formerTenants = tenants.filter(t => !t.isArchived && !t.leases.some(l => l.isActive) && t.leases.length > 0);
+                const activeTenants = tenants.filter(t => !t.isArchived && t.leases.some(isLeaseActive));
+                const futureTenants = tenants.filter(t => !t.isArchived && !t.leases.some(isLeaseActive) && t.leases.some(isLeaseFuture));
+                const formerTenants = tenants.filter(t => !t.isArchived && !t.leases.some(isLeaseActive) && !t.leases.some(isLeaseFuture) && t.leases.length > 0);
                 const archivedTenants = tenants.filter(t => t.isArchived);
                 const noLeaseTenants = tenants.filter(t => !t.isArchived && t.leases.length === 0);
-                // Combine no-lease with active for display (new tenants without lease)
-                const currentTenants = [...activeTenants, ...noLeaseTenants];
+                // Combine no-lease + future with active for display
+                const currentTenants = [...activeTenants, ...futureTenants, ...noLeaseTenants];
 
                 const renderTenantList = (list: typeof tenants, isFormer = false, isArchived = false) => {
                     if (list.length === 0) return null;
@@ -130,7 +137,7 @@ export default async function TenantsPage({ searchParams }: { searchParams: Prom
                                     </thead>
                                     <tbody>
                                         {list.map((tenant) => {
-                                            const activeLease = tenant.leases.find(l => l.isActive);
+                                            const activeLease = tenant.leases.find(isLeaseActive);
                                             const lastLease = tenant.leases[0];
                                             const displayLease = activeLease || lastLease;
                                             const hasCoTenant = tenant.coTenantFirstName || tenant.coTenantLastName;
@@ -187,7 +194,7 @@ export default async function TenantsPage({ searchParams }: { searchParams: Prom
                     return (
                         <div className={styles.grid} style={{ marginBottom: '1.5rem', opacity }}>
                             {list.map((tenant) => {
-                                const activeLease = tenant.leases.find(l => l.isActive);
+                                const activeLease = tenant.leases.find(isLeaseActive);
                                 const lastLease = tenant.leases[0];
                                 const displayLease = activeLease || lastLease;
                                 const hasCoTenant = tenant.coTenantFirstName || tenant.coTenantLastName;

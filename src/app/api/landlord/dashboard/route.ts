@@ -9,10 +9,14 @@ export async function GET(request: Request) {
 
     const now = new Date();
     const startOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    const nextMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
 
-    const [pendingPayments, paidPayments, openIncidents, openTasks, unreadMessages] = await Promise.all([
-        prisma.rentPayment.count({
-            where: { period: startOfMonth, status: { in: ['PENDING', 'LATE'] } }
+    const [activeLeasesThisMonth, paidPayments, openIncidents, openTasks, unreadMessages] = await Promise.all([
+        prisma.lease.count({
+            where: {
+                startDate: { lt: nextMonth },
+                OR: [{ endDate: null }, { endDate: { gte: startOfMonth } }],
+            }
         }),
         prisma.rentPayment.aggregate({
             where: { period: startOfMonth, status: 'PAID' },
@@ -28,6 +32,12 @@ export async function GET(request: Request) {
             where: { fromTenant: true, readAt: null }
         }),
     ]);
+
+    // pendingRents = active leases this month minus paid ones
+    const paidThisMonth = await prisma.rentPayment.count({
+        where: { period: startOfMonth, status: 'PAID' }
+    });
+    const pendingRents = activeLeasesThisMonth - paidThisMonth;
 
     // Active leases count (by date, excludes future leases)
     const todayMidnight = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
@@ -93,7 +103,7 @@ export async function GET(request: Request) {
     });
 
     return NextResponse.json({
-        pendingRents: pendingPayments,
+        pendingRents,
         monthRevenue: paidPayments._sum.amount ?? 0,
         pendingAmount: totalPendingAmount._sum.amount ?? 0,
         openIncidents,
