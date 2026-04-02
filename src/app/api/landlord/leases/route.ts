@@ -16,7 +16,14 @@ export async function GET(request: Request) {
         orderBy: { startDate: 'desc' },
     });
 
-    return NextResponse.json(leases);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const leasesWithStatus = leases.map(l => ({
+        ...l,
+        isActive: new Date(l.startDate) <= today && (!l.endDate || new Date(l.endDate) >= today),
+    }));
+
+    return NextResponse.json(leasesWithStatus);
 }
 
 export async function POST(request: Request) {

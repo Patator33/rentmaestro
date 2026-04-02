@@ -44,12 +44,10 @@ export default async function UnpaidRents() {
 
             <div className={styles.list}>
                 {unpaidPayments.map((payment) => {
-                    const daysSincePeriod = Math.floor((now.getTime() - payment.period.getTime()) / (1000 * 60 * 60 * 24));
-                    // Check if current day of month is > tenant's preferred payment day
                     const paymentDay = payment.lease.tenant.paymentDay || 5;
                     const currentDay = now.getDate();
-                    // Just simple check: if we are past the payment day in the current month
-                    const isLate = currentDay > paymentDay;
+                    const daysOverdue = currentDay - paymentDay;
+                    const isLate = daysOverdue > 4;
 
                     return (
                         <div key={payment.id} className={`${styles.item} ${isLate ? styles.itemLate : ''}`}>
@@ -60,9 +58,13 @@ export default async function UnpaidRents() {
                                 <div className={styles.itemApartment}>
                                     🏠 {payment.lease.apartment.name || payment.lease.apartment.address}
                                 </div>
-                                {isLate && (
+                                {isLate ? (
                                     <div className={styles.itemDays}>
-                                        {daysSincePeriod} jours de retard
+                                        {daysOverdue} jours de retard
+                                    </div>
+                                ) : (
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--warning)', marginTop: '0.15rem' }}>
+                                        À régler
                                     </div>
                                 )}
                                 {payment.sentAt && (
