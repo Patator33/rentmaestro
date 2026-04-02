@@ -8,11 +8,12 @@ export async function GET(request: Request) {
     if (!verifyMobileToken(request)) return unauthorized();
 
     const tenants = await prisma.tenant.findMany({
+        where: { isArchived: false },
         include: {
             leases: {
-                where: { isActive: true },
                 include: { apartment: { select: { id: true, address: true, name: true } } },
-                take: 1,
+                orderBy: { startDate: 'desc' },
+                take: 3,
             },
         },
         orderBy: { lastName: 'asc' },

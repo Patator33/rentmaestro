@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
 import LeaseDocumentUpload from "@/components/LeaseDocumentUpload";
-import { markDepositReceived, markDepositReturned } from "@/actions/leases";
+import { markDepositReceived, markDepositReturned, setDepositAmount } from "@/actions/leases";
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +49,12 @@ export default async function LeaseDetailPage({ params }: { params: Promise<{ id
         if (!isNaN(amount) && amount >= 0) await markDepositReturned(id, amount);
     };
 
+    const setDepositAmountAction = async (formData: FormData) => {
+        'use server';
+        const amt = parseFloat(formData.get('depositAmount') as string);
+        if (!isNaN(amt) && amt > 0) await setDepositAmount(id, amt);
+    };
+
     return (
         <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>
             <Link href="/leases" style={{ color: 'var(--primary-color)', fontSize: '0.9rem' }}>← Retour aux baux</Link>
@@ -78,6 +84,23 @@ export default async function LeaseDetailPage({ params }: { params: Promise<{ id
                     {lease.depositReturnedAt && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Restituée le {formatDate(lease.depositReturnedAt)}</div>}
                 </div>
             </div>
+
+            {/* Set deposit amount when not defined */}
+            {!lease.depositAmount && (
+                <section style={{ background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '1.25rem', marginBottom: '1.5rem' }}>
+                    <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.75rem' }}>💰 Définir le montant de la caution</h2>
+                    <form action={setDepositAmountAction} style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end' }}>
+                        <div>
+                            <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.25rem' }}>Montant (€)</label>
+                            <input type="number" name="depositAmount" step="0.01" required min="0.01"
+                                style={{ background: 'var(--bg)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.5rem 0.75rem', color: 'var(--text-main)', width: '140px' }} />
+                        </div>
+                        <button type="submit" style={{ background: 'var(--primary-color)', color: '#fff', border: 'none', borderRadius: '8px', padding: '0.5rem 1rem', cursor: 'pointer', fontWeight: 600 }}>
+                            Enregistrer
+                        </button>
+                    </form>
+                </section>
+            )}
 
             {/* Deposit actions */}
             {canMarkReceived && (

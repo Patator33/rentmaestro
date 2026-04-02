@@ -29,12 +29,18 @@ export default async function CompanyDetailsPage({ params }: { params: Promise<{
             </Link>
 
             <header className={styles.header}>
-                <div>
-                    <h1 className={styles.title}>
-                        {company.name}
-                        <span className={styles.badge} style={{ marginLeft: '1rem' }}>{company.type}</span>
-                    </h1>
-                    <p className={styles.subtitle}>Créée le {formatDate(company.createdAt)}</p>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
+                    {(company as any).logoUrl && (
+                        <img src={(company as any).logoUrl} alt={`Logo ${company.name}`}
+                            style={{ height: '52px', maxWidth: '120px', objectFit: 'contain', borderRadius: '6px', marginTop: '0.25rem' }} />
+                    )}
+                    <div>
+                        <h1 className={styles.title}>
+                            {company.name}
+                            <span className={styles.badge} style={{ marginLeft: '1rem' }}>{company.type}</span>
+                        </h1>
+                        <p className={styles.subtitle}>Créée le {formatDate(company.createdAt)}</p>
+                    </div>
                 </div>
                 <Link href={`/companies/${company.id}/edit`} className={styles.editButton}>
                     ✏️ Modifier

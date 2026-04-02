@@ -20,6 +20,7 @@ interface LeaseFormProps {
 export default function LeaseForm({ apartments, tenants }: LeaseFormProps) {
     const [rent, setRent] = useState<number | string>('');
     const [charges, setCharges] = useState<number | string>('');
+    const [deposit, setDeposit] = useState<number | string>('');
     const [conflictingLease, setConflictingLease] = useState<(Lease & { tenant: Tenant }) | null>(null);
     const [terminateConflict, setTerminateConflict] = useState(true);
 
@@ -30,6 +31,7 @@ export default function LeaseForm({ apartments, tenants }: LeaseFormProps) {
         if (apt) {
             setRent(apt.rent);
             setCharges(apt.charges);
+            setDeposit((apt as any).defaultDeposit ?? apt.rent ?? '');
             // Check for active lease
             // We consider 'active' if isActive is true OR if it overlaps (no end date or future end date)
             const conflict = apt.leases.find(l => {
@@ -42,6 +44,7 @@ export default function LeaseForm({ apartments, tenants }: LeaseFormProps) {
         } else {
             setRent('');
             setCharges('');
+            setDeposit('');
             setConflictingLease(null);
         }
     };
@@ -207,7 +210,8 @@ export default function LeaseForm({ apartments, tenants }: LeaseFormProps) {
                         name="depositAmount"
                         className={styles.input}
                         placeholder="Montant du dépôt de garantie"
-                        defaultValue={rent ? String(Number(rent)) : ''}
+                        value={deposit}
+                        onChange={(e) => setDeposit(e.target.value)}
                     />
                 </div>
 

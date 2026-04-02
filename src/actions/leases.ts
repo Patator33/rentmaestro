@@ -152,6 +152,15 @@ export async function updateLease(id: string, formData: FormData) {
     redirect("/leases");
 }
 
+export async function setDepositAmount(leaseId: string, amount: number) {
+    await prisma.lease.update({
+        where: { id: leaseId },
+        data: { depositAmount: amount, depositStatus: 'PENDING' },
+    });
+    revalidatePath('/leases');
+    revalidatePath(`/leases/${leaseId}`);
+}
+
 export async function markDepositReceived(leaseId: string, amount: number) {
     const lease = await prisma.lease.findUnique({ where: { id: leaseId } });
     const total = lease?.depositAmount ?? amount;

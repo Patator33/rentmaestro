@@ -39,9 +39,15 @@ export default async function CompaniesPage() {
                     {companies.map((company) => (
                         <div key={company.id} className={styles.card}>
                             <div className={styles.cardHeader}>
-                                <Link href={`/companies/${company.id}`} className={styles.cardTitle}>
-                                    {company.name}
-                                </Link>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                    {(company as any).logoUrl && (
+                                        <img src={(company as any).logoUrl} alt=""
+                                            style={{ height: '32px', maxWidth: '72px', objectFit: 'contain', borderRadius: '4px' }} />
+                                    )}
+                                    <Link href={`/companies/${company.id}`} className={styles.cardTitle}>
+                                        {company.name}
+                                    </Link>
+                                </div>
                                 <span className={styles.badge}>{company.type}</span>
                             </div>
 
