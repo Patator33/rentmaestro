@@ -10,6 +10,7 @@ interface RentItem {
   paidAmount: number | null;
   status: string | null;
   paidAt: string | null;
+  isLate?: boolean;
   tenant: { id: string; firstName: string; lastName: string };
   apartment: { address: string; name: string | null };
 }
@@ -194,10 +195,8 @@ export default function Rents() {
 }
 
 function RentCard({ item, actionLoading, onPay, onUnpay }: {
-  item: RentItem;
-  actionLoading: string | null;
-  onPay: (item: RentItem) => void;
-  onUnpay: (item: RentItem) => void;
+  item: RentItem; actionLoading: string | null;
+  onPay: (item: RentItem) => void; onUnpay: (item: RentItem) => void;
 }) {
   return (
     <div className="bg-surface rounded-xl border border-border p-3">
@@ -215,7 +214,7 @@ function RentCard({ item, actionLoading, onPay, onUnpay }: {
           ) : (
             <p className="text-text-main font-semibold text-sm">{item.amount.toFixed(2)} €</p>
           )}
-          <StatusBadge status={item.status} />
+          <StatusBadge status={item.status} isLate={item.isLate} />
         </div>
       </div>
       {item.status === 'PAID' ? (
@@ -239,10 +238,9 @@ function RentCard({ item, actionLoading, onPay, onUnpay }: {
   );
 }
 
-function StatusBadge({ status }: { status: string | null }) {
+function StatusBadge({ status, isLate }: { status: string | null; isLate?: boolean }) {
   if (status === 'PAID') return <span className="text-xs text-paid">✓ Payé</span>;
   if (status === 'PARTIAL') return <span className="text-xs font-semibold" style={{ color: '#f59e0b' }}>💰 Partiel</span>;
-  if (status === 'LATE') return <span className="text-xs text-late">⚠ Retard</span>;
-  if (status === 'PENDING') return <span className="text-xs text-pending">En attente</span>;
-  return <span className="text-xs text-text-muted">Non généré</span>;
+  if (status === 'LATE' || isLate) return <span className="text-xs text-late">⚠ En retard</span>;
+  return <span className="text-xs text-pending">À régler</span>;
 }
