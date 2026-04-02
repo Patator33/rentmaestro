@@ -126,16 +126,30 @@ export default async function RentsPage({
                                 </span>
                             )}
                         </span>
-                    ) : payment ? (
-                        <span className={styles.statusPending}>
-                            ⚠ En attente
-                            {payment.sentAt && (
-                                <span style={{ display: 'block', fontSize: '0.8em', fontWeight: 'normal', color: 'var(--warning)' }}>
-                                    (Relancé le {formatDate(payment.sentAt)})
-                                </span>
-                            )}
-                        </span>
-                    ) : (
+                    ) : payment ? (() => {
+                        const paymentDay = lease.tenant.paymentDay || 5;
+                        const daysOverdue = now.getDate() - paymentDay;
+                        const isLate = daysOverdue > 4;
+                        return isLate ? (
+                            <span className={styles.statusPending}>
+                                ⚠ En retard ({daysOverdue}j)
+                                {payment.sentAt && (
+                                    <span style={{ display: 'block', fontSize: '0.8em', fontWeight: 'normal', color: 'var(--warning)' }}>
+                                        (Relancé le {formatDate(payment.sentAt)})
+                                    </span>
+                                )}
+                            </span>
+                        ) : (
+                            <span className={styles.statusUnpaid}>
+                                À régler
+                                {payment.sentAt && (
+                                    <span style={{ display: 'block', fontSize: '0.8em', fontWeight: 'normal', color: 'var(--warning)' }}>
+                                        (Relancé le {formatDate(payment.sentAt)})
+                                    </span>
+                                )}
+                            </span>
+                        );
+                    })() : (
                         <span className={styles.statusUnpaid}>À régler</span>
                     )}
                 </td>
