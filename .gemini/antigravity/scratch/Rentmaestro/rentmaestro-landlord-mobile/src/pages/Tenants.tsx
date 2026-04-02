@@ -25,15 +25,19 @@ export default function Tenants() {
         {loading ? (
           <p className="text-text-muted text-sm text-center py-8">Chargement...</p>
         ) : (() => {
-          const activeTenants = tenants.filter((t: any) => t.leases.some((l: any) => l.isActive));
-          const formerTenants = tenants.filter((t: any) => !t.leases.some((l: any) => l.isActive) && t.leases.length > 0);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const isActive = (l: any) => l.isActive;
+          const isFuture = (l: any) => new Date(l.startDate) > today;
+
+          const activeTenants = tenants.filter((t: any) => t.leases.some(isActive));
+          const futureTenants = tenants.filter((t: any) => !t.leases.some(isActive) && t.leases.some(isFuture));
+          const formerTenants = tenants.filter((t: any) => !t.leases.some(isActive) && !t.leases.some(isFuture) && t.leases.length > 0);
           const noLeaseTenants = tenants.filter((t: any) => t.leases.length === 0);
           const allActive = [...activeTenants, ...noLeaseTenants];
 
           const renderCard = (t: any, dimmed = false) => {
-            const activeLease = t.leases.find((l: any) => l.isActive);
-            const lastLease = t.leases[0];
-            const displayLease = activeLease || lastLease;
+            const displayLease = t.leases.find(isActive) || t.leases.find(isFuture) || t.leases[0];
             return (
               <button
                 key={t.id}
@@ -55,9 +59,17 @@ export default function Tenants() {
                   {allActive.map((t: any) => renderCard(t))}
                 </div>
               )}
+              {futureTenants.length > 0 && (
+                <div className="mt-6">
+                  <p className="text-xs font-semibold uppercase tracking-wide mb-2 px-1" style={{ color: '#f59e0b' }}>À venir — {futureTenants.length}</p>
+                  <div className="space-y-2">
+                    {futureTenants.map((t: any) => renderCard(t))}
+                  </div>
+                </div>
+              )}
               {formerTenants.length > 0 && (
                 <div className="mt-6">
-                  <p className="text-text-muted text-xs font-semibold uppercase tracking-wide mb-2 px-1">Anciens locataires</p>
+                  <p className="text-text-muted text-xs font-semibold uppercase tracking-wide mb-2 px-1">Anciens locataires — {formerTenants.length}</p>
                   <div className="space-y-2">
                     {formerTenants.map((t: any) => renderCard(t, true))}
                   </div>
