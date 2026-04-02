@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
 export async function updateDepositStatus(leaseId: string, status: string) {
-    const validStatuses = ['PENDING', 'RECEIVED', 'TO_RETURN', 'RETURNED', 'DEDUCTED'];
+    const validStatuses = ['PENDING', 'PARTIAL_RECEIVED', 'RECEIVED', 'TO_RETURN', 'RETURNED', 'DEDUCTED'];
     if (!validStatuses.includes(status)) {
         throw new Error('Statut de dépôt invalide.');
     }

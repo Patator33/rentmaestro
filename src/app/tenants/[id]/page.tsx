@@ -38,6 +38,16 @@ export default async function TenantDetailsPage({ params }: { params: Promise<{ 
 
     const hasCoTenant = tenant.coTenantFirstName || tenant.coTenantLastName;
 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const getLeaseStatus = (lease: typeof tenant.leases[0]) => {
+        const start = new Date(lease.startDate);
+        const end = lease.endDate ? new Date(lease.endDate) : null;
+        if (start > today) return 'future';
+        if (!end || end >= today) return 'active';
+        return 'past';
+    };
+
     return (
         <div className={styles.container}>
             <Link href="/tenants" className={styles.backLink}>
@@ -129,24 +139,35 @@ export default async function TenantDetailsPage({ params }: { params: Promise<{ 
 
                 {tenant.leases.length > 0 && (
                     <section className={styles.section}>
-                        <h2 className={styles.sectionTitle}>Baux actifs</h2>
+                        <h2 className={styles.sectionTitle}>Baux</h2>
                         <div className={styles.leasesList}>
-                            {tenant.leases.map((lease) => (
-                                <div key={lease.id} className={styles.leaseItem}>
-                                    <div className={styles.leaseInfo}>
-                                        <span className={styles.leaseApartment}>
-                                            🏠 {lease.apartment.name || lease.apartment.address}
-                                        </span>
-                                        <span className={styles.leaseDate}>
-                                            Du {formatDate(lease.startDate)}
-                                            {lease.endDate ? ` au ${formatDate(lease.endDate)}` : ' (en cours)'}
-                                        </span>
+                            {tenant.leases.map((lease) => {
+                                const status = getLeaseStatus(lease);
+                                const statusConfig = status === 'active'
+                                    ? { label: 'Actif', color: '#22c55e' }
+                                    : status === 'future'
+                                    ? { label: 'À venir', color: '#f59e0b' }
+                                    : { label: 'Terminé', color: '#64748b' };
+                                return (
+                                    <div key={lease.id} className={styles.leaseItem} style={status === 'past' ? { opacity: 0.65 } : undefined}>
+                                        <div className={styles.leaseInfo}>
+                                            <span className={styles.leaseApartment} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                                🏠 {lease.apartment.name || lease.apartment.address}
+                                                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: statusConfig.color, background: `${statusConfig.color}20`, padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
+                                                    {statusConfig.label}
+                                                </span>
+                                            </span>
+                                            <span className={styles.leaseDate}>
+                                                Du {formatDate(lease.startDate)}
+                                                {lease.endDate ? ` au ${formatDate(lease.endDate)}` : ' (en cours)'}
+                                            </span>
+                                        </div>
+                                        <div className={styles.leaseAmount}>
+                                            {lease.rentAmount.toFixed(2)} € / mois
+                                        </div>
                                     </div>
-                                    <div className={styles.leaseAmount}>
-                                        {lease.rentAmount.toFixed(2)} € / mois
-                                    </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </section>
                 )}

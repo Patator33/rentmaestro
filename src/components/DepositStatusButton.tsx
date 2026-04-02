@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { updateDepositStatus } from '@/actions/management';
+import { payDepositPartial } from '@/actions/leases';
 import { useToast } from './Toast';
 
 const STATUS_LABELS: Record<string, { label: string; color: string; icon: string }> = {
@@ -21,6 +22,8 @@ interface DepositStatusButtonProps {
 
 export default function DepositStatusButton({ leaseId, currentStatus, amount }: DepositStatusButtonProps) {
     const [open, setOpen] = useState(false);
+    const [partialMode, setPartialMode] = useState(false);
+    const [partialAmount, setPartialAmount] = useState('');
     const { addToast } = useToast();
 
     if (!amount) return null;
@@ -28,6 +31,11 @@ export default function DepositStatusButton({ leaseId, currentStatus, amount }: 
     const current = STATUS_LABELS[currentStatus || 'PENDING'];
 
     const handleChange = async (newStatus: string) => {
+        if (newStatus === 'PARTIAL_RECEIVED') {
+            setOpen(false);
+            setPartialMode(true);
+            return;
+        }
         try {
             await updateDepositStatus(leaseId, newStatus);
             addToast(`Dépôt marqué comme "${STATUS_LABELS[newStatus].label}"`, 'success');
@@ -37,10 +45,26 @@ export default function DepositStatusButton({ leaseId, currentStatus, amount }: 
         setOpen(false);
     };
 
+    const handlePartialSubmit = async () => {
+        const paid = parseFloat(partialAmount);
+        if (isNaN(paid) || paid <= 0) {
+            addToast('Montant invalide', 'error');
+            return;
+        }
+        try {
+            await payDepositPartial(leaseId, paid);
+            addToast(`Paiement partiel de ${paid.toFixed(2)} € enregistré`, 'success');
+        } catch {
+            addToast('Erreur lors de l\'enregistrement', 'error');
+        }
+        setPartialMode(false);
+        setPartialAmount('');
+    };
+
     return (
         <div style={{ position: 'relative', display: 'inline-block' }}>
             <button
-                onClick={() => setOpen(!open)}
+                onClick={() => { setOpen(!open); setPartialMode(false); }}
                 style={{
                     padding: '0.25rem 0.75rem',
                     background: `${current.color}20`,
@@ -56,7 +80,63 @@ export default function DepositStatusButton({ leaseId, currentStatus, amount }: 
                 {current.icon} {current.label} ({amount.toFixed(0)}€)
             </button>
 
-            {open && (
+            {partialMode && (
+                <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    marginTop: '0.25rem',
+                    background: '#1a1f36',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: 'var(--radius-md)',
+                    padding: '0.75rem',
+                    zIndex: 100,
+                    minWidth: '200px',
+                    boxShadow: 'var(--shadow-lg)',
+                }}>
+                    <p style={{ fontSize: '0.8rem', color: '#f97316', marginBottom: '0.5rem', fontWeight: 600 }}>
+                        💰 Montant perçu (sur {amount.toFixed(0)} €)
+                    </p>
+                    <input
+                        type="number"
+                        min="0.01"
+                        max={amount}
+                        step="0.01"
+                        value={partialAmount}
+                        onChange={e => setPartialAmount(e.target.value)}
+                        placeholder={`0 – ${amount.toFixed(0)} €`}
+                        autoFocus
+                        style={{
+                            width: '100%',
+                            padding: '0.4rem 0.5rem',
+                            background: '#0f1729',
+                            border: '1px solid var(--border-color)',
+                            borderRadius: 'var(--radius-sm)',
+                            color: 'var(--text-main)',
+                            fontSize: '0.85rem',
+                            fontFamily: 'inherit',
+                            marginBottom: '0.5rem',
+                            boxSizing: 'border-box',
+                        }}
+                    />
+                    <div style={{ display: 'flex', gap: '0.4rem' }}>
+                        <button
+                            onClick={handlePartialSubmit}
+                            style={{ flex: 1, padding: '0.35rem', background: '#f97316', color: '#fff', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600, fontFamily: 'inherit' }}
+                        >
+                            Enregistrer
+                        </button>
+                        <button
+                            onClick={() => { setPartialMode(false); setPartialAmount(''); }}
+                            style={{ padding: '0.35rem 0.6rem', background: 'transparent', color: 'var(--text-muted)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: '0.8rem', fontFamily: 'inherit' }}
+                        >
+                            ✕
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {open && !partialMode && (
                 <div style={{
                     position: 'absolute',
                     top: '100%',
