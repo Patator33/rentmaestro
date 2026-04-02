@@ -2,12 +2,46 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/landlord';
 
+function leaseStatus(l: any): 'future' | 'active' | 'past' {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const start = new Date(l.startDate);
+  const end = l.endDate ? new Date(l.endDate) : null;
+  if (start > today) return 'future';
+  if (!end || end >= today) return 'active';
+  return 'past';
+}
+
 export default function Leases() {
   const [leases, setLeases] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => { api.getLeases().then(setLeases).finally(() => setLoading(false)); }, []);
+
+  const future = leases.filter(l => leaseStatus(l) === 'future');
+  const active = leases.filter(l => leaseStatus(l) === 'active');
+  const past   = leases.filter(l => leaseStatus(l) === 'past');
+
+  const renderCard = (l: any, dimmed = false) => (
+    <button
+      key={l.id}
+      onClick={() => navigate(`/leases/${l.id}`)}
+      className="w-full bg-surface rounded-xl border border-border p-3 text-left active:opacity-80"
+      style={dimmed ? { opacity: 0.5 } : undefined}
+    >
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-text-main font-medium text-sm">{l.tenant?.firstName} {l.tenant?.lastName}</p>
+          <p className="text-text-muted text-xs">{l.apartment?.name || l.apartment?.address}</p>
+          <p className="text-text-muted text-xs">
+            {new Date(l.startDate).toLocaleDateString('fr-FR')} — {l.endDate ? new Date(l.endDate).toLocaleDateString('fr-FR') : 'en cours'}
+          </p>
+        </div>
+        <p className="text-text-main text-sm font-semibold">{(l.rentAmount + l.chargesAmount).toFixed(0)} €</p>
+      </div>
+    </button>
+  );
 
   return (
     <div className="pb-nav safe-top overflow-y-auto" style={{ height: '100%' }}>
@@ -23,27 +57,32 @@ export default function Leases() {
         {loading ? (
           <p className="text-text-muted text-sm text-center py-8">Chargement...</p>
         ) : (
-          <div className="space-y-2">
-            {leases.map((l: any) => (
-              <button
-                key={l.id}
-                onClick={() => navigate(`/leases/${l.id}`)}
-                className="w-full bg-surface rounded-xl border border-border p-3 text-left active:opacity-80"
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-text-main font-medium text-sm">{l.tenant?.firstName} {l.tenant?.lastName}</p>
-                    <p className="text-text-muted text-xs">{l.apartment?.name || l.apartment?.address}</p>
-                    <p className="text-text-muted text-xs">{new Date(l.startDate).toLocaleDateString('fr-FR')} — {l.endDate ? new Date(l.endDate).toLocaleDateString('fr-FR') : 'en cours'}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-text-main text-sm font-semibold">{(l.rentAmount + l.chargesAmount).toFixed(0)} €</p>
-                    <p className={`text-xs ${l.isActive ? 'text-paid' : 'text-text-muted'}`}>{l.isActive ? 'Actif' : 'Terminé'}</p>
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
+          <>
+            {future.length > 0 && (
+              <div className="mb-5">
+                <p className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-2 px-1" style={{ color: '#f59e0b' }}>À venir</p>
+                <div className="space-y-2">{future.map(l => renderCard(l))}</div>
+              </div>
+            )}
+
+            {active.length > 0 && (
+              <div className="mb-5">
+                <p className="text-xs font-semibold uppercase tracking-wide mb-2 px-1" style={{ color: '#22c55e' }}>En cours</p>
+                <div className="space-y-2">{active.map(l => renderCard(l))}</div>
+              </div>
+            )}
+
+            {past.length > 0 && (
+              <div className="mb-5">
+                <p className="text-text-muted text-xs font-semibold uppercase tracking-wide mb-2 px-1">Terminés</p>
+                <div className="space-y-2">{past.map(l => renderCard(l, true))}</div>
+              </div>
+            )}
+
+            {leases.length === 0 && (
+              <p className="text-text-muted text-sm text-center py-8">Aucun bail enregistré.</p>
+            )}
+          </>
         )}
       </div>
     </div>
