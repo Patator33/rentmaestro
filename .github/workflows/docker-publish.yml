@@ -3,6 +3,13 @@ name: Build and Push Docker Image
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - '.gemini/**'
+      - '*.md'
+
+concurrency:
+  group: docker-build
+  cancel-in-progress: true
 
 env:
   REGISTRY: ghcr.io
