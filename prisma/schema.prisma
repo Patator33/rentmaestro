@@ -160,6 +160,7 @@ model LeaseDocument {
   name      String
   url       String
   type      String
+  docType   String   @default("AUTRE")
   size      Int
   createdAt DateTime @default(now())
   lease     Lease    @relation(fields: [leaseId], references: [id], onDelete: Cascade)

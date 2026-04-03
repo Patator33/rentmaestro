@@ -26,6 +26,7 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
         include: {
             apartment: true,
             tenant: true,
+            documents: { select: { docType: true } },
         },
         orderBy: { apartment: { address: 'asc' } }
     });
@@ -90,10 +91,22 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
         );
     };
 
-    const actionButtons = (lease: typeof leases[0]) => (
+    const gedComplete = (lease: typeof leases[0]) => {
+        const types = lease.documents.map(d => d.docType);
+        return types.includes('BAIL') && types.includes('EDL');
+    };
+
+    const actionButtons = (lease: typeof leases[0]) => {
+        const complete = gedComplete(lease);
+        return (
         <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', justifyContent: 'flex-end' }}>
-            <Link href={`/leases/${lease.id}`} className="std-add-button" style={{ fontSize: '0.8rem', padding: '0.3rem 0.6rem' }} title="Documents du bail">
-                📎
+            <Link
+                href={`/leases/${lease.id}`}
+                className="std-add-button"
+                style={{ fontSize: '0.8rem', padding: '0.3rem 0.6rem', ...(complete ? { background: 'rgba(34,197,94,0.15)', color: '#22c55e', borderColor: 'rgba(34,197,94,0.3)' } : {}) }}
+                title={complete ? 'GED complète (bail + EDL)' : 'Documents du bail'}
+            >
+                📎{complete ? ' ✓' : ''}
             </Link>
             <Link href={`/leases/${lease.id}/edit`} className="std-add-button" style={{ fontSize: '0.8rem', padding: '0.3rem 0.6rem' }}>
                 ✏️
@@ -107,7 +120,8 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
             />
             <DeleteLeaseButton id={lease.id} className="std-add-button" style={{ fontSize: '0.8rem', padding: '0.3rem 0.6rem' }} />
         </div>
-    );
+        );
+    };
 
     return (
         <div className={styles.container}>
@@ -345,8 +359,8 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                                 )}
                                             </div>
                                             <div className={styles.cardFooter} style={{ gap: '0.5rem' }}>
-                                                <Link href={`/leases/${lease.id}`} className="std-add-button" style={{ fontSize: '0.85rem', padding: '0.4rem 0.75rem' }} title="Documents du bail">
-                                                    📎
+                                                <Link href={`/leases/${lease.id}`} className="std-add-button" style={{ fontSize: '0.85rem', padding: '0.4rem 0.75rem', ...(gedComplete(lease) ? { background: 'rgba(34,197,94,0.15)', color: '#22c55e', borderColor: 'rgba(34,197,94,0.3)' } : {}) }} title={gedComplete(lease) ? 'GED complète (bail + EDL)' : 'Documents du bail'}>
+                                                    📎{gedComplete(lease) ? ' ✓' : ''}
                                                 </Link>
                                                 <Link href={`/leases/${lease.id}/edit`} className="std-add-button" style={{ fontSize: '0.85rem', padding: '0.4rem 0.75rem' }}>
                                                     ✏️ Modifier
@@ -496,8 +510,8 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                             )}
                                         </div>
                                         <div className={styles.cardFooter} style={{ gap: '0.5rem' }}>
-                                            <Link href={`/leases/${lease.id}`} className="std-add-button" style={{ fontSize: '0.85rem', padding: '0.4rem 0.75rem', opacity: 0.7 }} title="Documents du bail">
-                                                📎
+                                            <Link href={`/leases/${lease.id}`} className="std-add-button" style={{ fontSize: '0.85rem', padding: '0.4rem 0.75rem', opacity: 0.7, ...(gedComplete(lease) ? { background: 'rgba(34,197,94,0.15)', color: '#22c55e', borderColor: 'rgba(34,197,94,0.3)' } : {}) }} title={gedComplete(lease) ? 'GED complète (bail + EDL)' : 'Documents du bail'}>
+                                                📎{gedComplete(lease) ? ' ✓' : ''}
                                             </Link>
                                             <Link href={`/leases/${lease.id}/edit`} className="std-add-button" style={{ fontSize: '0.85rem', padding: '0.4rem 0.75rem', opacity: 0.7 }}>
                                                 ✏️ Modifier
