@@ -16,6 +16,7 @@ const NAV_ITEMS = [
     { href: "/tenants", label: "👥 Locataires" },
     { href: "/leases", label: "📜 Baux" },
     { href: "/rents", label: "💰 Loyers" },
+    { href: "/travaux", label: "🔧 Travaux" },
     { href: "/stats", label: "📈 Stats" },
     { href: "/reconciliation", label: "🔄 Banque" },
 ];

@@ -155,6 +155,13 @@ export async function deleteTask(taskId: string) {
     }
 }
 
+export async function cycleTaskStatusForTravaux(taskId: string, currentStatus: string) {
+    const next = currentStatus === 'TODO' ? 'IN_PROGRESS' : currentStatus === 'IN_PROGRESS' ? 'DONE' : 'TODO';
+    const task = await prisma.task.update({ where: { id: taskId }, data: { status: next } });
+    revalidatePath(`/apartments/${task.apartmentId}`);
+    revalidatePath('/travaux');
+}
+
 export async function convertTaskToExpense(taskId: string) {
     try {
         const task = await prisma.task.findUnique({ where: { id: taskId } });

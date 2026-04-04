@@ -87,6 +87,25 @@ export default async function RentsPage({
     const unpaidLeases = leases.filter(l => l.payments[0]?.status !== 'PAID');
     const paidLeases = leases.filter(l => l.payments[0]?.status === 'PAID');
 
+    // Summary totals
+    let totalReceived = 0;
+    let totalExpected = 0;
+    const daysInMonth = new Date(Date.UTC(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)).getUTCDate();
+    for (const lease of leases) {
+        const payment = lease.payments[0];
+        const totalAmount = lease.rentAmount + lease.chargesAmount;
+        const leaseStart = new Date(lease.startDate);
+        const startDay = leaseStart.getUTCDate();
+        const isFirstMonth = leaseStart >= startOfMonth && leaseStart < nextMonth;
+        const daysRemaining = daysInMonth - startDay;
+        const fallbackAmount = isFirstMonth && startDay > 1
+            ? Math.round((totalAmount / daysInMonth) * daysRemaining * 100) / 100
+            : totalAmount;
+        totalExpected += payment ? payment.amount : fallbackAmount;
+        if (payment?.status === 'PAID') totalReceived += payment.amount;
+        else if (payment?.status === 'PARTIAL' && (payment as any).paidAmount != null) totalReceived += (payment as any).paidAmount;
+    }
+
     const renderRow = (lease: typeof leases[0]) => {
         const payment = lease.payments[0];
         const isPaid = payment?.status === 'PAID';
@@ -235,6 +254,27 @@ export default async function RentsPage({
                 </div>
 
             </header>
+
+            {leases.length > 0 && (
+                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', padding: '0.75rem 1rem', background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1, minWidth: 120 }}>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.2rem' }}>Perçu ce mois</p>
+                        <p style={{ fontSize: '1.4rem', fontWeight: 700, color: '#22c55e' }}>{totalReceived.toFixed(0)} €</p>
+                    </div>
+                    <div style={{ width: '1px', background: 'var(--border-color)' }} />
+                    <div style={{ flex: 1, minWidth: 120 }}>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.2rem' }}>Attendu</p>
+                        <p style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-main)' }}>{totalExpected.toFixed(0)} €</p>
+                    </div>
+                    <div style={{ width: '1px', background: 'var(--border-color)' }} />
+                    <div style={{ flex: 1, minWidth: 120 }}>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.2rem' }}>Taux de collecte</p>
+                        <p style={{ fontSize: '1.4rem', fontWeight: 700, color: totalExpected > 0 && totalReceived >= totalExpected ? '#22c55e' : 'var(--warning)' }}>
+                            {totalExpected > 0 ? Math.round((totalReceived / totalExpected) * 100) : 0} %
+                        </p>
+                    </div>
+                </div>
+            )}
 
             <div className="table-container">
                 <table className="std-table">

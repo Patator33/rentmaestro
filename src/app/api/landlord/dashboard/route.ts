@@ -41,12 +41,16 @@ export async function GET(request: Request) {
 
     // Active leases count (by date, excludes future leases)
     const todayMidnight = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-    const activeLeases = await prisma.lease.count({
-        where: {
-            startDate: { lte: todayMidnight },
-            OR: [{ endDate: null }, { endDate: { gte: todayMidnight } }],
-        },
-    });
+    const [activeLeases, apartmentCount] = await Promise.all([
+        prisma.lease.count({
+            where: {
+                startDate: { lte: todayMidnight },
+                OR: [{ endDate: null }, { endDate: { gte: todayMidnight } }],
+            },
+        }),
+        prisma.apartment.count(),
+    ]);
+    const occupancyRate = apartmentCount > 0 ? Math.round((activeLeases / apartmentCount) * 100) : 0;
 
     // Partial payments this month
     const partialPaymentsRaw = await prisma.rentPayment.findMany({
@@ -110,6 +114,8 @@ export async function GET(request: Request) {
         openTasks,
         unreadMessages,
         activeLeases,
+        apartmentCount,
+        occupancyRate,
         currentMonth: startOfMonth.toISOString().slice(0, 7),
         rentReviews,
         partialPayments,
