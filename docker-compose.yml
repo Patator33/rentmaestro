@@ -2,7 +2,7 @@ services:
   rentmaestro:
     image: ghcr.io/patator33/rentmaestro:latest
     ports:
-      - "3008:3000"
+      - "${PORT_EXTERNAL:-3008}:3000"
     environment:
       - NODE_ENV=production
       - DATABASE_URL=file:/app/data/rentmaestro.db
@@ -13,12 +13,12 @@ services:
       - SMTP_PASS=${SMTP_PASS}
       - SMTP_FROM=${SMTP_FROM:-}
       # URL externe de l'application (pour les liens dans les emails)
-      - APP_BASE_URL=https://rentmaestro.nico33.net
+      - APP_BASE_URL=${APP_BASE_URL:-https://rentmaestro.nico33.net}
       # Automations & Webhooks
-      - CRON_SECRET=remplacez_moi_par_un_vrai_mot_de_passe
-      - N8N_WEBHOOK_URL=http://n8n.votredomaine.com/webhook/rentmaestro
+      - CRON_SECRET=${CRON_SECRET:-remplacez_moi_par_un_vrai_mot_de_passe}
+      - N8N_WEBHOOK_URL=${N8N_WEBHOOK_URL:-http://n8n.votredomaine.com/webhook/rentmaestro}
       # Session secret for iron-session (generate with: node -e "require('crypto').randomBytes(32).toString('hex')" | xargs)
-      - SESSION_SECRET=CHANGEZ_MOI_PAR_UNE_CLE_DE_64_CARACTERES_ALEATOIRES
+      - SESSION_SECRET=${SESSION_SECRET:-CHANGEZ_MOI_PAR_UNE_CLE_DE_64_CARACTERES_ALEATOIRES}
       # Set to 'true' if served over HTTPS (reverse proxy with TLS) — required for PWA install on Android
       - COOKIE_SECURE=true
       # Push notifications (VAPID keys — generate with: node -e "require('web-push').generateVAPIDKeys()|console.log")
