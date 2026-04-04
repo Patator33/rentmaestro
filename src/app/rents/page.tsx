@@ -190,6 +190,7 @@ export default async function RentsPage({
                                 leaseId={lease.id}
                                 periodStr={currentMonthStr}
                                 defaultAmount={payment?.amount ?? fallbackAmount}
+                                existingPaidAmount={payment?.status === 'PARTIAL' && payment?.paidAmount != null ? (payment.paidAmount as number) : undefined}
                                 buttonStyle={`${styles.actionButton} ${styles.paidButton}`}
                             />
                         )}

@@ -26,7 +26,11 @@ export async function markRentAsPaid(leaseId: string, periodStr: string, paidAmo
             expectedAmount = lease.rentAmount + lease.chargesAmount;
         }
 
-        const isPartial = paidAmount < expectedAmount - 0.01;
+        // Accumulate with any prior partial payment
+        const alreadyPaid = (existing?.status === 'PARTIAL' && existing?.paidAmount != null)
+            ? (existing.paidAmount as number) : 0;
+        const totalPaid = alreadyPaid + paidAmount;
+        const isPartial = totalPaid < expectedAmount - 0.01;
 
         if (existing) {
             await prisma.rentPayment.update({
@@ -34,7 +38,7 @@ export async function markRentAsPaid(leaseId: string, periodStr: string, paidAmo
                 data: {
                     status: isPartial ? "PARTIAL" : "PAID",
                     paidAt: new Date(),
-                    paidAmount: isPartial ? paidAmount : null,
+                    paidAmount: isPartial ? totalPaid : null,
                 }
             });
         } else {
@@ -45,7 +49,7 @@ export async function markRentAsPaid(leaseId: string, periodStr: string, paidAmo
                     amount: expectedAmount,
                     status: isPartial ? "PARTIAL" : "PAID",
                     paidAt: new Date(),
-                    paidAmount: isPartial ? paidAmount : null,
+                    paidAmount: isPartial ? totalPaid : null,
                 }
             });
         }

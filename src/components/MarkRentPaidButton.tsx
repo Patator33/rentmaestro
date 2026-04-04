@@ -6,23 +6,26 @@ import { markRentAsPaid } from '@/actions/rents';
 interface Props {
     leaseId: string;
     periodStr: string;
-    defaultAmount: number;
+    defaultAmount: number;       // full expected amount
+    existingPaidAmount?: number; // already received (PARTIAL case)
     buttonStyle?: string;
 }
 
-export default function MarkRentPaidButton({ leaseId, periodStr, defaultAmount, buttonStyle }: Props) {
+export default function MarkRentPaidButton({ leaseId, periodStr, defaultAmount, existingPaidAmount, buttonStyle }: Props) {
+    const remaining = defaultAmount - (existingPaidAmount ?? 0);
     const [showForm, setShowForm] = useState(false);
-    const [amount, setAmount] = useState(defaultAmount.toFixed(2));
+    const [amount, setAmount] = useState(remaining.toFixed(2));
     const [isPending, startTransition] = useTransition();
 
     const handleOpen = () => {
-        setAmount(defaultAmount.toFixed(2));
+        setAmount(remaining.toFixed(2));
         setShowForm(true);
     };
 
     const parsedAmount = parseFloat(amount);
-    const isPartial = !isNaN(parsedAmount) && parsedAmount > 0 && parsedAmount < defaultAmount - 0.01;
-    const remaining = isPartial ? (defaultAmount - parsedAmount).toFixed(2) : null;
+    const totalAfter = (existingPaidAmount ?? 0) + parsedAmount;
+    const isPartial = !isNaN(parsedAmount) && parsedAmount > 0 && totalAfter < defaultAmount - 0.01;
+    const solde = isPartial ? (defaultAmount - totalAfter).toFixed(2) : null;
 
     const handleConfirm = () => {
         if (isNaN(parsedAmount) || parsedAmount <= 0) return;
@@ -35,6 +38,11 @@ export default function MarkRentPaidButton({ leaseId, periodStr, defaultAmount, 
     if (showForm) {
         return (
             <span style={{ display: 'inline-flex', flexDirection: 'column', gap: '0.2rem' }}>
+                {existingPaidAmount != null && (
+                    <span style={{ fontSize: '0.75rem', color: '#f59e0b', fontWeight: 600 }}>
+                        Reçu : {existingPaidAmount.toFixed(2)} € / {defaultAmount.toFixed(2)} € attendu
+                    </span>
+                )}
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
                     <input
                         type="number"
@@ -66,9 +74,9 @@ export default function MarkRentPaidButton({ leaseId, periodStr, defaultAmount, 
                         ✕
                     </button>
                 </span>
-                {isPartial && remaining && (
+                {isPartial && solde && (
                     <span style={{ fontSize: '0.75rem', color: '#f59e0b', fontWeight: 600 }}>
-                        Paiement partiel — Solde : {remaining} €
+                        Paiement partiel — Solde restant : {solde} €
                     </span>
                 )}
             </span>
@@ -77,7 +85,7 @@ export default function MarkRentPaidButton({ leaseId, periodStr, defaultAmount, 
 
     return (
         <button onClick={handleOpen} className={buttonStyle} style={{ background: 'rgba(16,185,129,0.12)', color: 'var(--success)' }}>
-            Marquer Payé
+            {existingPaidAmount != null ? 'Compléter' : 'Marquer Payé'}
         </button>
     );
 }

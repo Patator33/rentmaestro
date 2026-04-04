@@ -26,16 +26,20 @@ export async function POST(request: Request) {
         expectedAmount = lease.rentAmount + lease.chargesAmount;
     }
 
-    const isPartial = paidAmount < expectedAmount - 0.01;
+    // Accumulate with any prior partial payment
+    const alreadyPaid = (existing?.status === 'PARTIAL' && existing?.paidAmount != null)
+        ? (existing.paidAmount as number) : 0;
+    const totalPaid = alreadyPaid + paidAmount;
+    const isPartial = totalPaid < expectedAmount - 0.01;
 
     if (existing) {
         await prisma.rentPayment.update({
             where: { id: existing.id },
-            data: { status: isPartial ? 'PARTIAL' : 'PAID', paidAt: new Date(), paidAmount: isPartial ? paidAmount : null } as any,
+            data: { status: isPartial ? 'PARTIAL' : 'PAID', paidAt: new Date(), paidAmount: isPartial ? totalPaid : null } as any,
         });
     } else {
         await prisma.rentPayment.create({
-            data: { leaseId, period, amount: expectedAmount, status: isPartial ? 'PARTIAL' : 'PAID', paidAt: new Date(), ...(isPartial ? { paidAmount } : {}) } as any,
+            data: { leaseId, period, amount: expectedAmount, status: isPartial ? 'PARTIAL' : 'PAID', paidAt: new Date(), ...(isPartial ? { paidAmount: totalPaid } : {}) } as any,
         });
     }
 
