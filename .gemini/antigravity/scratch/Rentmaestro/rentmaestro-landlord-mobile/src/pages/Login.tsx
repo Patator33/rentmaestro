@@ -1,20 +1,28 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/landlord';
-import { saveAuth } from '../lib/storage';
+import { saveAuth, saveServerUrl, getServerUrl } from '../lib/storage';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [serverUrl, setServerUrl] = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    getServerUrl().then(setServerUrl);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     try {
+      const trimmed = serverUrl.trim().replace(/\/$/, '');
+      if (trimmed) await saveServerUrl(trimmed);
       const { token, email: userEmail } = await api.login(email.trim(), password);
       await saveAuth(token, userEmail);
       navigate('/', { replace: true });
@@ -55,6 +63,25 @@ export default function Login() {
               required
               className="w-full bg-surface border border-border rounded-xl px-4 py-3 text-text-main text-sm focus:outline-none focus:border-primary"
             />
+          </div>
+
+          <div>
+            <button
+              type="button"
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className="text-xs text-text-muted underline"
+            >
+              ⚙️ {showAdvanced ? 'Masquer' : 'Serveur avancé'}
+            </button>
+            {showAdvanced && (
+              <input
+                type="url"
+                value={serverUrl}
+                onChange={e => setServerUrl(e.target.value)}
+                placeholder="https://mon-serveur.example.com"
+                className="mt-2 w-full bg-surface border border-border rounded-xl px-4 py-3 text-text-main text-sm focus:outline-none focus:border-primary"
+              />
+            )}
           </div>
 
           {error && (

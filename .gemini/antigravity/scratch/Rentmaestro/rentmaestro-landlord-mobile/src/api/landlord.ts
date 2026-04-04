@@ -1,9 +1,8 @@
-import { BACKEND_URL } from '../config';
-import { getToken } from '../lib/storage';
+import { getToken, getServerUrl } from '../lib/storage';
 
 async function apiFetch(path: string, options?: RequestInit) {
-  const token = await getToken();
-  const res = await fetch(`${BACKEND_URL}${path}`, {
+  const [token, baseUrl] = await Promise.all([getToken(), getServerUrl()]);
+  const res = await fetch(`${baseUrl}${path}`, {
     headers: {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -19,7 +18,8 @@ async function apiFetch(path: string, options?: RequestInit) {
 
 export const api = {
   login: async (email: string, password: string) => {
-    const res = await fetch(`${BACKEND_URL}/api/auth/mobile-login`, {
+    const baseUrl = await getServerUrl();
+    const res = await fetch(`${baseUrl}/api/auth/mobile-login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
