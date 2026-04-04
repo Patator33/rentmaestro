@@ -91,6 +91,8 @@ export default async function RentsPage({
     let totalReceived = 0;
     let totalExpected = 0;
     const daysInMonth = new Date(Date.UTC(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)).getUTCDate();
+    const seenApartments = new Set<string>();
+    let totalMonthlyCosts = 0;
     for (const lease of leases) {
         const payment = lease.payments[0];
         const totalAmount = lease.rentAmount + lease.chargesAmount;
@@ -104,7 +106,16 @@ export default async function RentsPage({
         totalExpected += payment ? payment.amount : fallbackAmount;
         if (payment?.status === 'PAID') totalReceived += payment.amount;
         else if (payment?.status === 'PARTIAL' && (payment as any).paidAmount != null) totalReceived += (payment as any).paidAmount;
+        // Monthly costs per unique apartment (taxe foncière is annual → /12)
+        if (!seenApartments.has(lease.apartment.id)) {
+            seenApartments.add(lease.apartment.id);
+            totalMonthlyCosts +=
+                (lease.apartment.mortgageAmount ?? 0) +
+                (lease.apartment.insuranceAmount ?? 0) +
+                (lease.apartment.taxAmount ?? 0);
+        }
     }
+    const netCashflow = totalReceived - totalMonthlyCosts;
 
     const renderRow = (lease: typeof leases[0]) => {
         const payment = lease.payments[0];
@@ -272,6 +283,14 @@ export default async function RentsPage({
                         <p style={{ fontSize: '1.4rem', fontWeight: 700, color: totalExpected > 0 && totalReceived >= totalExpected ? '#22c55e' : 'var(--warning)' }}>
                             {totalExpected > 0 ? Math.round((totalReceived / totalExpected) * 100) : 0} %
                         </p>
+                    </div>
+                    <div style={{ width: '1px', background: 'var(--border-color)' }} />
+                    <div style={{ flex: 1, minWidth: 120 }}>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.2rem' }}>Cashflow net</p>
+                        <p style={{ fontSize: '1.4rem', fontWeight: 700, color: netCashflow >= 0 ? '#22c55e' : '#ef4444' }}>{netCashflow.toFixed(0)} €</p>
+                        {totalMonthlyCosts > 0 && (
+                            <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>− {totalMonthlyCosts.toFixed(0)} € charges fixes</p>
+                        )}
                     </div>
                 </div>
             )}

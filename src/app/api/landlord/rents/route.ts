@@ -53,7 +53,7 @@ export async function GET(request: Request) {
             paidAt: payment?.paidAt ?? null,
             isLate,
             tenant: { id: lease.tenant.id, firstName: lease.tenant.firstName, lastName: lease.tenant.lastName },
-            apartment: { id: lease.apartment.id, address: lease.apartment.address, name: lease.apartment.name },
+            apartment: { id: lease.apartment.id, address: lease.apartment.address, name: lease.apartment.name, mortgageAmount: lease.apartment.mortgageAmount, insuranceAmount: lease.apartment.insuranceAmount, taxAmount: lease.apartment.taxAmount },
         };
     });
 
