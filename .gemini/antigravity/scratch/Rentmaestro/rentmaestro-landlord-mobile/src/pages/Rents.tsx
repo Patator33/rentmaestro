@@ -12,7 +12,7 @@ interface RentItem {
   paidAt: string | null;
   isLate?: boolean;
   tenant: { id: string; firstName: string; lastName: string };
-  apartment: { address: string; name: string | null };
+  apartment: { address: string; name: string | null; mortgageAmount?: number | null; insuranceAmount?: number | null; taxAmount?: number | null };
 }
 
 function getMonthStr(offset: number): string {
@@ -94,6 +94,16 @@ export default function Rents() {
   }, 0);
   const collectRate = totalExpected > 0 ? Math.round((totalReceived / totalExpected) * 100) : 0;
 
+  const seenApts = new Set<string>();
+  let totalMonthlyCosts = 0;
+  for (const r of rents) {
+    if (!seenApts.has(r.apartment.address + (r.apartment.name ?? ''))) {
+      seenApts.add(r.apartment.address + (r.apartment.name ?? ''));
+      totalMonthlyCosts += (r.apartment.mortgageAmount ?? 0) + (r.apartment.insuranceAmount ?? 0) + (r.apartment.taxAmount ?? 0);
+    }
+  }
+  const netCashflow = totalReceived - totalMonthlyCosts;
+
   const isPartialInput = payModal && parseFloat(payInput) > 0 && parseFloat(payInput) < payModal.amount - 0.01;
 
   return (
@@ -111,7 +121,7 @@ export default function Rents() {
         </div>
 
         {!loading && rents.length > 0 && (
-          <div className="grid grid-cols-3 gap-2 mb-4">
+          <div className="grid grid-cols-2 gap-2 mb-4">
             <div className="bg-surface rounded-xl border border-border p-2.5 text-center">
               <p className="text-text-muted text-xs mb-0.5">Perçu</p>
               <p className="font-bold text-sm" style={{ color: '#22c55e' }}>{totalReceived.toFixed(0)} €</p>
@@ -123,6 +133,10 @@ export default function Rents() {
             <div className="bg-surface rounded-xl border border-border p-2.5 text-center">
               <p className="text-text-muted text-xs mb-0.5">Collecte</p>
               <p className="font-bold text-sm" style={{ color: collectRate >= 100 ? '#22c55e' : '#f59e0b' }}>{collectRate} %</p>
+            </div>
+            <div className="bg-surface rounded-xl border border-border p-2.5 text-center">
+              <p className="text-text-muted text-xs mb-0.5">Cashflow net</p>
+              <p className="font-bold text-sm" style={{ color: netCashflow >= 0 ? '#22c55e' : '#ef4444' }}>{netCashflow.toFixed(0)} €</p>
             </div>
           </div>
         )}
