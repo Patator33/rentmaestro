@@ -85,11 +85,13 @@ export async function POST(
         const lease = await prisma.lease.findUnique({ where: { id } });
         if (!lease) return NextResponse.json({ error: 'Bail introuvable' }, { status: 404 });
         const total = lease.depositAmount ?? 0;
-        const isComplete = paidAmount >= total;
+        const alreadyPaid = lease.depositPaidAmount ?? 0;
+        const totalPaid = alreadyPaid + paidAmount;
+        const isComplete = totalPaid >= total;
         await prisma.lease.update({
             where: { id },
             data: {
-                depositPaidAmount: paidAmount,
+                depositPaidAmount: isComplete ? null : totalPaid,
                 depositStatus: isComplete ? 'RECEIVED' : 'PARTIAL_RECEIVED',
             },
         });
