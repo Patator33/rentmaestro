@@ -10,6 +10,7 @@ interface SearchParams {
     start?: string;
     end?: string;
     companyId?: string;
+    buildingId?: string;
 }
 
 export default async function StatsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
@@ -29,16 +30,25 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
     }
 
     const companyId = params.companyId;
+    const buildingId = params.buildingId;
 
-    // Fetch companies for the filter
-    const companies = await prisma.company.findMany({ orderBy: { name: 'asc' } });
+    const aptFilter = {
+        ...(companyId ? { companyId } : {}),
+        ...(buildingId ? { buildingId } : {}),
+    };
+
+    // Fetch companies and buildings for the filters
+    const [companies, buildings] = await Promise.all([
+        prisma.company.findMany({ orderBy: { name: 'asc' } }),
+        prisma.building.findMany({ orderBy: { name: 'asc' } }),
+    ]);
 
     // Revenue calculation
     const payments = await prisma.rentPayment.findMany({
         where: {
             period: { gte: startDate, lte: endDate },
             status: 'PAID',
-            ...(companyId ? { lease: { apartment: { companyId } } } : {})
+            ...(Object.keys(aptFilter).length > 0 ? { lease: { apartment: aptFilter } } : {})
         },
         orderBy: { period: 'asc' }
     });
@@ -68,7 +78,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
     const expenses = await prisma.expense.findMany({
         where: {
             date: { gte: startDate, lte: endDate },
-            ...(companyId ? { apartment: { companyId } } : {})
+            ...(Object.keys(aptFilter).length > 0 ? { apartment: aptFilter } : {})
         }
     });
 
@@ -89,7 +99,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
 
     // Vacancy days calculation
     const apartments = await prisma.apartment.findMany({
-        where: companyId ? { companyId } : undefined,
+        where: Object.keys(aptFilter).length > 0 ? aptFilter : undefined,
         include: {
             leases: {
                 where: {
@@ -157,7 +167,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
     const activeLeases = await prisma.lease.findMany({
         where: {
             isActive: true,
-            ...(companyId ? { apartment: { companyId } } : {})
+            ...(Object.keys(aptFilter).length > 0 ? { apartment: aptFilter } : {})
         }
     });
     const averageRent = activeLeases.length > 0
@@ -173,7 +183,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
                 </div>
             </header>
 
-            <DateFilters companies={companies} />
+            <DateFilters companies={companies} buildings={buildings} />
 
             <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
                 <a

@@ -3,6 +3,7 @@ import styles from "../../new/page.module.css"; // Reuse styling
 import { updateApartment } from "@/actions/apartments";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
+import BuildingSelectorWithCreate from "@/components/BuildingSelectorWithCreate";
 
 export default async function EditApartmentPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -14,7 +15,10 @@ export default async function EditApartmentPage({ params }: { params: Promise<{ 
         notFound();
     }
 
-    const companies = await prisma.company.findMany({ orderBy: { name: 'asc' } });
+    const [companies, buildings] = await Promise.all([
+        prisma.company.findMany({ orderBy: { name: 'asc' } }),
+        prisma.building.findMany({ orderBy: { name: 'asc' } }),
+    ]);
 
     const updateApartmentWithId = updateApartment.bind(null, apartment.id);
 
@@ -110,6 +114,11 @@ export default async function EditApartmentPage({ params }: { params: Promise<{ 
                 <div className={styles.formGroup}>
                     <label htmlFor="comment" className={styles.label}>Commentaire interne (Privé)</label>
                     <textarea id="comment" name="comment" defaultValue={apartment.comment || ''} className={styles.textarea} placeholder="Notes sur le propriétaire, code d'entrée..." />
+                </div>
+
+                <div className={styles.formGroup}>
+                    <label className={styles.label}>Immeuble (Optionnel)</label>
+                    <BuildingSelectorWithCreate buildings={buildings} companies={companies} defaultValue={(apartment as any).buildingId} inputClassName={styles.input} />
                 </div>
 
                 <div className={styles.row}>

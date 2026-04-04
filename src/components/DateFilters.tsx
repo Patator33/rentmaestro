@@ -6,32 +6,37 @@ import styles from './DateFilters.module.css';
 
 interface Props {
     companies?: { id: string; name: string }[];
+    buildings?: { id: string; name: string }[];
 }
 
-export default function DateFilters({ companies = [] }: Props) {
+export default function DateFilters({ companies = [], buildings = [] }: Props) {
     const router = useRouter();
     const searchParams = useSearchParams();
 
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [companyId, setCompanyId] = useState('');
+    const [buildingId, setBuildingId] = useState('');
 
     useEffect(() => {
         const start = searchParams.get('start');
         const end = searchParams.get('end');
         const comp = searchParams.get('companyId');
+        const bld = searchParams.get('buildingId');
 
         if (start) setStartDate(start);
         if (end) setEndDate(end);
         if (comp) setCompanyId(comp);
+        if (bld) setBuildingId(bld);
     }, [searchParams]);
 
-    const applyFilters = (presetStart?: string, presetEnd?: string, presetCompany?: string) => {
+    const applyFilters = (presetStart?: string, presetEnd?: string, presetCompany?: string, presetBuilding?: string) => {
         const params = new URLSearchParams(searchParams.toString());
 
         const applyStart = presetStart !== undefined ? presetStart : startDate;
         const applyEnd = presetEnd !== undefined ? presetEnd : endDate;
         const applyComp = presetCompany !== undefined ? presetCompany : companyId;
+        const applyBld = presetBuilding !== undefined ? presetBuilding : buildingId;
 
         if (applyStart) params.set('start', applyStart);
         else params.delete('start');
@@ -41,6 +46,9 @@ export default function DateFilters({ companies = [] }: Props) {
 
         if (applyComp) params.set('companyId', applyComp);
         else params.delete('companyId');
+
+        if (applyBld) params.set('buildingId', applyBld);
+        else params.delete('buildingId');
 
         router.push(`/stats?${params.toString()}`);
     };
@@ -68,7 +76,7 @@ export default function DateFilters({ companies = [] }: Props) {
 
         setStartDate(startStr);
         setEndDate(endStr);
-        applyFilters(startStr, endStr, companyId);
+        applyFilters(startStr, endStr, companyId, buildingId);
     };
 
     return (
@@ -82,7 +90,7 @@ export default function DateFilters({ companies = [] }: Props) {
                             value={companyId}
                             onChange={(e) => {
                                 setCompanyId(e.target.value);
-                                applyFilters(startDate, endDate, e.target.value);
+                                applyFilters(startDate, endDate, e.target.value, buildingId);
                             }}
                             className={styles.dateInput}
                             style={{ maxWidth: '200px' }}
@@ -90,6 +98,26 @@ export default function DateFilters({ companies = [] }: Props) {
                             <option value="">Toutes (Global)</option>
                             {companies.map(c => (
                                 <option key={c.id} value={c.id}>{c.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                )}
+                {buildings.length > 0 && (
+                    <div className={styles.inputGroup}>
+                        <label htmlFor="building">Immeuble</label>
+                        <select
+                            id="building"
+                            value={buildingId}
+                            onChange={(e) => {
+                                setBuildingId(e.target.value);
+                                applyFilters(startDate, endDate, companyId, e.target.value);
+                            }}
+                            className={styles.dateInput}
+                            style={{ maxWidth: '200px' }}
+                        >
+                            <option value="">Tous immeubles</option>
+                            {buildings.map(b => (
+                                <option key={b.id} value={b.id}>{b.name}</option>
                             ))}
                         </select>
                     </div>

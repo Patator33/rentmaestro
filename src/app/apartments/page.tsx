@@ -12,6 +12,7 @@ interface SearchParams {
     q?: string;
     filter?: string;
     company?: string;
+    building?: string;
     view?: string;
     sort?: string;
     dir?: string;
@@ -22,6 +23,7 @@ export default async function ApartmentsPage({ searchParams }: { searchParams: P
     const query = params.q?.toLowerCase() || '';
     const filter = params.filter || '';
     const companyFilter = params.company || '';
+    const buildingFilter = params.building || '';
     const view = params.view === 'list' ? 'list' : 'grid';
     const sort = params.sort || 'name';
     const dir = params.dir === 'desc' ? 'desc' : 'asc';
@@ -29,7 +31,7 @@ export default async function ApartmentsPage({ searchParams }: { searchParams: P
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const [allApartments, companies] = await Promise.all([
+    const [allApartments, companies, buildings] = await Promise.all([
         prisma.apartment.findMany({
             include: {
                 leases: {
@@ -37,10 +39,12 @@ export default async function ApartmentsPage({ searchParams }: { searchParams: P
                     include: { tenant: true }
                 },
                 company: true,
+                building: true,
             },
             orderBy: { address: 'asc' }
         }),
         prisma.company.findMany({ orderBy: { name: 'asc' } }),
+        prisma.building.findMany({ orderBy: { name: 'asc' } }),
     ]);
 
     // Returns the lease that is actually ongoing today (not future)
@@ -82,6 +86,12 @@ export default async function ApartmentsPage({ searchParams }: { searchParams: P
         apartments = apartments.filter(apt => apt.companyId === companyFilter);
     }
 
+    if (buildingFilter === 'none') {
+        apartments = apartments.filter(apt => !(apt as any).buildingId);
+    } else if (buildingFilter) {
+        apartments = apartments.filter(apt => (apt as any).buildingId === buildingFilter);
+    }
+
     apartments = [...apartments].sort((a, b) => {
         const al = getCurrentLease(a), bl = getCurrentLease(b);
         let av: string | number = '', bv: string | number = '';
@@ -121,6 +131,7 @@ export default async function ApartmentsPage({ searchParams }: { searchParams: P
         if (query) p.set('q', query);
         if (filter) p.set('filter', filter);
         if (companyFilter) p.set('company', companyFilter);
+        if (buildingFilter) p.set('building', buildingFilter);
         p.set('view', 'list');
         p.set('sort', field);
         p.set('dir', nextDir);
@@ -161,12 +172,18 @@ export default async function ApartmentsPage({ searchParams }: { searchParams: P
                     ...companies.map((c: typeof companies[0]) => ({ value: c.id, label: c.name })),
                 ]}
                 filterParamName2="company"
-                resultCount={query || filter || companyFilter ? apartments.length : undefined}
+                filterOptions3={buildings.length > 0 ? [
+                    { value: '', label: '🏗️ Tous immeubles' },
+                    { value: 'none', label: '— Sans immeuble' },
+                    ...buildings.map(b => ({ value: b.id, label: b.name })),
+                ] : undefined}
+                filterParamName3="building"
+                resultCount={query || filter || companyFilter || buildingFilter ? apartments.length : undefined}
             />
 
             {(() => {
                 // Split into 3 sections only when no filter active
-                const noFilter = !filter && !query && !companyFilter;
+                const noFilter = !filter && !query && !companyFilter && !buildingFilter;
                 const soldApts = noFilter ? apartments.filter(apt => !!(apt as any).soldAt) : [];
                 const soonApts = noFilter ? apartments.filter(apt => !(apt as any).soldAt && (apt as any).availableFrom && new Date((apt as any).availableFrom) > today) : [];
                 const activeApts = noFilter ? apartments.filter(apt => !(apt as any).soldAt && !((apt as any).availableFrom && new Date((apt as any).availableFrom) > today)) : apartments;
@@ -202,6 +219,9 @@ export default async function ApartmentsPage({ searchParams }: { searchParams: P
                                                     </Link>
                                                     {apt.name && (
                                                         <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{apt.address}</div>
+                                                    )}
+                                                    {(apt as any).building && (
+                                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>🏗️ {(apt as any).building.name}</div>
                                                     )}
                                                 </td>
                                                 <td>{apt.city} {apt.zipCode}</td>
@@ -261,6 +281,9 @@ export default async function ApartmentsPage({ searchParams }: { searchParams: P
                                             <p className={styles.cardSubtitle}>
                                                 {apt.name ? `📍 ${apt.address} •` : ''} {apt.city} {apt.zipCode}
                                             </p>
+                                            {(apt as any).building && (
+                                                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>🏗️ {(apt as any).building.name}</p>
+                                            )}
                                         </div>
                                         <div className={styles.cardBody}>
                                             <div className={styles.infoRow}>

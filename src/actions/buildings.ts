@@ -1,0 +1,41 @@
+'use server';
+
+import { prisma } from '@/lib/prisma';
+import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
+
+export async function createBuilding(formData: FormData) {
+    const name = (formData.get('name') as string).trim();
+    const address = (formData.get('address') as string).trim();
+    const companyId = (formData.get('companyId') as string) || null;
+    await prisma.building.create({ data: { name, address, companyId } });
+    revalidatePath('/buildings');
+    revalidatePath('/apartments');
+    redirect('/buildings');
+}
+
+export async function createBuildingQuick(formData: FormData): Promise<{ id: string; name: string; address: string }> {
+    const name = (formData.get('name') as string).trim();
+    const address = (formData.get('address') as string).trim();
+    const companyId = (formData.get('companyId') as string) || null;
+    const building = await prisma.building.create({ data: { name, address, companyId } });
+    revalidatePath('/buildings');
+    revalidatePath('/apartments');
+    return { id: building.id, name: building.name, address: building.address };
+}
+
+export async function updateBuilding(id: string, formData: FormData) {
+    const name = (formData.get('name') as string).trim();
+    const address = (formData.get('address') as string).trim();
+    const companyId = (formData.get('companyId') as string) || null;
+    await prisma.building.update({ where: { id }, data: { name, address, companyId } });
+    revalidatePath('/buildings');
+    revalidatePath('/apartments');
+    redirect('/buildings');
+}
+
+export async function deleteBuilding(id: string) {
+    await prisma.building.delete({ where: { id } });
+    revalidatePath('/buildings');
+    revalidatePath('/apartments');
+}

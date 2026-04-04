@@ -20,13 +20,14 @@ export async function createApartment(formData: FormData) {
         insuranceAmount: formData.get("insuranceAmount") ? parseFloat(formData.get("insuranceAmount") as string) : null,
         taxAmount: formData.get("taxAmount") ? parseFloat(formData.get("taxAmount") as string) : null,
         companyId: formData.get("companyId") as string || null,
+        buildingId: formData.get("buildingId") as string || null,
         availableFrom: formData.get("availableFrom") ? new Date(formData.get("availableFrom") as string) : null,
     };
 
     try {
         const validatedData = apartmentSchema.parse(rawData);
         await prisma.apartment.create({
-            data: { ...validatedData, availableFrom: rawData.availableFrom },
+            data: { ...validatedData, availableFrom: rawData.availableFrom, buildingId: rawData.buildingId },
         });
     } catch (error) {
         console.error("Erreur lors de la création de l'appartement:", error);
@@ -69,6 +70,7 @@ export async function updateApartment(id: string, formData: FormData) {
         taxAmount: formData.get("taxAmount") ? parseFloat(formData.get("taxAmount") as string) : null,
         defaultDeposit: formData.get("defaultDeposit") ? parseFloat(formData.get("defaultDeposit") as string) : null,
         companyId: formData.get("companyId") as string || null,
+        buildingId: formData.get("buildingId") as string || null,
         availableFrom: formData.get("availableFrom") ? new Date(formData.get("availableFrom") as string) : null,
         soldAt: formData.get("soldAt") ? new Date(formData.get("soldAt") as string) : null,
     };

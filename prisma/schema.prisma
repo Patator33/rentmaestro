@@ -8,6 +8,17 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Building {
+  id         String      @id @default(uuid())
+  name       String
+  address    String
+  companyId  String?
+  company    Company?    @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  apartments Apartment[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+}
+
 model Apartment {
   id              String    @id @default(uuid())
   name            String?
@@ -29,6 +40,8 @@ model Apartment {
   soldAt          DateTime?
   companyId       String?
   company         Company?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  buildingId      String?
+  building        Building? @relation(fields: [buildingId], references: [id], onDelete: SetNull)
   leases          Lease[]
   expenses        Expense[]
   tasks           Task[]
@@ -176,6 +189,7 @@ model Company {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   apartments  Apartment[]
+  buildings   Building[]
 }
 
 model Contact {

@@ -4,9 +4,13 @@ import Link from "next/link";
 import styles from "./page.module.css";
 import { createApartment } from "@/actions/apartments";
 import { prisma } from "@/lib/prisma";
+import BuildingSelectorWithCreate from "@/components/BuildingSelectorWithCreate";
 
 export default async function NewApartmentPage() {
-    const companies = await prisma.company.findMany({ orderBy: { name: 'asc' } });
+    const [companies, buildings] = await Promise.all([
+        prisma.company.findMany({ orderBy: { name: 'asc' } }),
+        prisma.building.findMany({ orderBy: { name: 'asc' } }),
+    ]);
 
     return (
         <div className={styles.container}>
@@ -93,6 +97,11 @@ export default async function NewApartmentPage() {
                 <div className={styles.formGroup}>
                     <label htmlFor="comment" className={styles.label}>Commentaire interne (Privé)</label>
                     <textarea id="comment" name="comment" className={styles.textarea} placeholder="Notes sur le propriétaire, code d'entrée..." />
+                </div>
+
+                <div className={styles.formGroup}>
+                    <label className={styles.label}>Immeuble (Optionnel)</label>
+                    <BuildingSelectorWithCreate buildings={buildings} companies={companies} inputClassName={styles.input} />
                 </div>
 
                 <div className={styles.formGroup}>

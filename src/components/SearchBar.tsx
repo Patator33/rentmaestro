@@ -17,6 +17,9 @@ interface SearchBarProps {
     filterOptions2?: FilterOption[];
     filterParamName2?: string;
     filterLabel2?: string;
+    filterOptions3?: FilterOption[];
+    filterParamName3?: string;
+    filterLabel3?: string;
     resultCount?: number;
 }
 
@@ -28,6 +31,9 @@ export default function SearchBar({
     filterOptions2,
     filterParamName2 = 'filter2',
     filterLabel2,
+    filterOptions3,
+    filterParamName3 = 'filter3',
+    filterLabel3,
     resultCount,
 }: SearchBarProps) {
     const router = useRouter();
@@ -85,6 +91,19 @@ export default function SearchBar({
                     aria-label={filterLabel2 || 'Filtrer'}
                 >
                     {filterOptions2.map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                </select>
+            )}
+
+            {filterOptions3 && (
+                <select
+                    className={styles.filterSelect}
+                    value={searchParams.get(filterParamName3) || ''}
+                    onChange={(e) => updateParams(filterParamName3, e.target.value)}
+                    aria-label={filterLabel3 || 'Filtrer'}
+                >
+                    {filterOptions3.map(opt => (
                         <option key={opt.value} value={opt.value}>{opt.label}</option>
                     ))}
                 </select>
