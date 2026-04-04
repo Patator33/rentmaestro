@@ -29,6 +29,8 @@ interface DashboardData {
   openTasks: number;
   unreadMessages: number;
   activeLeases: number;
+  apartmentCount: number;
+  occupancyRate: number;
   currentMonth: string;
   rentReviews: RentReview[];
   partialPayments: PartialPayment[];
@@ -146,17 +148,17 @@ export default function Dashboard() {
           <p className="text-red-400 text-sm text-center py-8 break-all">{error}</p>
         ) : data && (
           <>
-            <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="grid grid-cols-2 gap-3 mb-3">
               <KpiCard label="Loyers en attente" value={data.pendingRents} sub={`${data.pendingAmount.toFixed(0)} €`} color="text-pending" onClick={() => navigate('/rents')} />
               <KpiCard label="Revenus encaissés" value={`${data.monthRevenue.toFixed(0)} €`} sub="ce mois" color="text-paid" />
-              <KpiCard label="Incidents ouverts" value={data.openIncidents} sub="à traiter" color="text-late" onClick={() => navigate('/incidents')} />
-              <KpiCard label="Travaux en cours" value={data.openTasks ?? 0} sub="à planifier" color="text-pending" onClick={() => navigate('/incidents')} />
+              <KpiCard label="Incidents & Travaux" value={(data.openIncidents ?? 0) + (data.openTasks ?? 0)} sub="ouverts" color="text-late" onClick={() => navigate('/incidents')} />
               <KpiCard label="Messages non lus" value={data.unreadMessages} sub="locataires" color="text-primary" onClick={() => navigate('/messages')} />
             </div>
 
-            <div className="bg-surface rounded-xl border border-border p-3 mb-3 cursor-pointer active:opacity-80" onClick={() => navigate('/leases')}>
-              <p className="text-text-muted text-xs uppercase tracking-wide mb-2">Baux actifs</p>
-              <p className="text-text-main text-2xl font-bold">{data.activeLeases}</p>
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              <KpiCard label="Baux actifs" value={data.activeLeases} sub="en cours" color="text-text-main" onClick={() => navigate('/leases')} />
+              <KpiCard label="Appartements" value={data.apartmentCount ?? 0} sub="total" color="text-text-main" />
+              <KpiCard label="Occupation" value={`${data.occupancyRate ?? 0}%`} sub="taux" color={(data.occupancyRate ?? 0) >= 80 ? 'text-paid' : 'text-pending'} />
             </div>
 
             {data.unpaidThisMonth.length > 0 && (

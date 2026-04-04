@@ -86,6 +86,14 @@ export default function Rents() {
   const unpaidRents = rents.filter(r => r.status !== 'PAID');
   const paidRents = rents.filter(r => r.status === 'PAID');
 
+  const totalExpected = rents.reduce((s, r) => s + r.amount, 0);
+  const totalReceived = rents.reduce((s, r) => {
+    if (r.status === 'PAID') return s + r.amount;
+    if (r.status === 'PARTIAL' && r.paidAmount != null) return s + r.paidAmount;
+    return s;
+  }, 0);
+  const collectRate = totalExpected > 0 ? Math.round((totalReceived / totalExpected) * 100) : 0;
+
   const isPartialInput = payModal && parseFloat(payInput) > 0 && parseFloat(payInput) < payModal.amount - 0.01;
 
   return (
@@ -101,6 +109,23 @@ export default function Rents() {
           </div>
           <button onClick={() => navigate(1)} className="text-text-muted px-3 py-1.5 border border-border rounded-lg text-sm">→</button>
         </div>
+
+        {!loading && rents.length > 0 && (
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            <div className="bg-surface rounded-xl border border-border p-2.5 text-center">
+              <p className="text-text-muted text-xs mb-0.5">Perçu</p>
+              <p className="font-bold text-sm" style={{ color: '#22c55e' }}>{totalReceived.toFixed(0)} €</p>
+            </div>
+            <div className="bg-surface rounded-xl border border-border p-2.5 text-center">
+              <p className="text-text-muted text-xs mb-0.5">Attendu</p>
+              <p className="font-bold text-sm text-text-main">{totalExpected.toFixed(0)} €</p>
+            </div>
+            <div className="bg-surface rounded-xl border border-border p-2.5 text-center">
+              <p className="text-text-muted text-xs mb-0.5">Collecte</p>
+              <p className="font-bold text-sm" style={{ color: collectRate >= 100 ? '#22c55e' : '#f59e0b' }}>{collectRate} %</p>
+            </div>
+          </div>
+        )}
 
         {loading ? (
           <p className="text-text-muted text-sm text-center py-8">Chargement...</p>
