@@ -18,15 +18,19 @@ interface DepositStatusButtonProps {
     leaseId: string;
     currentStatus: string | null;
     amount: number | null;
+    depositPaidAmount?: number | null;
 }
 
-export default function DepositStatusButton({ leaseId, currentStatus, amount }: DepositStatusButtonProps) {
+export default function DepositStatusButton({ leaseId, currentStatus, amount, depositPaidAmount }: DepositStatusButtonProps) {
     const [open, setOpen] = useState(false);
     const [partialMode, setPartialMode] = useState(false);
     const [partialAmount, setPartialAmount] = useState('');
     const { addToast } = useToast();
 
     if (!amount) return null;
+
+    const alreadyPaid = depositPaidAmount ?? 0;
+    const remaining = amount - alreadyPaid;
 
     const current = STATUS_LABELS[currentStatus || 'PENDING'];
 
@@ -53,7 +57,8 @@ export default function DepositStatusButton({ leaseId, currentStatus, amount }: 
         }
         try {
             await payDepositPartial(leaseId, paid);
-            addToast(`Paiement partiel de ${paid.toFixed(2)} € enregistré`, 'success');
+            const newTotal = alreadyPaid + paid;
+            addToast(newTotal >= amount ? `Caution complète reçue` : `Versement de ${paid.toFixed(2)} € enregistré (total: ${newTotal.toFixed(2)} €)`, 'success');
         } catch {
             addToast('Erreur lors de l\'enregistrement', 'error');
         }
@@ -94,17 +99,22 @@ export default function DepositStatusButton({ leaseId, currentStatus, amount }: 
                     minWidth: '200px',
                     boxShadow: 'var(--shadow-lg)',
                 }}>
-                    <p style={{ fontSize: '0.8rem', color: '#f97316', marginBottom: '0.5rem', fontWeight: 600 }}>
-                        💰 Montant perçu (sur {amount.toFixed(0)} €)
+                    <p style={{ fontSize: '0.8rem', color: '#f97316', marginBottom: '0.25rem', fontWeight: 600 }}>
+                        💰 Nouveau versement
                     </p>
+                    {alreadyPaid > 0 && (
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>
+                            Déjà perçu : {alreadyPaid.toFixed(2)} € / {amount.toFixed(0)} € · Solde : {remaining.toFixed(2)} €
+                        </p>
+                    )}
                     <input
                         type="number"
                         min="0.01"
-                        max={amount}
+                        max={remaining > 0 ? remaining : amount}
                         step="0.01"
                         value={partialAmount}
                         onChange={e => setPartialAmount(e.target.value)}
-                        placeholder={`0 – ${amount.toFixed(0)} €`}
+                        placeholder={alreadyPaid > 0 ? `Solde : ${remaining.toFixed(2)} €` : `0 – ${amount.toFixed(0)} €`}
                         autoFocus
                         style={{
                             width: '100%',

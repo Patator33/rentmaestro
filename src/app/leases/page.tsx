@@ -182,6 +182,7 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                                             leaseId={lease.id}
                                                             currentStatus={lease.depositStatus}
                                                             amount={lease.depositAmount}
+                                                            depositPaidAmount={lease.depositPaidAmount}
                                                         />
                                                     ) : '—'}
                                                 </td>
@@ -241,6 +242,7 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                                         leaseId={lease.id}
                                                         currentStatus={lease.depositStatus}
                                                         amount={lease.depositAmount}
+                                                        depositPaidAmount={lease.depositPaidAmount}
                                                     />
                                                 ) : '—'}
                                             </td>
@@ -290,6 +292,7 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                                             leaseId={lease.id}
                                                             currentStatus={lease.depositStatus}
                                                             amount={lease.depositAmount}
+                                                            depositPaidAmount={lease.depositPaidAmount}
                                                         />
                                                     ) : '—'}
                                                 </td>
@@ -355,6 +358,7 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                                         leaseId={lease.id}
                                                         currentStatus={lease.depositStatus}
                                                         amount={lease.depositAmount}
+                                                        depositPaidAmount={lease.depositPaidAmount}
                                                     />
                                                 )}
                                             </div>
@@ -452,6 +456,7 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                                     leaseId={lease.id}
                                                     currentStatus={lease.depositStatus}
                                                     amount={lease.depositAmount}
+                                                    depositPaidAmount={lease.depositPaidAmount}
                                                 />
                                             )}
                                         </div>
@@ -506,6 +511,7 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                                     leaseId={lease.id}
                                                     currentStatus={lease.depositStatus}
                                                     amount={lease.depositAmount}
+                                                    depositPaidAmount={lease.depositPaidAmount}
                                                 />
                                             )}
                                         </div>
