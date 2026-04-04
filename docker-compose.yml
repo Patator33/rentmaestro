@@ -28,6 +28,7 @@ services:
     volumes:
       - rentmaestro_data:/app/data
       - rentmaestro_uploads:/app/public/uploads
+      - /data/rentmaestro:/app/data/save
     restart: unless-stopped
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://127.0.0.1:3000 || exit 1" ]
