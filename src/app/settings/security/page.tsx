@@ -4,6 +4,7 @@ import { getUserById } from '@/lib/auth';
 import TotpSetup from '@/components/TotpSetup';
 import PushNotificationToggle from '@/components/PushNotificationToggle';
 import UserManagement from '@/components/UserManagement';
+import BackupRestore from '@/components/BackupRestore';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
@@ -30,6 +31,8 @@ export default async function SecuritySettingsPage() {
             <PushNotificationToggle />
 
             <UserManagement currentUserId={user.id} />
+
+            <BackupRestore />
         </div>
     );
 }

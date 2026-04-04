@@ -19,6 +19,7 @@ const NAV_ITEMS = [
     { href: "/travaux", label: "🔧 Travaux" },
     { href: "/stats", label: "📈 Stats" },
     { href: "/reconciliation", label: "🔄 Banque" },
+    { href: "/settings/security", label: "🔐 Sécurité" },
 ];
 
 export default function NavBar() {
@@ -62,7 +63,6 @@ export default function NavBar() {
                         ))}
                         <GlobalSearch />
                         <ThemeToggle />
-                        <Link href="/settings/security" className="nav-link" title="Sécurité">🔐</Link>
                         <button
                             onClick={handleLogout}
                             className="nav-link"
@@ -101,9 +101,6 @@ export default function NavBar() {
                         {item.label}
                     </Link>
                 ))}
-                <Link href="/settings/security" className="mobile-nav-link" onClick={() => setMenuOpen(false)}>
-                    🔐 Sécurité
-                </Link>
                 <button
                     onClick={() => { setMenuOpen(false); handleLogout(); }}
                     className="mobile-nav-link"
