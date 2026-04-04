@@ -104,7 +104,8 @@ export default function Rents() {
   }
   const netCashflow = totalReceived - totalMonthlyCosts;
 
-  const isPartialInput = payModal && parseFloat(payInput) > 0 && parseFloat(payInput) < payModal.amount - 0.01;
+  const isPartialInput = payModal && parseFloat(payInput) > 0 &&
+    ((payModal.paidAmount ?? 0) + parseFloat(payInput)) < payModal.amount - 0.01;
 
   return (
     <>
@@ -191,10 +192,19 @@ export default function Rents() {
       >
         <div style={{ background: '#1e293b', borderRadius: '20px 20px 0 0', padding: '1.5rem', paddingBottom: 'calc(1.5rem + 72px)', width: '100%' }}>
           <h3 className="text-text-main font-bold text-base mb-0.5">Enregistrer un paiement</h3>
-          <p className="text-text-muted text-sm mb-4">
-            {payModal.tenant.firstName} {payModal.tenant.lastName} · Attendu : {payModal.amount.toFixed(2)} €
+          <p className="text-text-muted text-sm mb-1">
+            {payModal.tenant.firstName} {payModal.tenant.lastName}
           </p>
-          <label className="text-text-muted text-xs block mb-1">Montant reçu (€)</label>
+          {payModal.status === 'PARTIAL' && payModal.paidAmount != null ? (
+            <p className="text-sm font-semibold mb-4" style={{ color: '#f59e0b' }}>
+              Reçu : {payModal.paidAmount.toFixed(2)} € / {payModal.amount.toFixed(2)} € attendu
+            </p>
+          ) : (
+            <p className="text-text-muted text-sm mb-4">Attendu : {payModal.amount.toFixed(2)} €</p>
+          )}
+          <label className="text-text-muted text-xs block mb-1">
+            {payModal.status === 'PARTIAL' ? 'Nouveau versement (€)' : 'Montant reçu (€)'}
+          </label>
           <input
             type="number"
             step="0.01"
@@ -207,7 +217,7 @@ export default function Rents() {
           />
           {isPartialInput && (
             <p className="text-xs mb-3 font-semibold" style={{ color: '#f59e0b' }}>
-              💰 Paiement partiel — solde restant : {(payModal.amount - parseFloat(payInput)).toFixed(2)} €
+              💰 Paiement partiel — solde restant : {(payModal.amount - (payModal.paidAmount ?? 0) - parseFloat(payInput)).toFixed(2)} €
             </p>
           )}
           {payMsg && (
