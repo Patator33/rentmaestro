@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
-import { deleteBuilding } from '@/actions/buildings';
+import DeleteBuildingButton from '@/components/DeleteBuildingButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -72,17 +72,7 @@ export default async function BuildingsPage() {
                                     <Link href={`/buildings/${building.id}/edit`} style={{ padding: '0.35rem 0.75rem', background: 'var(--surface-active)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--text-secondary)', fontSize: '0.8rem', textDecoration: 'none' }}>
                                         ✏️ Modifier
                                     </Link>
-                                    <form action={deleteBuilding.bind(null, building.id)} style={{ display: 'inline' }}>
-                                        <button
-                                            type="submit"
-                                            disabled={totalApts > 0}
-                                            title={totalApts > 0 ? 'Dissociez d\'abord les appartements' : 'Supprimer'}
-                                            onClick={e => { if (!confirm(`Supprimer l'immeuble "${building.name}" ?`)) e.preventDefault(); }}
-                                            style={{ padding: '0.35rem 0.75rem', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 'var(--radius-sm)', color: '#ef4444', fontSize: '0.8rem', cursor: totalApts > 0 ? 'not-allowed' : 'pointer', opacity: totalApts > 0 ? 0.4 : 1, fontFamily: 'inherit' }}
-                                        >
-                                            🗑
-                                        </button>
-                                    </form>
+                                    <DeleteBuildingButton id={building.id} name={building.name} hasApartments={totalApts > 0} />
                                 </div>
                             </div>
 
