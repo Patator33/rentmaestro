@@ -14,6 +14,7 @@ export async function GET(
     const apartment = await prisma.apartment.findUnique({
         where: { id },
         include: {
+            building: true,
             leases: {
                 include: { tenant: true },
                 orderBy: { startDate: 'desc' },
