@@ -7,11 +7,13 @@ export default function ApartmentForm() {
   const navigate = useNavigate();
   const isEdit = !!id;
 
-  const [form, setForm] = useState({ name: '', address: '', complement: '', city: '', zipCode: '', rent: '', charges: '', mortgageAmount: '', insuranceAmount: '', taxAmount: '', defaultDeposit: '' });
+  const [form, setForm] = useState({ name: '', address: '', complement: '', city: '', zipCode: '', rent: '', charges: '', mortgageAmount: '', insuranceAmount: '', taxAmount: '', defaultDeposit: '', buildingId: '' });
+  const [buildings, setBuildings] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
+    api.getBuildings().then(setBuildings).catch(() => {});
     if (isEdit) {
       api.getApartment(id!).then(a => setForm({
         name: a.name || '', address: a.address || '', complement: a.complement || '',
@@ -21,11 +23,12 @@ export default function ApartmentForm() {
         insuranceAmount: a.insuranceAmount != null ? String(a.insuranceAmount) : '',
         taxAmount: a.taxAmount != null ? String(a.taxAmount) : '',
         defaultDeposit: a.defaultDeposit != null ? String(a.defaultDeposit) : '',
+        buildingId: a.building?.id || '',
       }));
     }
   }, [id]);
 
-  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, [k]: e.target.value }));
+  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setForm(f => ({ ...f, [k]: e.target.value }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +36,7 @@ export default function ApartmentForm() {
     try {
       if (isEdit) await api.updateApartment(id!, form);
       else await api.createApartment(form);
-      navigate('/apartments');
+      navigate(isEdit ? `/apartments/${id}` : '/apartments');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur');
     } finally { setLoading(false); }
@@ -47,6 +50,19 @@ export default function ApartmentForm() {
           <h1 className="text-xl font-bold text-text-main">{isEdit ? 'Modifier' : 'Nouvel'} appartement</h1>
         </div>
         <form onSubmit={handleSubmit} className="space-y-3">
+          <div>
+            <label className="block text-xs text-text-secondary mb-1">Immeuble (optionnel)</label>
+            <select
+              value={form.buildingId}
+              onChange={set('buildingId')}
+              className="w-full bg-surface border border-border rounded-xl px-3 py-2.5 text-text-main text-sm focus:outline-none focus:border-primary"
+            >
+              <option value="">Aucun immeuble</option>
+              {buildings.map((b: any) => (
+                <option key={b.id} value={b.id}>{b.name}{b.city ? ` — ${b.city}` : ''}</option>
+              ))}
+            </select>
+          </div>
           <Field label="Nom (optionnel)" value={form.name} onChange={set('name')} />
           <Field label="Adresse *" value={form.address} onChange={set('address')} required />
           <Field label="Complément" value={form.complement} onChange={set('complement')} />

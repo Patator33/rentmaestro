@@ -84,6 +84,7 @@ export default function Dashboard() {
   const [remindModal, setRemindModal] = useState<DashboardData['unpaidThisMonth'][0] | null>(null);
   const [remindLoading, setRemindLoading] = useState(false);
   const [remindMsg, setRemindMsg] = useState('');
+  const [sentReviews, setSentReviews] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
 
   const load = useCallback(async () => {
@@ -202,21 +203,32 @@ export default function Dashboard() {
               </div>
             )}
 
-            {data.rentReviews?.length > 0 && (
+            {data.rentReviews?.filter(r => !sentReviews.has(r.leaseId)).length > 0 && (
               <div className="rounded-xl p-3 mb-3" style={{ background: 'rgba(34,197,94,0.08)', border: '2px solid #22c55e' }}>
                 <p className="text-xs uppercase tracking-wide mb-2 font-semibold" style={{ color: '#22c55e' }}>📈 Révisions de loyer à prévoir</p>
-                {data.rentReviews.map(r => (
+                {data.rentReviews.filter(r => !sentReviews.has(r.leaseId)).map(r => (
                   <div
                     key={r.leaseId}
                     className="flex items-center justify-between py-2 border-b border-border last:border-0 active:opacity-70"
                     style={{ cursor: 'pointer' }}
                     onClick={() => navigate(`/leases/${r.leaseId}/edit`)}
                   >
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <p className="text-text-main text-sm font-medium">{r.tenantName}</p>
                       <p className="text-text-muted text-xs">{r.apartmentName}</p>
+                      <p className="text-text-secondary text-xs">depuis {new Date(r.startDate).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}</p>
                     </div>
-                    <p className="text-text-secondary text-xs">depuis {new Date(r.startDate).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}</p>
+                    <button
+                      onClick={async e => {
+                        e.stopPropagation();
+                        try { await api.markRentReviewSent(r.leaseId); } catch {}
+                        setSentReviews(prev => new Set([...prev, r.leaseId]));
+                      }}
+                      className="ml-3 shrink-0 text-xs font-semibold px-2.5 py-1 rounded-lg"
+                      style={{ background: 'rgba(34,197,94,0.15)', color: '#22c55e', border: '1px solid #22c55e' }}
+                    >
+                      ✓ Envoyé
+                    </button>
                   </div>
                 ))}
               </div>

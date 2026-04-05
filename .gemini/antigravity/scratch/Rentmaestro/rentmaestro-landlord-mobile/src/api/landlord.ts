@@ -159,6 +159,11 @@ export const api = {
     return res.json();
   },
 
+  markRentReviewSent: async (leaseId: string) => {
+    const res = await apiFetch(`/api/landlord/leases/${leaseId}/rent-review`, { method: 'POST' });
+    return res.json();
+  },
+
   getAgenda: async () => {
     const res = await apiFetch('/api/landlord/agenda');
     return res.json();

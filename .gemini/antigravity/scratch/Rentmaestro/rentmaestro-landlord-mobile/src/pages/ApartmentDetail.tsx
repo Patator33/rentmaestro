@@ -43,6 +43,15 @@ export default function ApartmentDetail() {
             <p className="text-text-muted text-xs uppercase tracking-wide mb-2">Adresse</p>
             <p className="text-text-main text-sm">{apt.address}{apt.complement ? `, ${apt.complement}` : ''}</p>
             <p className="text-text-secondary text-xs mt-0.5">{apt.zipCode} {apt.city}</p>
+            {apt.building && (
+              <button
+                onClick={() => navigate(`/buildings/${apt.building.id}`)}
+                className="mt-1.5 flex items-center gap-1 active:opacity-70"
+              >
+                <span className="text-xs">🏢</span>
+                <span className="text-primary text-xs font-medium">{apt.building.name}</span>
+              </button>
+            )}
           </div>
 
           {/* Finances */}
