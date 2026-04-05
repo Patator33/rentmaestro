@@ -25,8 +25,7 @@ export default function BuildingSelectorWithCreate({ buildings: initial, compani
     const [error, setError] = useState('');
     const router = useRouter();
 
-    const handleCreate = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleCreate = async () => {
         if (!newName.trim() || !newAddress.trim()) return;
         setCreating(true);
         setError('');
@@ -89,7 +88,7 @@ export default function BuildingSelectorWithCreate({ buildings: initial, compani
             {showCreate && (
                 <div style={{ marginTop: '0.75rem', padding: '1rem', background: 'rgba(99,102,241,0.05)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: '10px' }}>
                     <p style={{ fontSize: '0.8rem', fontWeight: 700, color: '#6366f1', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🏗️ Nouvel immeuble</p>
-                    <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                         <input
                             type="text"
                             value={newName}
@@ -119,7 +118,8 @@ export default function BuildingSelectorWithCreate({ buildings: initial, compani
                         {error && <p style={{ fontSize: '0.8rem', color: '#ef4444' }}>{error}</p>}
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                             <button
-                                type="submit"
+                                type="button"
+                                onClick={handleCreate}
                                 disabled={creating || !newName.trim() || !newAddress.trim()}
                                 style={{ flex: 1, padding: '0.5rem', background: '#6366f1', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem', fontFamily: 'inherit', opacity: creating ? 0.7 : 1 }}
                             >
@@ -133,7 +133,7 @@ export default function BuildingSelectorWithCreate({ buildings: initial, compani
                                 Annuler
                             </button>
                         </div>
-                    </form>
+                    </div>
                 </div>
             )}
         </div>
