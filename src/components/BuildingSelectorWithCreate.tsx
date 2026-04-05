@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { createBuildingQuick } from '@/actions/buildings';
 import { useRouter } from 'next/navigation';
 
-interface Building { id: string; name: string; address: string; zipCode: string | null; city: string | null; }
+interface Building { id: string; name: string; address: string; complement: string | null; zipCode: string | null; city: string | null; }
 interface Company { id: string; name: string; type: string; }
 
 interface Props {
@@ -14,6 +14,13 @@ interface Props {
     inputClassName?: string;
 }
 
+function buildingLabel(b: Building) {
+    const parts = [b.address];
+    if (b.complement) parts.push(b.complement);
+    if (b.city) parts.push(b.city);
+    return `${b.name} — ${parts.join(', ')}`;
+}
+
 export default function BuildingSelectorWithCreate({ buildings: initial, companies, defaultValue, inputClassName }: Props) {
     const [buildings, setBuildings] = useState(initial);
     const [selected, setSelected] = useState(defaultValue || '');
@@ -21,17 +28,20 @@ export default function BuildingSelectorWithCreate({ buildings: initial, compani
     const [creating, setCreating] = useState(false);
     const [newName, setNewName] = useState('');
     const [newAddress, setNewAddress] = useState('');
+    const [newComplement, setNewComplement] = useState('');
     const [newZipCode, setNewZipCode] = useState('');
     const [newCity, setNewCity] = useState('');
     const [newCompanyId, setNewCompanyId] = useState('');
     const [error, setError] = useState('');
     const router = useRouter();
 
-    const fillApartmentFields = (b: { address: string; zipCode: string | null; city: string | null }) => {
+    const fillApartmentFields = (b: { address: string; complement: string | null; zipCode: string | null; city: string | null }) => {
         const addrEl = document.getElementById('address') as HTMLInputElement | null;
+        const compEl = document.getElementById('complement') as HTMLInputElement | null;
         const zipEl = document.getElementById('zipCode') as HTMLInputElement | null;
         const cityEl = document.getElementById('city') as HTMLInputElement | null;
         if (addrEl && b.address) addrEl.value = b.address;
+        if (compEl && b.complement) compEl.value = b.complement;
         if (zipEl && b.zipCode) zipEl.value = b.zipCode;
         if (cityEl && b.city) cityEl.value = b.city;
     };
@@ -53,6 +63,7 @@ export default function BuildingSelectorWithCreate({ buildings: initial, compani
             const fd = new FormData();
             fd.append('name', newName.trim());
             fd.append('address', newAddress.trim());
+            if (newComplement.trim()) fd.append('complement', newComplement.trim());
             if (newZipCode.trim()) fd.append('zipCode', newZipCode.trim());
             if (newCity.trim()) fd.append('city', newCity.trim());
             if (newCompanyId) fd.append('companyId', newCompanyId);
@@ -61,7 +72,7 @@ export default function BuildingSelectorWithCreate({ buildings: initial, compani
             setSelected(building.id);
             fillApartmentFields(building);
             setShowCreate(false);
-            setNewName(''); setNewAddress(''); setNewZipCode(''); setNewCity(''); setNewCompanyId('');
+            setNewName(''); setNewAddress(''); setNewComplement(''); setNewZipCode(''); setNewCity(''); setNewCompanyId('');
             router.refresh();
         } catch {
             setError('Erreur lors de la création');
@@ -95,7 +106,7 @@ export default function BuildingSelectorWithCreate({ buildings: initial, compani
                 >
                     <option value="">Aucun immeuble</option>
                     {buildings.map(b => (
-                        <option key={b.id} value={b.id}>{b.name} — {b.address}</option>
+                        <option key={b.id} value={b.id}>{buildingLabel(b)}</option>
                     ))}
                 </select>
                 <button
@@ -110,7 +121,7 @@ export default function BuildingSelectorWithCreate({ buildings: initial, compani
 
             {showCreate && (
                 <div style={{ marginTop: '0.75rem', padding: '1rem', background: 'rgba(99,102,241,0.05)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: '10px' }}>
-                    <p style={{ fontSize: '0.8rem', fontWeight: 700, color: '#6366f1', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🏗️ Nouvel immeuble</p>
+                    <p style={{ fontSize: '0.8rem', fontWeight: 700, color: '#6366f1', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🏢 Nouvel immeuble</p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                         <input
                             type="text"
@@ -126,6 +137,13 @@ export default function BuildingSelectorWithCreate({ buildings: initial, compani
                             onChange={e => setNewAddress(e.target.value)}
                             placeholder="Adresse (rue) *"
                             required
+                            style={inputStyle}
+                        />
+                        <input
+                            type="text"
+                            value={newComplement}
+                            onChange={e => setNewComplement(e.target.value)}
+                            placeholder="Complément d'adresse"
                             style={inputStyle}
                         />
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -166,7 +184,7 @@ export default function BuildingSelectorWithCreate({ buildings: initial, compani
                             </button>
                             <button
                                 type="button"
-                                onClick={() => { setShowCreate(false); setNewName(''); setNewAddress(''); setNewZipCode(''); setNewCity(''); setNewCompanyId(''); setError(''); }}
+                                onClick={() => { setShowCreate(false); setNewName(''); setNewAddress(''); setNewComplement(''); setNewZipCode(''); setNewCity(''); setNewCompanyId(''); setError(''); }}
                                 style={{ padding: '0.5rem 0.75rem', background: 'transparent', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.85rem', fontFamily: 'inherit' }}
                             >
                                 Annuler

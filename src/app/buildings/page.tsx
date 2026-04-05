@@ -26,7 +26,7 @@ export default async function BuildingsPage() {
     return (
         <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '1.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-                <h1 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-main)' }}>🏗️ Immeubles</h1>
+                <h1 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-main)' }}>🏢 Immeubles</h1>
                 <Link href="/buildings/new" className="std-add-button">+ Ajouter un immeuble</Link>
             </div>
 
@@ -60,8 +60,8 @@ export default async function BuildingsPage() {
                         <div key={building.id} style={{ background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '1.25rem' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem' }}>
                                 <div>
-                                    <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '0.2rem' }}>🏗️ {building.name}</h2>
-                                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>📍 {building.address}</p>
+                                    <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '0.2rem' }}>🏢 {building.name}</h2>
+                                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>📍 {building.address}{(building as any).complement ? `, ${(building as any).complement}` : ''}{(building as any).zipCode ? ` ${(building as any).zipCode}` : ''}{(building as any).city ? ` ${(building as any).city}` : ''}</p>
                                     {building.company && (
                                         <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
                                             🏢 <Link href={`/companies/${building.company.id}`} style={{ color: 'var(--primary-color)', textDecoration: 'none' }}>{building.company.name}</Link>

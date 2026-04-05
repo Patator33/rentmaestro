@@ -22,6 +22,11 @@ export default async function NewBuildingPage() {
                     <input type="text" id="address" name="address" required className={styles.input} placeholder="12 rue de la Paix" />
                 </div>
 
+                <div className={styles.formGroup}>
+                    <label htmlFor="complement" className={styles.label}>Complément d'adresse</label>
+                    <input type="text" id="complement" name="complement" className={styles.input} placeholder="Bâtiment A, Résidence..." />
+                </div>
+
                 <div className={styles.row}>
                     <div className={styles.formGroup}>
                         <label htmlFor="zipCode" className={styles.label}>Code postal</label>

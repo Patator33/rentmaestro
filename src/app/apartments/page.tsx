@@ -173,7 +173,7 @@ export default async function ApartmentsPage({ searchParams }: { searchParams: P
                 ]}
                 filterParamName2="company"
                 filterOptions3={buildings.length > 0 ? [
-                    { value: '', label: '🏗️ Tous immeubles' },
+                    { value: '', label: '🏢 Tous immeubles' },
                     { value: 'none', label: '— Sans immeuble' },
                     ...buildings.map(b => ({ value: b.id, label: b.name })),
                 ] : undefined}
@@ -221,7 +221,7 @@ export default async function ApartmentsPage({ searchParams }: { searchParams: P
                                                         <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{apt.address}</div>
                                                     )}
                                                     {(apt as any).building && (
-                                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>🏗️ {(apt as any).building.name}</div>
+                                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>🏢 {(apt as any).building.name}</div>
                                                     )}
                                                 </td>
                                                 <td>{apt.city} {apt.zipCode}</td>
@@ -282,7 +282,7 @@ export default async function ApartmentsPage({ searchParams }: { searchParams: P
                                                 {apt.name ? `📍 ${apt.address} •` : ''} {apt.city} {apt.zipCode}
                                             </p>
                                             {(apt as any).building && (
-                                                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>🏗️ {(apt as any).building.name}</p>
+                                                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>🏢 {(apt as any).building.name}</p>
                                             )}
                                         </div>
                                         <div className={styles.cardBody}>

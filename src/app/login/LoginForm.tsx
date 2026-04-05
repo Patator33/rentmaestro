@@ -2,6 +2,7 @@
 
 import { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Logo from '@/components/Logo';
 
 function Form() {
     const searchParams = useSearchParams();
@@ -41,7 +42,7 @@ function Form() {
         <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-color)' }}>
             <div style={{ width: '100%', maxWidth: '420px', padding: '2rem' }}>
                 <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-                    <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🏠</div>
+                    <div style={{ marginBottom: '0.5rem' }}><Logo size={64} /></div>
                     <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-main)' }}>Rentmaestro</h1>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.25rem' }}>Gestionnaire de biens immobiliers</p>
                 </div>

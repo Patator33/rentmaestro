@@ -12,7 +12,7 @@ const NAV_ITEMS = [
     { href: "/", label: "🏠 Accueil" },
     { href: "/agenda", label: "📅 Agenda" },
     { href: "/companies", label: "🏢 Sociétés" },
-    { href: "/buildings", label: "🏗️ Immeubles" },
+    { href: "/buildings", label: "🏢 Immeubles" },
     { href: "/apartments", label: "🏠 Appartements" },
     { href: "/tenants", label: "👥 Locataires" },
     { href: "/leases", label: "📜 Baux" },
