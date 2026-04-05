@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { createBuildingQuick } from '@/actions/buildings';
 import { useRouter } from 'next/navigation';
 
-interface Building { id: string; name: string; address: string; }
+interface Building { id: string; name: string; address: string; zipCode: string | null; city: string | null; }
 interface Company { id: string; name: string; type: string; }
 
 interface Props {
@@ -21,9 +21,29 @@ export default function BuildingSelectorWithCreate({ buildings: initial, compani
     const [creating, setCreating] = useState(false);
     const [newName, setNewName] = useState('');
     const [newAddress, setNewAddress] = useState('');
+    const [newZipCode, setNewZipCode] = useState('');
+    const [newCity, setNewCity] = useState('');
     const [newCompanyId, setNewCompanyId] = useState('');
     const [error, setError] = useState('');
     const router = useRouter();
+
+    const fillApartmentFields = (b: { address: string; zipCode: string | null; city: string | null }) => {
+        const addrEl = document.getElementById('address') as HTMLInputElement | null;
+        const zipEl = document.getElementById('zipCode') as HTMLInputElement | null;
+        const cityEl = document.getElementById('city') as HTMLInputElement | null;
+        if (addrEl && b.address) addrEl.value = b.address;
+        if (zipEl && b.zipCode) zipEl.value = b.zipCode;
+        if (cityEl && b.city) cityEl.value = b.city;
+    };
+
+    const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const id = e.target.value;
+        setSelected(id);
+        if (id) {
+            const b = buildings.find(bld => bld.id === id);
+            if (b) fillApartmentFields(b);
+        }
+    };
 
     const handleCreate = async () => {
         if (!newName.trim() || !newAddress.trim()) return;
@@ -33,12 +53,15 @@ export default function BuildingSelectorWithCreate({ buildings: initial, compani
             const fd = new FormData();
             fd.append('name', newName.trim());
             fd.append('address', newAddress.trim());
+            if (newZipCode.trim()) fd.append('zipCode', newZipCode.trim());
+            if (newCity.trim()) fd.append('city', newCity.trim());
             if (newCompanyId) fd.append('companyId', newCompanyId);
             const building = await createBuildingQuick(fd);
             setBuildings(prev => [...prev, building]);
             setSelected(building.id);
+            fillApartmentFields(building);
             setShowCreate(false);
-            setNewName(''); setNewAddress(''); setNewCompanyId('');
+            setNewName(''); setNewAddress(''); setNewZipCode(''); setNewCity(''); setNewCompanyId('');
             router.refresh();
         } catch {
             setError('Erreur lors de la création');
@@ -66,7 +89,7 @@ export default function BuildingSelectorWithCreate({ buildings: initial, compani
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                 <select
                     value={selected}
-                    onChange={e => setSelected(e.target.value)}
+                    onChange={handleSelectChange}
                     className={inputClassName}
                     style={inputClassName ? undefined : { ...inputStyle, flex: 1 }}
                 >
@@ -101,10 +124,26 @@ export default function BuildingSelectorWithCreate({ buildings: initial, compani
                             type="text"
                             value={newAddress}
                             onChange={e => setNewAddress(e.target.value)}
-                            placeholder="Adresse *"
+                            placeholder="Adresse (rue) *"
                             required
                             style={inputStyle}
                         />
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <input
+                                type="text"
+                                value={newZipCode}
+                                onChange={e => setNewZipCode(e.target.value)}
+                                placeholder="Code postal"
+                                style={{ ...inputStyle, flex: '0 0 120px' }}
+                            />
+                            <input
+                                type="text"
+                                value={newCity}
+                                onChange={e => setNewCity(e.target.value)}
+                                placeholder="Ville"
+                                style={{ ...inputStyle, flex: 1 }}
+                            />
+                        </div>
                         <select
                             value={newCompanyId}
                             onChange={e => setNewCompanyId(e.target.value)}
@@ -127,7 +166,7 @@ export default function BuildingSelectorWithCreate({ buildings: initial, compani
                             </button>
                             <button
                                 type="button"
-                                onClick={() => { setShowCreate(false); setNewName(''); setNewAddress(''); setNewCompanyId(''); setError(''); }}
+                                onClick={() => { setShowCreate(false); setNewName(''); setNewAddress(''); setNewZipCode(''); setNewCity(''); setNewCompanyId(''); setError(''); }}
                                 style={{ padding: '0.5rem 0.75rem', background: 'transparent', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.85rem', fontFamily: 'inherit' }}
                             >
                                 Annuler

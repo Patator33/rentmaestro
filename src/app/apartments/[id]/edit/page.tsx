@@ -31,6 +31,11 @@ export default async function EditApartmentPage({ params }: { params: Promise<{ 
 
             <form action={updateApartmentWithId} className={styles.form}>
                 <div className={styles.formGroup}>
+                    <label className={styles.label}>Immeuble (Optionnel)</label>
+                    <BuildingSelectorWithCreate buildings={buildings} companies={companies} defaultValue={(apartment as any).buildingId} inputClassName={styles.input} />
+                </div>
+
+                <div className={styles.formGroup}>
                     <label htmlFor="companyId" className={styles.label}>Entité propriétaire (Optionnel)</label>
                     <select id="companyId" name="companyId" defaultValue={apartment.companyId || ''} className={styles.input}>
                         <option value="">Aucune (Nom propre, sans SCI)</option>
@@ -114,11 +119,6 @@ export default async function EditApartmentPage({ params }: { params: Promise<{ 
                 <div className={styles.formGroup}>
                     <label htmlFor="comment" className={styles.label}>Commentaire interne (Privé)</label>
                     <textarea id="comment" name="comment" defaultValue={apartment.comment || ''} className={styles.textarea} placeholder="Notes sur le propriétaire, code d'entrée..." />
-                </div>
-
-                <div className={styles.formGroup}>
-                    <label className={styles.label}>Immeuble (Optionnel)</label>
-                    <BuildingSelectorWithCreate buildings={buildings} companies={companies} defaultValue={(apartment as any).buildingId} inputClassName={styles.input} />
                 </div>
 
                 <div className={styles.row}>
