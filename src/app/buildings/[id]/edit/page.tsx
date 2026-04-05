@@ -27,8 +27,19 @@ export default async function EditBuildingPage({ params }: { params: Promise<{ i
                 </div>
 
                 <div className={styles.formGroup}>
-                    <label htmlFor="address" className={styles.label}>Adresse *</label>
+                    <label htmlFor="address" className={styles.label}>Adresse (rue) *</label>
                     <input type="text" id="address" name="address" required defaultValue={building.address} className={styles.input} />
+                </div>
+
+                <div className={styles.row}>
+                    <div className={styles.formGroup}>
+                        <label htmlFor="zipCode" className={styles.label}>Code postal</label>
+                        <input type="text" id="zipCode" name="zipCode" defaultValue={(building as any).zipCode || ''} className={styles.input} placeholder="75000" pattern="^\d{5}$" title="5 chiffres" />
+                    </div>
+                    <div className={styles.formGroup}>
+                        <label htmlFor="city" className={styles.label}>Ville</label>
+                        <input type="text" id="city" name="city" defaultValue={(building as any).city || ''} className={styles.input} placeholder="Paris" />
+                    </div>
                 </div>
 
                 <div className={styles.formGroup}>

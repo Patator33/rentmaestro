@@ -12,6 +12,8 @@ model Building {
   id         String      @id @default(uuid())
   name       String
   address    String
+  zipCode    String?
+  city       String?
   companyId  String?
   company    Company?    @relation(fields: [companyId], references: [id], onDelete: SetNull)
   apartments Apartment[]

@@ -18,8 +18,19 @@ export default async function NewBuildingPage() {
                 </div>
 
                 <div className={styles.formGroup}>
-                    <label htmlFor="address" className={styles.label}>Adresse *</label>
-                    <input type="text" id="address" name="address" required className={styles.input} placeholder="12 rue de la Paix, 75000 Paris" />
+                    <label htmlFor="address" className={styles.label}>Adresse (rue) *</label>
+                    <input type="text" id="address" name="address" required className={styles.input} placeholder="12 rue de la Paix" />
+                </div>
+
+                <div className={styles.row}>
+                    <div className={styles.formGroup}>
+                        <label htmlFor="zipCode" className={styles.label}>Code postal</label>
+                        <input type="text" id="zipCode" name="zipCode" className={styles.input} placeholder="75000" pattern="^\d{5}$" title="5 chiffres" />
+                    </div>
+                    <div className={styles.formGroup}>
+                        <label htmlFor="city" className={styles.label}>Ville</label>
+                        <input type="text" id="city" name="city" className={styles.input} placeholder="Paris" />
+                    </div>
                 </div>
 
                 <div className={styles.formGroup}>

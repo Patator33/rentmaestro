@@ -7,28 +7,34 @@ import { redirect } from 'next/navigation';
 export async function createBuilding(formData: FormData) {
     const name = (formData.get('name') as string).trim();
     const address = (formData.get('address') as string).trim();
+    const zipCode = (formData.get('zipCode') as string)?.trim() || null;
+    const city = (formData.get('city') as string)?.trim() || null;
     const companyId = (formData.get('companyId') as string) || null;
-    await prisma.building.create({ data: { name, address, companyId } });
+    await prisma.building.create({ data: { name, address, zipCode, city, companyId } });
     revalidatePath('/buildings');
     revalidatePath('/apartments');
     redirect('/buildings');
 }
 
-export async function createBuildingQuick(formData: FormData): Promise<{ id: string; name: string; address: string }> {
+export async function createBuildingQuick(formData: FormData): Promise<{ id: string; name: string; address: string; zipCode: string | null; city: string | null }> {
     const name = (formData.get('name') as string).trim();
     const address = (formData.get('address') as string).trim();
+    const zipCode = (formData.get('zipCode') as string)?.trim() || null;
+    const city = (formData.get('city') as string)?.trim() || null;
     const companyId = (formData.get('companyId') as string) || null;
-    const building = await prisma.building.create({ data: { name, address, companyId } });
+    const building = await prisma.building.create({ data: { name, address, zipCode, city, companyId } });
     revalidatePath('/buildings');
     revalidatePath('/apartments');
-    return { id: building.id, name: building.name, address: building.address };
+    return { id: building.id, name: building.name, address: building.address, zipCode: building.zipCode, city: building.city };
 }
 
 export async function updateBuilding(id: string, formData: FormData) {
     const name = (formData.get('name') as string).trim();
     const address = (formData.get('address') as string).trim();
+    const zipCode = (formData.get('zipCode') as string)?.trim() || null;
+    const city = (formData.get('city') as string)?.trim() || null;
     const companyId = (formData.get('companyId') as string) || null;
-    await prisma.building.update({ where: { id }, data: { name, address, companyId } });
+    await prisma.building.update({ where: { id }, data: { name, address, zipCode, city, companyId } });
     revalidatePath('/buildings');
     revalidatePath('/apartments');
     redirect('/buildings');
