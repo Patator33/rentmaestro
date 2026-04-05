@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 
 const sections = [
+  { label: 'Immeubles', icon: '🏢', path: '/buildings' },
   { label: 'Locataires', icon: '👤', path: '/tenants' },
   { label: 'Appartements', icon: '🏠', path: '/apartments' },
   { label: 'Baux', icon: '📄', path: '/leases' },

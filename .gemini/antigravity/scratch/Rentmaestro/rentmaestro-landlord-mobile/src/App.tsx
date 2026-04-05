@@ -10,6 +10,8 @@ import Messages from './pages/Messages';
 import Chat from './pages/Chat';
 import Incidents from './pages/Incidents';
 import Manage from './pages/Manage';
+import Buildings from './pages/Buildings';
+import BuildingDetail from './pages/BuildingDetail';
 import Tenants from './pages/Tenants';
 import TenantForm from './pages/TenantForm';
 import TenantDetail from './pages/TenantDetail';
@@ -87,6 +89,8 @@ export default function App() {
           <Route path="/messages/:tenantId" element={<AppShell><Chat /></AppShell>} />
           <Route path="/incidents" element={<AppShell><Incidents /></AppShell>} />
           <Route path="/manage" element={<AppShell><Manage /></AppShell>} />
+          <Route path="/buildings" element={<AppShell><Buildings /></AppShell>} />
+          <Route path="/buildings/:id" element={<AppShell><BuildingDetail /></AppShell>} />
           <Route path="/tenants" element={<AppShell><Tenants /></AppShell>} />
           <Route path="/tenants/new" element={<AppShell><TenantForm /></AppShell>} />
           <Route path="/tenants/:id" element={<AppShell><TenantDetail /></AppShell>} />
