@@ -7,6 +7,9 @@ interface SearchResult {
     tenants: { id: string; firstName: string; lastName: string; email: string }[];
     apartments: { id: string; address: string; city: string; name: string | null }[];
     contacts: { id: string; name: string; role: string; apartmentId: string | null }[];
+    buildings: { id: string; name: string; address: string; city: string | null }[];
+    companies: { id: string; name: string; type: string }[];
+    leases: { id: string; tenant: { firstName: string; lastName: string }; apartment: { name: string | null; address: string; city: string | null }; startDate: string; endDate: string | null }[];
 }
 
 const itemStyle: React.CSSProperties = {
@@ -64,7 +67,8 @@ export default function GlobalSearch() {
     };
 
     const hasResults = results && (
-        results.tenants.length > 0 || results.apartments.length > 0 || results.contacts.length > 0
+        results.tenants.length > 0 || results.apartments.length > 0 || results.contacts.length > 0 ||
+        results.buildings.length > 0 || results.companies.length > 0 || results.leases.length > 0
     );
 
     return (
@@ -128,6 +132,39 @@ export default function GlobalSearch() {
                                         <button key={c.id} onClick={() => navigate(c.apartmentId ? `/apartments/${c.apartmentId}` : '/contacts')} style={itemStyle}>
                                             <span style={{ fontWeight: 600, color: 'var(--text-main)', fontSize: '0.9rem' }}>{c.name}</span>
                                             <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{c.role}</span>
+                                        </button>
+                                    ))}
+                                </>
+                            )}
+                            {results!.buildings.length > 0 && (
+                                <>
+                                    <div style={sectionHeaderStyle}>🏢 Immeubles</div>
+                                    {results!.buildings.map(b => (
+                                        <button key={b.id} onClick={() => navigate(`/buildings/${b.id}`)} style={itemStyle}>
+                                            <span style={{ fontWeight: 600, color: 'var(--text-main)', fontSize: '0.9rem' }}>{b.name}</span>
+                                            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{b.address}{b.city ? `, ${b.city}` : ''}</span>
+                                        </button>
+                                    ))}
+                                </>
+                            )}
+                            {results!.companies.length > 0 && (
+                                <>
+                                    <div style={sectionHeaderStyle}>🏛️ Sociétés</div>
+                                    {results!.companies.map(c => (
+                                        <button key={c.id} onClick={() => navigate(`/companies/${c.id}`)} style={itemStyle}>
+                                            <span style={{ fontWeight: 600, color: 'var(--text-main)', fontSize: '0.9rem' }}>{c.name}</span>
+                                            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{c.type}</span>
+                                        </button>
+                                    ))}
+                                </>
+                            )}
+                            {results!.leases.length > 0 && (
+                                <>
+                                    <div style={sectionHeaderStyle}>📜 Baux</div>
+                                    {results!.leases.map(l => (
+                                        <button key={l.id} onClick={() => navigate(`/leases/${l.id}`)} style={itemStyle}>
+                                            <span style={{ fontWeight: 600, color: 'var(--text-main)', fontSize: '0.9rem' }}>{l.tenant.firstName} {l.tenant.lastName}</span>
+                                            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{l.apartment.name || l.apartment.address}</span>
                                         </button>
                                     ))}
                                 </>

@@ -8,10 +8,10 @@ export async function GET(request: Request) {
     const q = (searchParams.get('q') || '').trim();
 
     if (q.length < 2) {
-        return NextResponse.json({ tenants: [], apartments: [], contacts: [] });
+        return NextResponse.json({ tenants: [], apartments: [], contacts: [], buildings: [], companies: [], leases: [] });
     }
 
-    const [tenants, apartments, contacts] = await Promise.all([
+    const [tenants, apartments, contacts, buildings, companies, leases] = await Promise.all([
         prisma.tenant.findMany({
             where: {
                 isArchived: false,
@@ -45,7 +45,48 @@ export async function GET(request: Request) {
             select: { id: true, name: true, role: true, apartmentId: true },
             take: 3,
         }),
+        prisma.building.findMany({
+            where: {
+                OR: [
+                    { name: { contains: q } },
+                    { address: { contains: q } },
+                    { city: { contains: q } },
+                    { zipCode: { contains: q } },
+                ],
+            },
+            select: { id: true, name: true, address: true, city: true },
+            take: 5,
+        }),
+        prisma.company.findMany({
+            where: {
+                OR: [
+                    { name: { contains: q } },
+                    { siret: { contains: q } },
+                    { address: { contains: q } },
+                ],
+            },
+            select: { id: true, name: true, type: true },
+            take: 5,
+        }),
+        prisma.lease.findMany({
+            where: {
+                OR: [
+                    { tenant: { firstName: { contains: q } } },
+                    { tenant: { lastName: { contains: q } } },
+                    { apartment: { name: { contains: q } } },
+                    { apartment: { address: { contains: q } } },
+                ],
+            },
+            select: {
+                id: true,
+                tenant: { select: { firstName: true, lastName: true } },
+                apartment: { select: { name: true, address: true, city: true } },
+                startDate: true,
+                endDate: true,
+            },
+            take: 5,
+        }),
     ]);
 
-    return NextResponse.json({ tenants, apartments, contacts });
+    return NextResponse.json({ tenants, apartments, contacts, buildings, companies, leases });
 }
