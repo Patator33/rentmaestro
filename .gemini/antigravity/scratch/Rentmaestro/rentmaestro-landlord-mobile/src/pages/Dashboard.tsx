@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../api/landlord';
 import { clearAuth } from '../lib/storage';
 import PullToRefresh from '../components/PullToRefresh';
+import GlobalSearch from '../components/GlobalSearch';
 
 interface RentReview {
   leaseId: string;
@@ -133,7 +134,7 @@ export default function Dashboard() {
     <PullToRefresh onRefresh={load}>
       <div className="pb-nav safe-top" style={{ minHeight: '100%' }}>
       <div className="px-4 py-4">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-3">
           <div>
             <h1 className="text-xl font-bold text-text-main">Tableau de bord</h1>
             <p className="text-text-muted text-xs">{monthLabel}</p>
@@ -142,6 +143,7 @@ export default function Dashboard() {
             Déconnexion
           </button>
         </div>
+        <GlobalSearch />
 
         {loading ? (
           <p className="text-text-muted text-sm text-center py-8">Chargement...</p>

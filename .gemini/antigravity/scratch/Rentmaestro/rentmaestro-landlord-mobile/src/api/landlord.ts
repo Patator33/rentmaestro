@@ -144,6 +144,11 @@ export const api = {
     return res.json();
   },
 
+  search: async (q: string) => {
+    const res = await apiFetch(`/api/landlord/search?q=${encodeURIComponent(q)}`);
+    return res.json();
+  },
+
   getApartments: async () => {
     const res = await apiFetch('/api/landlord/apartments');
     return res.json();
