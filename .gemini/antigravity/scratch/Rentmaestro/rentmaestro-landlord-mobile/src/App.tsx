@@ -21,6 +21,7 @@ import ApartmentForm from './pages/ApartmentForm';
 import Leases from './pages/Leases';
 import LeaseDetail from './pages/LeaseDetail';
 import LeaseForm from './pages/LeaseForm';
+import Companies from './pages/Companies';
 
 const TABS = ['/', '/rents', '/messages', '/incidents', '/manage'];
 
@@ -99,6 +100,7 @@ export default function App() {
           <Route path="/apartments/new" element={<AppShell><ApartmentForm /></AppShell>} />
           <Route path="/apartments/:id" element={<AppShell><ApartmentDetail /></AppShell>} />
           <Route path="/apartments/:id/edit" element={<AppShell><ApartmentForm /></AppShell>} />
+          <Route path="/companies" element={<AppShell><Companies /></AppShell>} />
           <Route path="/leases" element={<AppShell><Leases /></AppShell>} />
           <Route path="/leases/new" element={<AppShell><LeaseForm /></AppShell>} />
           <Route path="/leases/:id" element={<AppShell><LeaseDetail /></AppShell>} />

@@ -139,6 +139,11 @@ export const api = {
     return res.json();
   },
 
+  getCompanies: async () => {
+    const res = await apiFetch('/api/landlord/companies');
+    return res.json();
+  },
+
   getApartments: async () => {
     const res = await apiFetch('/api/landlord/apartments');
     return res.json();
