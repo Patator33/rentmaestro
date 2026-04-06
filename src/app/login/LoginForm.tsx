@@ -10,6 +10,7 @@ function Form() {
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -70,13 +71,23 @@ function Form() {
                         </div>
                         <div>
                             <label style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: '0.4rem' }}>Mot de passe</label>
-                            <input
-                                type="password"
-                                required
-                                value={password}
-                                onChange={e => setPassword(e.target.value)}
-                                style={{ width: '100%', padding: '0.65rem 0.9rem', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'var(--surface-active)', color: 'var(--text-main)', fontSize: '0.95rem', fontFamily: 'inherit', boxSizing: 'border-box' }}
-                            />
+                            <div style={{ position: 'relative' }}>
+                                <input
+                                    type={showPassword ? 'text' : 'password'}
+                                    required
+                                    value={password}
+                                    onChange={e => setPassword(e.target.value)}
+                                    style={{ width: '100%', padding: '0.65rem 2.5rem 0.65rem 0.9rem', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'var(--surface-active)', color: 'var(--text-main)', fontSize: '0.95rem', fontFamily: 'inherit', boxSizing: 'border-box' }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(v => !v)}
+                                    tabIndex={-1}
+                                    style={{ position: 'absolute', right: '0.6rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.1rem', color: 'var(--text-muted)', padding: '0.2rem', lineHeight: 1 }}
+                                >
+                                    {showPassword ? '🙈' : '👁️'}
+                                </button>
+                            </div>
                         </div>
                         <button
                             type="submit"
