@@ -6,6 +6,7 @@ import { saveAuth, saveServerUrl, getServerUrl } from '../lib/storage';
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [serverUrl, setServerUrl] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [error, setError] = useState('');
@@ -56,13 +57,23 @@ export default function Login() {
           </div>
           <div>
             <label className="block text-sm font-medium text-text-secondary mb-1">Mot de passe</label>
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-              className="w-full bg-surface border border-border rounded-xl px-4 py-3 text-text-main text-sm focus:outline-none focus:border-primary"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+                className="w-full bg-surface border border-border rounded-xl px-4 py-3 pr-11 text-text-main text-sm focus:outline-none focus:border-primary"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted text-lg leading-none"
+                tabIndex={-1}
+              >
+                {showPassword ? '🙈' : '👁️'}
+              </button>
+            </div>
           </div>
 
           <div>
