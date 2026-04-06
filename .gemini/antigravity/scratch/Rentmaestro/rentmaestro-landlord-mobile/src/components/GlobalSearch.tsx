@@ -5,6 +5,9 @@ import { api } from '../api/landlord';
 interface SearchResult {
   tenants: { id: string; firstName: string; lastName: string; email: string }[];
   apartments: { id: string; address: string; city: string; name: string | null }[];
+  buildings: { id: string; name: string; address: string; city: string | null }[];
+  companies: { id: string; name: string; type: string }[];
+  leases: { id: string; tenant: { firstName: string; lastName: string }; apartment: { name: string | null; address: string; city: string | null }; startDate: string; endDate: string | null }[];
 }
 
 export default function GlobalSearch() {
@@ -58,7 +61,10 @@ export default function GlobalSearch() {
     navigate(path);
   };
 
-  const hasResults = results && (results.tenants.length > 0 || results.apartments.length > 0);
+  const hasResults = results && (
+    results.tenants.length > 0 || results.apartments.length > 0 ||
+    results.buildings.length > 0 || results.companies.length > 0 || results.leases.length > 0
+  );
 
   return (
     <div ref={containerRef} className="relative mb-4">
@@ -115,6 +121,51 @@ export default function GlobalSearch() {
                     >
                       <p className="text-text-main text-sm font-medium">{t.firstName} {t.lastName}</p>
                       <p className="text-text-muted text-xs">{t.email}</p>
+                    </button>
+                  ))}
+                </>
+              )}
+              {results!.buildings.length > 0 && (
+                <>
+                  <p className="px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-text-muted bg-surface border-b border-border">🏢 Immeubles</p>
+                  {results!.buildings.map(b => (
+                    <button
+                      key={b.id}
+                      onClick={() => go(`/buildings/${b.id}`)}
+                      className="w-full text-left px-3 py-2.5 border-b border-border last:border-0 active:bg-surface-active"
+                    >
+                      <p className="text-text-main text-sm font-medium">{b.name}</p>
+                      <p className="text-text-muted text-xs">{b.address}{b.city ? `, ${b.city}` : ''}</p>
+                    </button>
+                  ))}
+                </>
+              )}
+              {results!.companies.length > 0 && (
+                <>
+                  <p className="px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-text-muted bg-surface border-b border-border">🏛️ Sociétés</p>
+                  {results!.companies.map(c => (
+                    <button
+                      key={c.id}
+                      onClick={() => go(`/companies`)}
+                      className="w-full text-left px-3 py-2.5 border-b border-border last:border-0 active:bg-surface-active"
+                    >
+                      <p className="text-text-main text-sm font-medium">{c.name}</p>
+                      <p className="text-text-muted text-xs">{c.type}</p>
+                    </button>
+                  ))}
+                </>
+              )}
+              {results!.leases.length > 0 && (
+                <>
+                  <p className="px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-text-muted bg-surface border-b border-border">📜 Baux</p>
+                  {results!.leases.map(l => (
+                    <button
+                      key={l.id}
+                      onClick={() => go(`/leases/${l.id}`)}
+                      className="w-full text-left px-3 py-2.5 border-b border-border last:border-0 active:bg-surface-active"
+                    >
+                      <p className="text-text-main text-sm font-medium">{l.tenant.firstName} {l.tenant.lastName}</p>
+                      <p className="text-text-muted text-xs">{l.apartment.name || l.apartment.address}</p>
                     </button>
                   ))}
                 </>
