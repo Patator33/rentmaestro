@@ -4,6 +4,7 @@ import { companySchema } from "@/lib/validations";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { logAction } from "@/lib/audit";
 
 export async function createCompany(formData: FormData) {
     const rawData = {
@@ -16,9 +17,10 @@ export async function createCompany(formData: FormData) {
 
     try {
         const validatedData = companySchema.parse(rawData);
-        await prisma.company.create({
+        const c = await prisma.company.create({
             data: { ...validatedData, ...(logoUrl !== null ? { logoUrl } : {}) },
         });
+        await logAction({ action: 'CREATE_COMPANY', entity: 'Company', entityId: c.id, details: `${rawData.name} (${rawData.type})` });
     } catch (error) {
         console.error("Erreur lors de la création de la société:", error);
         throw new Error("Impossible de créer la société. Vérifiez les données saisies.");
@@ -33,6 +35,7 @@ export async function deleteCompany(id: string) {
         await prisma.company.delete({
             where: { id },
         });
+        await logAction({ action: 'DELETE_COMPANY', entity: 'Company', entityId: id });
     } catch (error) {
         console.error("Erreur lors de la suppression de la société:", error);
         throw new Error("Impossible de supprimer la société.");
@@ -55,6 +58,7 @@ export async function updateCompany(id: string, formData: FormData) {
             where: { id },
             data: { ...validatedData, logoUrl },
         });
+        await logAction({ action: 'UPDATE_COMPANY', entity: 'Company', entityId: id, details: `${rawData.name} (${rawData.type})` });
     } catch (error) {
         console.error("Erreur lors de la mise à jour de la société:", error);
         throw new Error("Impossible de mettre à jour la société.");

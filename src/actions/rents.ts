@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { notifyN8n } from "@/lib/n8n";
+import { logAction } from "@/lib/audit";
 
 export async function markRentAsPaid(leaseId: string, periodStr: string, paidAmount: number) {
     if (!leaseId || !periodStr || isNaN(paidAmount) || paidAmount <= 0) {
@@ -63,6 +64,8 @@ export async function markRentAsPaid(leaseId: string, periodStr: string, paidAmo
         if (paymentData) {
             await notifyN8n('RENT_PAID', paymentData);
         }
+        const status = isPartial ? 'PARTIAL' : 'PAID';
+        await logAction({ action: 'MARK_RENT_PAID', entity: 'RentPayment', entityId: leaseId, details: `${totalPaid}€ — ${status} — ${period.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}` });
     } catch (error) {
         console.error("Erreur lors du marquage du paiement:", error);
         throw new Error("Impossible de marquer le loyer comme payé.");
@@ -78,6 +81,7 @@ export async function cancelRentPayment(paymentId: string) {
         where: { id: paymentId },
         data: { status: "PENDING", paidAt: null }
     });
+    await logAction({ action: 'CANCEL_RENT_PAYMENT', entity: 'RentPayment', entityId: paymentId });
     revalidatePath("/rents");
     revalidatePath("/");
 }
@@ -115,6 +119,7 @@ export async function sendRentReminder(leaseId: string, periodStr: string) {
                 }
             });
         }
+        await logAction({ action: 'SEND_RENT_REMINDER', entity: 'Lease', entityId: leaseId, details: period.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }) });
     } catch (error) {
         console.error("Erreur lors de l'envoi de la relance:", error);
         throw new Error("Impossible d'envoyer la relance.");

@@ -98,12 +98,20 @@ export async function GET(request: Request) {
             }
         }
 
+        // Purge audit logs older than 1 year
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+        const { count: deletedLogs } = await prisma.auditLog.deleteMany({
+            where: { createdAt: { lt: oneYearAgo } },
+        });
+
         return NextResponse.json({
             success: true,
             message: `CRON Job success. Sent ${sentQuittances} quittances and ${sentReminders} reminders.`,
             stats: {
                 quittancesSent: sentQuittances,
-                remindersSent: sentReminders
+                remindersSent: sentReminders,
+                auditLogsPurged: deletedLogs,
             }
         });
 

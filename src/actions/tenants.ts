@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { notifyN8n } from "@/lib/n8n";
 import { sendEmail } from "@/lib/email";
+import { logAction } from "@/lib/audit";
 
 export async function createTenant(formData: FormData) {
     const rawData = {
@@ -28,6 +29,7 @@ export async function createTenant(formData: FormData) {
 
         // Trigger n8n webhook
         await notifyN8n('TENANT_CREATED', newTenant);
+        await logAction({ action: 'CREATE_TENANT', entity: 'Tenant', entityId: newTenant.id, details: `${newTenant.firstName} ${newTenant.lastName}` });
     } catch (error) {
         console.error("Erreur lors de la création du locataire:", error);
         throw new Error("Impossible de créer le locataire. Vérifiez les données saisies.");
@@ -46,6 +48,7 @@ export async function deleteTenant(id: string) {
         await prisma.tenant.delete({
             where: { id },
         });
+        await logAction({ action: 'DELETE_TENANT', entity: 'Tenant', entityId: id });
     } catch (error) {
         console.error("Erreur lors de la suppression du locataire:", error);
         throw new Error("Impossible de supprimer le locataire.");
@@ -71,6 +74,7 @@ export async function updateTenant(id: string, formData: FormData) {
             where: { id },
             data: rawData,
         });
+        await logAction({ action: 'UPDATE_TENANT', entity: 'Tenant', entityId: id, details: `${rawData.firstName} ${rawData.lastName}` });
     } catch (error) {
         console.error("Erreur lors de la mise à jour du locataire:", error);
         throw new Error("Impossible de mettre à jour le locataire.");
@@ -85,6 +89,7 @@ export async function archiveTenant(id: string) {
         where: { id },
         data: { isArchived: true, portalToken: null },
     });
+    await logAction({ action: 'ARCHIVE_TENANT', entity: 'Tenant', entityId: id });
     revalidatePath('/tenants');
     revalidatePath(`/tenants/${id}`);
 }
@@ -94,6 +99,7 @@ export async function reactivateTenant(id: string) {
         where: { id },
         data: { isArchived: false },
     });
+    await logAction({ action: 'REACTIVATE_TENANT', entity: 'Tenant', entityId: id });
     revalidatePath('/tenants');
     revalidatePath(`/tenants/${id}`);
 }

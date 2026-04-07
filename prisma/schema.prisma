@@ -248,3 +248,14 @@ model PushSubscription {
   auth      String
   createdAt DateTime @default(now())
 }
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userEmail String?
+  action    String
+  entity    String?
+  entityId  String?
+  details   String?
+  ip        String?
+  createdAt DateTime @default(now())
+}

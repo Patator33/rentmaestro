@@ -33,6 +33,20 @@ export default async function SecuritySettingsPage() {
             <UserManagement currentUserId={user.id} />
 
             <BackupRestore />
+
+            <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)' }}>
+                <h2 style={{ fontWeight: 700, color: 'var(--text-main)', marginBottom: '0.4rem', fontSize: '1rem' }}>📋 Journal d'activité</h2>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                    Historique horodaté de toutes les connexions et actions effectuées sur le compte. Conservé 1 an.
+                </p>
+                <Link href="/settings/logs" style={{
+                    display: 'inline-block', padding: '0.55rem 1.2rem',
+                    background: 'var(--primary)', color: '#fff', fontWeight: 600,
+                    borderRadius: 'var(--radius-md)', textDecoration: 'none', fontSize: '0.9rem',
+                }}>
+                    Consulter les logs →
+                </Link>
+            </div>
         </div>
     );
 }

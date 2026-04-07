@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { logAction } from "@/lib/audit";
 
 export async function createLease(formData: FormData) {
     const apartmentId = formData.get("apartmentId") as string;
@@ -33,7 +34,7 @@ export async function createLease(formData: FormData) {
             });
         }
 
-        await prisma.lease.create({
+        const newLease = await prisma.lease.create({
             data: {
                 apartmentId,
                 tenantId,
@@ -45,6 +46,7 @@ export async function createLease(formData: FormData) {
                 isActive: true,
             },
         });
+        await logAction({ action: 'CREATE_LEASE', entity: 'Lease', entityId: newLease.id, details: `Loyer: ${rentAmount}€` });
     } catch (error) {
         console.error("Erreur lors de la création du bail:", error);
         throw new Error("Impossible de créer le contrat. Veuillez réessayer.");
@@ -71,6 +73,7 @@ export async function terminateLease(id: string, endDateStr?: string | null) {
                 endDate: endDate,
             },
         });
+        await logAction({ action: 'TERMINATE_LEASE', entity: 'Lease', entityId: id, details: endDate ? `Fin: ${endDate.toLocaleDateString('fr-FR')}` : 'Sans date de fin' });
     } catch (error) {
         console.error("Erreur lors de la terminaison du bail:", error);
         throw new Error("Impossible de modifier le contrat.");
@@ -84,6 +87,7 @@ export async function deleteLease(id: string) {
         await prisma.lease.delete({
             where: { id },
         });
+        await logAction({ action: 'DELETE_LEASE', entity: 'Lease', entityId: id });
     } catch (error) {
         console.error("Erreur lors de la suppression du bail:", error);
         throw new Error("Impossible de supprimer le contrat.");
@@ -143,6 +147,7 @@ export async function updateLease(id: string, formData: FormData) {
                 data: { amount: rentAmount + chargesAmount },
             });
         }
+        await logAction({ action: 'UPDATE_LEASE', entity: 'Lease', entityId: id, details: `Loyer: ${rentAmount}€` });
     } catch (error) {
         console.error("Erreur lors de la modification du bail:", error);
         throw new Error("Impossible de modifier le contrat.");

@@ -4,6 +4,7 @@ import { apartmentSchema } from "@/lib/validations";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { logAction } from "@/lib/audit";
 
 export async function createApartment(formData: FormData) {
     const rawData = {
@@ -26,9 +27,10 @@ export async function createApartment(formData: FormData) {
 
     try {
         const validatedData = apartmentSchema.parse(rawData);
-        await prisma.apartment.create({
+        const apt = await prisma.apartment.create({
             data: { ...validatedData, availableFrom: rawData.availableFrom, buildingId: rawData.buildingId },
         });
+        await logAction({ action: 'CREATE_APARTMENT', entity: 'Apartment', entityId: apt.id, details: rawData.name || rawData.address });
     } catch (error) {
         console.error("Erreur lors de la création de l'appartement:", error);
         throw new Error("Impossible de créer l'appartement. Vérifiez les données saisies.");
@@ -47,6 +49,7 @@ export async function deleteApartment(id: string) {
         await prisma.apartment.delete({
             where: { id },
         });
+        await logAction({ action: 'DELETE_APARTMENT', entity: 'Apartment', entityId: id });
     } catch (error) {
         console.error("Erreur lors de la suppression de l'appartement:", error);
         throw new Error("Impossible de supprimer l'appartement.");
@@ -80,6 +83,7 @@ export async function updateApartment(id: string, formData: FormData) {
             where: { id },
             data: rawData,
         });
+        await logAction({ action: 'UPDATE_APARTMENT', entity: 'Apartment', entityId: id, details: rawData.name || rawData.address });
     } catch (error) {
         console.error("Erreur lors de la mise à jour de l'appartement:", error);
         throw new Error("Impossible de mettre à jour l'appartement.");
