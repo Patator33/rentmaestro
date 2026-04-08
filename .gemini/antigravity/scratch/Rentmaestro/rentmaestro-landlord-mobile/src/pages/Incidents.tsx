@@ -109,7 +109,7 @@ function TaskModal({
     >
       <div
         className="bg-surface rounded-t-2xl p-5 space-y-3"
-        style={{ maxHeight: '85vh', overflowY: 'auto' }}
+        style={{ maxHeight: '85vh', overflowY: 'auto', paddingBottom: 'calc(1.25rem + 4rem + env(safe-area-inset-bottom))' }}
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-1">
