@@ -102,10 +102,31 @@ export const api = {
   },
 
   updateTask: async (id: string, status: string) => {
-    const res = await apiFetch(`/api/landlord/incidents/${id}`, {
+    const res = await apiFetch(`/api/landlord/tasks/${id}`, {
       method: 'PATCH',
       body: JSON.stringify({ status }),
     });
+    return res.json();
+  },
+
+  updateTaskFull: async (id: string, data: Record<string, unknown>) => {
+    const res = await apiFetch(`/api/landlord/tasks/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  },
+
+  createTask: async (data: Record<string, unknown>) => {
+    const res = await apiFetch('/api/landlord/tasks', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  },
+
+  deleteTask: async (id: string) => {
+    const res = await apiFetch(`/api/landlord/tasks/${id}`, { method: 'DELETE' });
     return res.json();
   },
 
