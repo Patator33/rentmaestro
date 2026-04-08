@@ -92,7 +92,7 @@ export default function NavBar() {
                                             href={item.href}
                                             onClick={() => setGestionOpen(false)}
                                             className={`nav-link${isActive(item.href) ? ' nav-link-active' : ''}`}
-                                            style={{ display: 'block', padding: '0.6rem 1rem', borderRadius: 0, borderBottom: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}
+                                            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.6rem 1rem', borderRadius: 0, borderBottom: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}
                                         >
                                             {item.label}
                                         </Link>

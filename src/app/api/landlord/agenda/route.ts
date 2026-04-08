@@ -75,7 +75,8 @@ export async function GET(request: Request) {
         const nextReview = new Date(refDate);
         nextReview.setFullYear(nextReview.getFullYear() + 1);
 
-        if (nextReview >= today && nextReview <= horizon) {
+        const leaseEndDate = lease.endDate ? new Date(lease.endDate) : null;
+        if (nextReview >= today && nextReview <= horizon && (!leaseEndDate || leaseEndDate >= nextReview)) {
             const days = diffDays(nextReview, now);
             events.push({
                 date: nextReview,
