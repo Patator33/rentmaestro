@@ -6,6 +6,10 @@ export default function TenantDetail() {
   const { id } = useParams<{ id: string }>();
   const [tenant, setTenant] = useState<any>(null);
   const [deleting, setDeleting] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
+  const [portalSending, setPortalSending] = useState(false);
+  const [portalCopied, setPortalCopied] = useState(false);
+  const [portalSent, setPortalSent] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => { api.getTenant(id!).then(setTenant); }, [id]);
@@ -30,6 +34,43 @@ export default function TenantDetail() {
 
   const handleEmail = (email: string) => {
     window.location.href = `mailto:${email}`;
+  };
+
+  const handleGeneratePortal = async () => {
+    if (tenant.portalToken && !confirm('Régénérer révoquera l\'ancien lien. Continuer ?')) return;
+    setPortalLoading(true);
+    try {
+      const res = await api.generatePortalToken(id!);
+      setTenant((t: any) => ({ ...t, portalToken: res.portalToken }));
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : 'Erreur');
+    } finally {
+      setPortalLoading(false);
+    }
+  };
+
+  const handleCopyPortalToken = async () => {
+    if (!tenant.portalToken) return;
+    try {
+      await navigator.clipboard.writeText(tenant.portalToken);
+      setPortalCopied(true);
+      setTimeout(() => setPortalCopied(false), 2500);
+    } catch {
+      alert(tenant.portalToken);
+    }
+  };
+
+  const handleSendPortalInvite = async () => {
+    setPortalSending(true);
+    try {
+      await api.sendPortalInvite(id!);
+      setPortalSent(true);
+      setTimeout(() => setPortalSent(false), 3000);
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : 'Erreur envoi');
+    } finally {
+      setPortalSending(false);
+    }
   };
 
   if (!tenant) return <div className="safe-top px-4 py-4 text-text-muted text-sm">Chargement...</div>;
@@ -103,10 +144,57 @@ export default function TenantDetail() {
 
         <button
           onClick={() => navigate(`/messages/${id}`)}
-          className="w-full text-sm text-primary border border-primary/30 py-2.5 rounded-xl mb-2"
+          className="w-full text-sm text-primary border border-primary/30 py-2.5 rounded-xl mb-3"
         >
           Envoyer un message
         </button>
+
+        {/* Portail locataire */}
+        <div className="bg-surface rounded-xl border border-border p-3 mb-3">
+          <p className="text-text-muted text-xs uppercase tracking-wide mb-2">Portail locataire</p>
+          {tenant.isArchived ? (
+            <p className="text-text-muted text-xs">🔒 Accès révoqué (locataire archivé).</p>
+          ) : tenant.portalToken ? (
+            <div className="space-y-2">
+              <div className="bg-bg rounded-lg px-3 py-2 flex items-center justify-between gap-2">
+                <span className="text-text-secondary text-xs font-mono truncate flex-1">{tenant.portalToken}</span>
+                <button
+                  onClick={handleCopyPortalToken}
+                  className="text-xs text-primary shrink-0"
+                >
+                  {portalCopied ? '✓ Copié' : 'Copier'}
+                </button>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSendPortalInvite}
+                  disabled={portalSending || !tenant.email}
+                  className="flex-1 text-xs py-2 bg-primary/20 text-primary border border-primary/30 rounded-lg disabled:opacity-50"
+                >
+                  {portalSending ? 'Envoi...' : portalSent ? '✓ Envoyé !' : '✉️ Envoyer par email'}
+                </button>
+                <button
+                  onClick={handleGeneratePortal}
+                  disabled={portalLoading}
+                  className="text-xs px-3 py-2 border border-border text-text-secondary rounded-lg disabled:opacity-50"
+                >
+                  {portalLoading ? '...' : '🔄 Régénérer'}
+                </button>
+              </div>
+              {!tenant.email && (
+                <p className="text-xs text-late">Aucun email — impossible d'envoyer l'invitation.</p>
+              )}
+            </div>
+          ) : (
+            <button
+              onClick={handleGeneratePortal}
+              disabled={portalLoading}
+              className="w-full text-xs py-2.5 bg-primary/20 text-primary border border-primary/30 rounded-lg disabled:opacity-50"
+            >
+              {portalLoading ? 'Génération...' : '🔑 Générer le lien portail'}
+            </button>
+          )}
+        </div>
 
         <button onClick={handleDelete} disabled={deleting} className="w-full text-sm text-red-400 border border-red-400/30 py-2.5 rounded-xl disabled:opacity-50">
           {deleting ? 'Suppression...' : 'Supprimer le locataire'}

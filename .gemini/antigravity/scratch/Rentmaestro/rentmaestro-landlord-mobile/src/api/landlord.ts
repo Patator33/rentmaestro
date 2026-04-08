@@ -220,6 +220,22 @@ export const api = {
     return res.json();
   },
 
+  generatePortalToken: async (tenantId: string) => {
+    const res = await apiFetch(`/api/landlord/tenants/${tenantId}/portal`, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'generate' }),
+    });
+    return res.json() as Promise<{ portalToken: string }>;
+  },
+
+  sendPortalInvite: async (tenantId: string) => {
+    const res = await apiFetch(`/api/landlord/tenants/${tenantId}/portal`, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'send' }),
+    });
+    return res.json();
+  },
+
   payDeposit: async (leaseId: string, paidAmount: number) => {
     const res = await apiFetch(`/api/landlord/leases/${leaseId}`, {
       method: 'POST',
