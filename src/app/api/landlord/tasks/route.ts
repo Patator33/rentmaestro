@@ -25,6 +25,29 @@ export async function GET(request: Request) {
     return NextResponse.json(tasks);
 }
 
+export async function POST(request: Request) {
+    if (!verifyMobileToken(request)) return unauthorized();
+
+    const { title, description, cost, dueDate, apartmentId } = await request.json();
+    if (!title || !apartmentId) {
+        return NextResponse.json({ error: 'title et apartmentId sont requis' }, { status: 400 });
+    }
+
+    const task = await prisma.task.create({
+        data: {
+            title,
+            description: description || null,
+            cost: cost != null && cost !== '' ? parseFloat(cost) : null,
+            dueDate: dueDate ? new Date(dueDate) : null,
+            apartmentId,
+            status: 'TODO',
+        },
+        include: { apartment: { select: { id: true, address: true, name: true } } },
+    });
+
+    return NextResponse.json(task, { status: 201 });
+}
+
 export async function OPTIONS() {
     return new NextResponse(null, { status: 204 });
 }
