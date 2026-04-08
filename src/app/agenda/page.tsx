@@ -65,7 +65,8 @@ export default async function AgendaPage() {
         const nextReview = new Date(refDate);
         nextReview.setFullYear(nextReview.getFullYear() + 1);
 
-        if (nextReview >= now && nextReview <= horizon) {
+        const leaseEndDate = lease.endDate ? new Date(lease.endDate) : null;
+        if (nextReview >= now && nextReview <= horizon && (!leaseEndDate || leaseEndDate >= nextReview)) {
             const daysLeft = differenceInDays(nextReview, now);
             events.push({
                 date: nextReview,
