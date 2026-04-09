@@ -23,7 +23,8 @@ export default function Buildings() {
         <div className="px-4 py-4">
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
             <button onClick={() => navigate('/manage')} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '1.4rem', padding: '0 0.5rem 0 0', cursor: 'pointer', lineHeight: 1 }}>←</button>
-            <h1 className="text-xl font-bold text-text-main">🏢 Immeubles</h1>
+            <h1 className="text-xl font-bold text-text-main" style={{ flex: 1 }}>🏢 Immeubles</h1>
+            <button onClick={() => navigate('/buildings/new')} className="text-primary text-sm font-semibold">+ Nouveau</button>
           </div>
 
           {loading && <p className="text-text-muted text-sm text-center py-8">Chargement...</p>}

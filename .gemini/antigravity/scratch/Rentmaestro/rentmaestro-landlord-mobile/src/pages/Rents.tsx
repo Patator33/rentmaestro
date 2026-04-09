@@ -82,6 +82,19 @@ export default function Rents() {
     }
   };
 
+  const handleRemind = async (item: RentItem) => {
+    setActionLoading(item.leaseId);
+    try {
+      const period = new Date(item.period).toISOString().split('T')[0];
+      await api.sendReminder(item.leaseId, period);
+      alert('Relance envoyée.');
+    } catch (e: any) {
+      alert(e.message || 'Erreur envoi relance');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const monthLabel = new Date(month + '-01').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
   const unpaidRents = rents.filter(r => r.status !== 'PAID');
   const paidRents = rents.filter(r => r.status === 'PAID');
@@ -158,7 +171,7 @@ export default function Rents() {
               ) : (
                 <div className="space-y-2">
                   {unpaidRents.map(item => (
-                    <RentCard key={item.leaseId} item={item} actionLoading={actionLoading} onPay={openPayModal} onUnpay={handleUnpay} />
+                    <RentCard key={item.leaseId} item={item} actionLoading={actionLoading} onPay={openPayModal} onUnpay={handleUnpay} onRemind={handleRemind} />
                   ))}
                 </div>
               )}
@@ -173,7 +186,7 @@ export default function Rents() {
               ) : (
                 <div className="space-y-2">
                   {paidRents.map(item => (
-                    <RentCard key={item.leaseId} item={item} actionLoading={actionLoading} onPay={openPayModal} onUnpay={handleUnpay} />
+                    <RentCard key={item.leaseId} item={item} actionLoading={actionLoading} onPay={openPayModal} onUnpay={handleUnpay} onRemind={handleRemind} />
                   ))}
                 </div>
               )}
@@ -243,9 +256,10 @@ export default function Rents() {
   );
 }
 
-function RentCard({ item, actionLoading, onPay, onUnpay }: {
+function RentCard({ item, actionLoading, onPay, onUnpay, onRemind }: {
   item: RentItem; actionLoading: string | null;
   onPay: (item: RentItem) => void; onUnpay: (item: RentItem) => void;
+  onRemind: (item: RentItem) => void;
 }) {
   return (
     <div className="bg-surface rounded-xl border border-border p-3">
@@ -275,13 +289,22 @@ function RentCard({ item, actionLoading, onPay, onUnpay }: {
           {actionLoading === item.leaseId ? '...' : 'Annuler paiement'}
         </button>
       ) : (
-        <button
-          onClick={() => onPay(item)}
-          disabled={actionLoading === item.leaseId}
-          className="w-full text-xs py-1.5 rounded-lg bg-paid/20 text-paid border border-paid/30 font-semibold disabled:opacity-50"
-        >
-          {actionLoading === item.leaseId ? '...' : '✓ Marquer payé'}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => onPay(item)}
+            disabled={actionLoading === item.leaseId}
+            className="flex-1 text-xs py-1.5 rounded-lg bg-paid/20 text-paid border border-paid/30 font-semibold disabled:opacity-50"
+          >
+            {actionLoading === item.leaseId ? '...' : '✓ Marquer payé'}
+          </button>
+          <button
+            onClick={() => onRemind(item)}
+            disabled={actionLoading === item.leaseId}
+            className="text-xs py-1.5 px-2.5 rounded-lg border border-border text-text-secondary disabled:opacity-50"
+          >
+            📧
+          </button>
+        </div>
       )}
     </div>
   );

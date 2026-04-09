@@ -7,6 +7,7 @@ export default function BuildingDetail() {
   const { id } = useParams<{ id: string }>();
   const [building, setBuilding] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
   const navigate = useNavigate();
 
   const load = () => {
@@ -20,6 +21,18 @@ export default function BuildingDetail() {
   };
 
   useEffect(() => { load(); }, [id]);
+
+  const handleDelete = async () => {
+    if (!confirm('Supprimer cet immeuble ?')) return;
+    setDeleting(true);
+    try {
+      await api.deleteBuilding(id!);
+      navigate('/buildings');
+    } catch (e: any) {
+      alert(e.message || 'Erreur suppression');
+      setDeleting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -62,9 +75,15 @@ export default function BuildingDetail() {
               <h1 className="text-text-main font-bold" style={{ fontSize: '1.1rem' }}>🏢 {building.name}</h1>
               {fullAddress && <p className="text-text-muted text-xs" style={{ marginTop: '0.1rem' }}>📍 {fullAddress}</p>}
               {building.company && (
-                <p className="text-text-muted text-xs" style={{ marginTop: '0.1rem' }}>🏢 {building.company.name} ({building.company.type})</p>
+                <p className="text-text-muted text-xs" style={{ marginTop: '0.1rem' }}>🏛️ {building.company.name} ({building.company.type})</p>
               )}
             </div>
+            <button
+              onClick={() => navigate(`/buildings/${id}/edit`)}
+              className="text-primary text-sm font-medium shrink-0 ml-2"
+            >
+              Modifier
+            </button>
           </div>
 
           {/* Stats grid */}
@@ -97,33 +116,20 @@ export default function BuildingDetail() {
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <p className="text-text-main font-medium text-sm">{apt.name || apt.address}</p>
-                          {apt.complement && <p className="text-text-muted text-xs">{apt.complement}</p>}
                           {tenant ? (
-                            <p className="text-text-secondary text-xs" style={{ marginTop: '0.1rem' }}>
-                              👤 {tenant.firstName} {tenant.lastName}
-                            </p>
+                            <p className="text-text-secondary text-xs" style={{ marginTop: '0.1rem' }}>👤 {tenant.firstName} {tenant.lastName}</p>
                           ) : (
                             <p className="text-text-muted text-xs" style={{ marginTop: '0.1rem' }}>Vacant</p>
                           )}
                         </div>
-                        <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '0.5rem' }}>
-                          <span style={{
-                            display: 'inline-block',
-                            padding: '0.2rem 0.5rem',
-                            borderRadius: '20px',
-                            fontSize: '0.7rem',
-                            fontWeight: 600,
-                            background: lease ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)',
-                            color: lease ? '#22c55e' : '#ef4444',
-                          }}>
-                            {lease ? 'Loué' : 'Vacant'}
-                          </span>
-                          {lease && (
-                            <p className="text-text-muted" style={{ fontSize: '0.65rem', marginTop: '0.15rem' }}>
-                              {(lease.rentAmount + lease.chargesAmount).toFixed(0)} €/m
-                            </p>
-                          )}
-                        </div>
+                        <span style={{
+                          display: 'inline-block', padding: '0.2rem 0.5rem', borderRadius: '20px',
+                          fontSize: '0.7rem', fontWeight: 600,
+                          background: lease ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)',
+                          color: lease ? '#22c55e' : '#ef4444',
+                        }}>
+                          {lease ? 'Loué' : 'Vacant'}
+                        </span>
                       </div>
                     </button>
                   );
@@ -137,6 +143,13 @@ export default function BuildingDetail() {
               <p className="text-sm">Aucun appartement rattaché à cet immeuble.</p>
             </div>
           )}
+
+          <div style={{ marginTop: '1.5rem' }}>
+            <button onClick={handleDelete} disabled={deleting}
+              className="w-full text-sm text-red-400 border border-red-400/30 py-2.5 rounded-xl disabled:opacity-50">
+              {deleting ? 'Suppression...' : 'Supprimer l\'immeuble'}
+            </button>
+          </div>
         </div>
       </PullToRefresh>
     </div>

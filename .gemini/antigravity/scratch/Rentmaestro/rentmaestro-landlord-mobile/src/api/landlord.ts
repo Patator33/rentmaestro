@@ -243,4 +243,81 @@ export const api = {
     });
     return res.json();
   },
+
+  terminateLease: async (id: string, terminationDate?: string) => {
+    const res = await apiFetch(`/api/landlord/leases/${id}`, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'terminate', terminationDate }),
+    });
+    return res.json();
+  },
+
+  deleteApartment: async (id: string) => {
+    const res = await apiFetch(`/api/landlord/apartments/${id}`, { method: 'DELETE' });
+    return res.json();
+  },
+
+  archiveTenant: async (id: string) => {
+    const res = await apiFetch(`/api/landlord/tenants/${id}`, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'archive' }),
+    });
+    return res.json();
+  },
+
+  reactivateTenant: async (id: string) => {
+    const res = await apiFetch(`/api/landlord/tenants/${id}`, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'reactivate' }),
+    });
+    return res.json();
+  },
+
+  getTenantNotes: async (tenantId: string) => {
+    const res = await apiFetch(`/api/landlord/tenants/${tenantId}/notes`);
+    return res.json();
+  },
+
+  addTenantNote: async (tenantId: string, content: string) => {
+    const res = await apiFetch(`/api/landlord/tenants/${tenantId}/notes`, {
+      method: 'POST',
+      body: JSON.stringify({ content, type: 'NOTE' }),
+    });
+    return res.json();
+  },
+
+  createCompany: async (data: Record<string, string>) => {
+    const res = await apiFetch('/api/landlord/companies', { method: 'POST', body: JSON.stringify(data) });
+    return res.json();
+  },
+
+  getCompany: async (id: string) => {
+    const res = await apiFetch(`/api/landlord/companies/${id}`);
+    return res.json();
+  },
+
+  updateCompany: async (id: string, data: Record<string, string>) => {
+    const res = await apiFetch(`/api/landlord/companies/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+    return res.json();
+  },
+
+  deleteCompany: async (id: string) => {
+    const res = await apiFetch(`/api/landlord/companies/${id}`, { method: 'DELETE' });
+    return res.json();
+  },
+
+  createBuilding: async (data: Record<string, string>) => {
+    const res = await apiFetch('/api/landlord/buildings', { method: 'POST', body: JSON.stringify(data) });
+    return res.json();
+  },
+
+  updateBuilding: async (id: string, data: Record<string, string>) => {
+    const res = await apiFetch(`/api/landlord/buildings/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+    return res.json();
+  },
+
+  deleteBuilding: async (id: string) => {
+    const res = await apiFetch(`/api/landlord/buildings/${id}`, { method: 'DELETE' });
+    return res.json();
+  },
 };

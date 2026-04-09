@@ -25,6 +25,9 @@ export default function LeaseDetail() {
   const [depositInput, setDepositInput] = useState('');
   const [depositLoading, setDepositLoading] = useState(false);
   const [depositMsg, setDepositMsg] = useState('');
+  const [terminateModal, setTerminateModal] = useState(false);
+  const [terminateDate, setTerminateDate] = useState(new Date().toISOString().split('T')[0]);
+  const [terminateLoading, setTerminateLoading] = useState(false);
   const navigate = useNavigate();
 
   const load = useCallback(() => api.getLease(id!).then(setLease), [id]);
@@ -42,6 +45,19 @@ export default function LeaseDetail() {
       setDepositMsg(`Erreur : ${e.message}`);
     } finally {
       setDepositLoading(false);
+    }
+  };
+
+  const handleTerminate = async () => {
+    setTerminateLoading(true);
+    try {
+      await api.terminateLease(id!, terminateDate);
+      setTerminateModal(false);
+      load();
+    } catch (e: any) {
+      alert(e.message || 'Erreur résiliation');
+    } finally {
+      setTerminateLoading(false);
     }
   };
 
@@ -192,6 +208,16 @@ export default function LeaseDetail() {
               })}
             </div>
           )}
+
+          {/* Résilier le bail */}
+          {isActive && (
+            <button
+              onClick={() => setTerminateModal(true)}
+              className="w-full text-sm text-red-400 border border-red-400/30 py-2.5 rounded-xl"
+            >
+              Résilier le bail
+            </button>
+          )}
         </div>
       </div>
     </PullToRefresh>
@@ -233,6 +259,41 @@ export default function LeaseDetail() {
               style={{ background: '#f59e0b', color: '#fff' }}
             >
               {depositLoading ? 'Enregistrement...' : '✓ Enregistrer'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* Terminate modal */}
+    {terminateModal && (
+      <div
+        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'flex-end', zIndex: 50 }}
+        onClick={e => e.target === e.currentTarget && setTerminateModal(false)}
+      >
+        <div style={{ background: '#1e293b', borderRadius: '20px 20px 0 0', padding: '1.5rem', paddingBottom: 'calc(1.5rem + 72px)', width: '100%' }}>
+          <h3 className="text-text-main font-bold text-base mb-1">Résilier le bail</h3>
+          <p className="text-text-muted text-sm mb-4">
+            {lease.tenant?.firstName} {lease.tenant?.lastName} — {lease.apartment?.name || lease.apartment?.address}
+          </p>
+          <label className="text-text-muted text-xs block mb-1">Date de résiliation</label>
+          <input
+            type="date"
+            value={terminateDate}
+            onChange={e => setTerminateDate(e.target.value)}
+            className="w-full mb-4 px-3 py-2 rounded-xl border border-border bg-surface text-text-main text-sm"
+          />
+          <div className="flex gap-3">
+            <button onClick={() => setTerminateModal(false)} className="flex-1 py-3 rounded-xl border border-border text-text-secondary text-sm">
+              Annuler
+            </button>
+            <button
+              onClick={handleTerminate}
+              disabled={terminateLoading}
+              className="flex-1 py-3 rounded-xl font-semibold text-sm text-white disabled:opacity-50"
+              style={{ background: '#ef4444' }}
+            >
+              {terminateLoading ? 'Résiliation...' : 'Confirmer résiliation'}
             </button>
           </div>
         </div>

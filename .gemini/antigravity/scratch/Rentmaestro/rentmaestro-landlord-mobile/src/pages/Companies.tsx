@@ -35,8 +35,11 @@ export default function Companies() {
       <div className="pb-nav safe-top overflow-y-auto" style={{ minHeight: '100%' }}>
         <div className="px-4 py-4">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-xl font-bold text-text-main">Sociétés</h1>
-            <button onClick={() => navigate(-1)} className="text-text-muted text-sm">← Retour</button>
+            <div className="flex items-center gap-2">
+              <button onClick={() => navigate(-1)} className="text-text-muted text-lg">←</button>
+              <h1 className="text-xl font-bold text-text-main">Sociétés</h1>
+            </div>
+            <button onClick={() => navigate('/companies/new')} className="text-primary text-sm font-semibold">+ Nouvelle</button>
           </div>
 
           {loading ? (
@@ -46,7 +49,11 @@ export default function Companies() {
           ) : (
             <div className="space-y-3">
               {companies.map(c => (
-                <div key={c.id} className="bg-surface rounded-xl border border-border p-4">
+                <button
+                  key={c.id}
+                  onClick={() => navigate(`/companies/${c.id}`)}
+                  className="w-full bg-surface rounded-xl border border-border p-4 text-left active:opacity-80"
+                >
                   <div className="flex items-center gap-3 mb-3">
                     {c.logoUrl ? (
                       <img src={c.logoUrl} alt={c.name} style={{ height: 40, maxWidth: 80, objectFit: 'contain', borderRadius: 6 }} />
@@ -57,6 +64,7 @@ export default function Companies() {
                       <p className="text-text-main font-semibold text-base leading-tight truncate">{c.name}</p>
                       <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'rgba(43,140,238,0.15)', color: '#2b8cee' }}>{c.type}</span>
                     </div>
+                    <span className="text-text-muted text-lg shrink-0">›</span>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="bg-background rounded-lg p-2 text-center">
@@ -74,7 +82,7 @@ export default function Companies() {
                       {c.address && <p className="text-text-muted text-xs">{c.address}</p>}
                     </div>
                   )}
-                </div>
+                </button>
               ))}
             </div>
           )}

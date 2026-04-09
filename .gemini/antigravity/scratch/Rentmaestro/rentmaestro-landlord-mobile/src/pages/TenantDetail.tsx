@@ -10,9 +10,16 @@ export default function TenantDetail() {
   const [portalSending, setPortalSending] = useState(false);
   const [portalCopied, setPortalCopied] = useState(false);
   const [portalSent, setPortalSent] = useState(false);
+  const [archiveLoading, setArchiveLoading] = useState(false);
+  const [notes, setNotes] = useState<any[]>([]);
+  const [noteInput, setNoteInput] = useState('');
+  const [noteLoading, setNoteLoading] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => { api.getTenant(id!).then(setTenant); }, [id]);
+  useEffect(() => {
+    api.getTenant(id!).then(setTenant);
+    api.getTenantNotes(id!).then(setNotes).catch(() => {});
+  }, [id]);
 
   const handleDelete = async () => {
     if (!confirm('Supprimer ce locataire ?')) return;
@@ -73,7 +80,50 @@ export default function TenantDetail() {
     }
   };
 
+  const handleArchive = async () => {
+    if (!confirm('Archiver ce locataire ? Le lien portail sera révoqué.')) return;
+    setArchiveLoading(true);
+    try {
+      await api.archiveTenant(id!);
+      setTenant((t: any) => ({ ...t, isArchived: true, portalToken: null }));
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : 'Erreur');
+    } finally {
+      setArchiveLoading(false);
+    }
+  };
+
+  const handleReactivate = async () => {
+    setArchiveLoading(true);
+    try {
+      await api.reactivateTenant(id!);
+      setTenant((t: any) => ({ ...t, isArchived: false }));
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : 'Erreur');
+    } finally {
+      setArchiveLoading(false);
+    }
+  };
+
+  const handleAddNote = async () => {
+    const content = noteInput.trim();
+    if (!content) return;
+    setNoteLoading(true);
+    try {
+      const note = await api.addTenantNote(id!, content);
+      setNotes(n => [note, ...n]);
+      setNoteInput('');
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : 'Erreur');
+    } finally {
+      setNoteLoading(false);
+    }
+  };
+
   if (!tenant) return <div className="safe-top px-4 py-4 text-text-muted text-sm">Chargement...</div>;
+
+  const hasActiveLeases = tenant.leases?.some((l: any) => l.isActive);
+  const isFormerTenant = (tenant.leases?.length ?? 0) > 0 && !hasActiveLeases;
 
   return (
     <div className="pb-nav safe-top overflow-y-auto" style={{ height: '100%' }}>
@@ -81,7 +131,10 @@ export default function TenantDetail() {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <button onClick={() => navigate('/tenants')} className="text-text-muted text-lg">←</button>
-            <h1 className="text-xl font-bold text-text-main">{tenant.firstName} {tenant.lastName}</h1>
+            <h1 className="text-xl font-bold text-text-main">
+              {tenant.firstName} {tenant.lastName}
+              {tenant.isArchived && <span className="ml-2 text-xs font-normal text-text-muted">(archivé)</span>}
+            </h1>
           </div>
           <button onClick={() => navigate(`/tenants/${id}/edit`)} className="text-primary text-sm">Modifier</button>
         </div>
@@ -195,6 +248,59 @@ export default function TenantDetail() {
             </button>
           )}
         </div>
+
+        {/* Notes journal */}
+        <div className="bg-surface rounded-xl border border-border p-3 mb-3">
+          <p className="text-text-muted text-xs uppercase tracking-wide mb-2">Journal</p>
+          <div className="flex gap-2 mb-3">
+            <input
+              type="text"
+              value={noteInput}
+              onChange={e => setNoteInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleAddNote()}
+              placeholder="Ajouter une note..."
+              className="flex-1 px-3 py-2 rounded-xl border border-border bg-bg text-text-main text-xs"
+            />
+            <button
+              onClick={handleAddNote}
+              disabled={noteLoading || !noteInput.trim()}
+              className="text-xs px-3 py-2 bg-primary/20 text-primary border border-primary/30 rounded-xl disabled:opacity-50"
+            >
+              {noteLoading ? '...' : '+'}
+            </button>
+          </div>
+          {notes.length === 0 ? (
+            <p className="text-text-muted text-xs italic text-center py-2">Aucune note</p>
+          ) : (
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {notes.map((n: any) => (
+                <div key={n.id} className="border-b border-border pb-2 last:border-0">
+                  <p className="text-text-secondary text-xs leading-relaxed">{n.content}</p>
+                  <p className="text-text-muted text-xs mt-0.5">{new Date(n.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Archive / Réactiver */}
+        {tenant.isArchived ? (
+          <button
+            onClick={handleReactivate}
+            disabled={archiveLoading}
+            className="w-full text-sm text-blue-400 border border-blue-400/30 py-2.5 rounded-xl mb-3 disabled:opacity-50"
+          >
+            {archiveLoading ? 'Réactivation...' : '♻️ Réactiver le locataire'}
+          </button>
+        ) : isFormerTenant ? (
+          <button
+            onClick={handleArchive}
+            disabled={archiveLoading}
+            className="w-full text-sm text-yellow-500 border border-yellow-500/30 py-2.5 rounded-xl mb-3 disabled:opacity-50"
+          >
+            {archiveLoading ? 'Archivage...' : '📦 Archiver le locataire'}
+          </button>
+        ) : null}
 
         <button onClick={handleDelete} disabled={deleting} className="w-full text-sm text-red-400 border border-red-400/30 py-2.5 rounded-xl disabled:opacity-50">
           {deleting ? 'Suppression...' : 'Supprimer le locataire'}
