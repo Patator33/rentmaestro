@@ -98,6 +98,15 @@ export async function POST(
         return NextResponse.json({ success: true, status: isComplete ? 'RECEIVED' : 'PARTIAL_RECEIVED' });
     }
 
+    if (body.action === 'terminate') {
+        const terminationDate = body.terminationDate ? new Date(body.terminationDate) : new Date();
+        await prisma.lease.update({
+            where: { id },
+            data: { isActive: false, endDate: terminationDate },
+        });
+        return NextResponse.json({ success: true });
+    }
+
     return NextResponse.json({ error: 'Action inconnue' }, { status: 400 });
 }
 

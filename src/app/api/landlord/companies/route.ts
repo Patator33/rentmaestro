@@ -33,6 +33,14 @@ export async function GET(request: Request) {
     return NextResponse.json(result);
 }
 
+export async function POST(request: Request) {
+    if (!verifyMobileToken(request)) return unauthorized();
+    const { name, type, siret, address } = await request.json();
+    if (!name) return NextResponse.json({ error: 'Nom requis.' }, { status: 400 });
+    const company = await prisma.company.create({ data: { name, type: type || null, siret: siret || null, address: address || null } });
+    return NextResponse.json(company, { status: 201 });
+}
+
 export async function OPTIONS() {
     return new NextResponse(null, { status: 204 });
 }

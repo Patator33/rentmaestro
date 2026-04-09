@@ -16,9 +16,13 @@ export async function GET(
         include: {
             building: true,
             leases: {
-                include: { tenant: true },
+                include: {
+                    tenant: true,
+                    payments: { orderBy: { period: 'desc' }, take: 24 },
+                },
                 orderBy: { startDate: 'desc' },
             },
+            tasks: { orderBy: { createdAt: 'desc' }, take: 20 },
         },
     });
 
@@ -59,6 +63,22 @@ export async function PUT(
     });
 
     return NextResponse.json(apartment);
+}
+
+export async function DELETE(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    if (!verifyMobileToken(request)) return unauthorized();
+    const { id } = await params;
+
+    const leaseCount = await prisma.lease.count({ where: { apartmentId: id } });
+    if (leaseCount > 0) {
+        return NextResponse.json({ error: 'Supprimez d\'abord les baux associés.' }, { status: 400 });
+    }
+
+    await prisma.apartment.delete({ where: { id } });
+    return NextResponse.json({ success: true });
 }
 
 export async function OPTIONS() {

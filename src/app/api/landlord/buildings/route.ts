@@ -28,6 +28,14 @@ export async function GET(request: Request) {
     return NextResponse.json(buildings);
 }
 
+export async function POST(request: Request) {
+    if (!verifyMobileToken(request)) return unauthorized();
+    const { name, address, companyId } = await request.json();
+    if (!name || !address) return NextResponse.json({ error: 'Nom et adresse requis.' }, { status: 400 });
+    const building = await prisma.building.create({ data: { name, address, companyId: companyId || null } });
+    return NextResponse.json(building, { status: 201 });
+}
+
 export async function OPTIONS() {
     return new NextResponse(null, { status: 204 });
 }

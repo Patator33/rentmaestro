@@ -58,6 +58,26 @@ export async function PUT(
     return NextResponse.json(tenant);
 }
 
+export async function POST(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    if (!verifyMobileToken(request)) return unauthorized();
+    const { id } = await params;
+    const { action } = await request.json();
+
+    if (action === 'archive') {
+        await prisma.tenant.update({ where: { id }, data: { isArchived: true, portalToken: null } });
+        return NextResponse.json({ success: true });
+    }
+    if (action === 'reactivate') {
+        await prisma.tenant.update({ where: { id }, data: { isArchived: false } });
+        return NextResponse.json({ success: true });
+    }
+
+    return NextResponse.json({ error: 'Action inconnue' }, { status: 400 });
+}
+
 export async function DELETE(
     request: Request,
     { params }: { params: Promise<{ id: string }> }
