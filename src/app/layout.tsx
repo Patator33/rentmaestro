@@ -3,6 +3,7 @@ import { Manrope } from "next/font/google";
 import NavBarWrapper from "@/components/NavBarWrapper";
 import { ToastProvider } from "@/components/Toast";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
+import RefreshOnFocus from "@/components/RefreshOnFocus";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -38,6 +39,7 @@ export default function RootLayout({
       <body className={`${manrope.variable}`}>
         <ToastProvider>
           <ServiceWorkerRegistration />
+          <RefreshOnFocus />
           <NavBarWrapper />
           <main className="main-content">
             {children}
