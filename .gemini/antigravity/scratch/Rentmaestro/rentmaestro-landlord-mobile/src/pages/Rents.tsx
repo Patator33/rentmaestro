@@ -83,6 +83,8 @@ export default function Rents() {
   };
 
   const handleRemind = async (item: RentItem) => {
+    const tenantName = `${item.tenant.firstName} ${item.tenant.lastName}`;
+    if (!confirm(`Envoyer une relance de loyer à ${tenantName} ?`)) return;
     setActionLoading(item.leaseId);
     try {
       const period = new Date(item.period).toISOString().split('T')[0];

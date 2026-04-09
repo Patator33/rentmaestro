@@ -47,16 +47,23 @@ export default function LeaseForm() {
     }
   }, [id]);
 
-  // Auto-fill deposit when apartment is selected (create mode)
+  // Auto-fill rent/charges/deposit when apartment is selected (create mode)
   const handleApartmentChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const aptId = e.target.value;
-    setForm(f => ({ ...f, apartmentId: aptId }));
     if (!isEdit && aptId) {
       const apt = apartments.find((a: any) => a.id === aptId);
-      if (apt?.defaultDeposit) {
-        setForm(f => ({ ...f, apartmentId: aptId, depositAmount: String(apt.defaultDeposit) }));
+      if (apt) {
+        setForm(f => ({
+          ...f,
+          apartmentId: aptId,
+          rentAmount: apt.rent ? String(apt.rent) : f.rentAmount,
+          chargesAmount: apt.charges ? String(apt.charges) : f.chargesAmount,
+          depositAmount: apt.defaultDeposit ? String(apt.defaultDeposit) : f.depositAmount,
+        }));
+        return;
       }
     }
+    setForm(f => ({ ...f, apartmentId: aptId }));
   };
 
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>

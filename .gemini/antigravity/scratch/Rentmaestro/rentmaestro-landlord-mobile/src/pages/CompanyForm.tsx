@@ -109,8 +109,7 @@ export default function CompanyForm() {
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="w-full py-3 rounded-xl font-semibold text-sm text-white disabled:opacity-50"
-            style={{ background: 'var(--primary)' }}
+            className="w-full py-3 rounded-xl font-semibold text-sm bg-primary text-white disabled:opacity-50"
           >
             {saving ? 'Enregistrement...' : isEdit ? 'Enregistrer' : 'Créer la société'}
           </button>

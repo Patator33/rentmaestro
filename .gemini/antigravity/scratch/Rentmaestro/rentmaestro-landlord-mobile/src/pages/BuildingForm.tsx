@@ -9,6 +9,8 @@ export default function BuildingForm() {
 
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
+  const [zipCode, setZipCode] = useState('');
+  const [city, setCity] = useState('');
   const [companyId, setCompanyId] = useState('');
   const [companies, setCompanies] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
@@ -22,6 +24,8 @@ export default function BuildingForm() {
         if (b) {
           setName(b.name ?? '');
           setAddress(b.address ?? '');
+          setZipCode(b.zipCode ?? '');
+          setCity(b.city ?? '');
           setCompanyId(b.companyId ?? '');
         }
       }).catch(() => {});
@@ -30,13 +34,15 @@ export default function BuildingForm() {
 
   const handleSubmit = async () => {
     if (!name.trim() || !address.trim()) {
-      setError('Nom et adresse requis.');
+      setError('Nom et rue requis.');
       return;
     }
     setSaving(true);
     setError('');
     try {
       const data: Record<string, string> = { name: name.trim(), address: address.trim() };
+      if (zipCode.trim()) data.zipCode = zipCode.trim();
+      if (city.trim()) data.city = city.trim();
       if (companyId) data.companyId = companyId;
       if (isEdit) {
         await api.updateBuilding(id!, data);
@@ -72,14 +78,37 @@ export default function BuildingForm() {
           </div>
 
           <div>
-            <label className="text-text-muted text-xs block mb-1">Adresse *</label>
+            <label className="text-text-muted text-xs block mb-1">Rue *</label>
             <input
               type="text"
               value={address}
               onChange={e => setAddress(e.target.value)}
-              placeholder="12 rue de la Paix, 75001 Paris"
+              placeholder="12 rue de la Paix"
               className="w-full px-3 py-2.5 rounded-xl border border-border bg-surface text-text-main text-sm"
             />
+          </div>
+
+          <div className="flex gap-2">
+            <div className="w-1/3">
+              <label className="text-text-muted text-xs block mb-1">Code postal</label>
+              <input
+                type="text"
+                value={zipCode}
+                onChange={e => setZipCode(e.target.value)}
+                placeholder="75001"
+                className="w-full px-3 py-2.5 rounded-xl border border-border bg-surface text-text-main text-sm"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="text-text-muted text-xs block mb-1">Ville</label>
+              <input
+                type="text"
+                value={city}
+                onChange={e => setCity(e.target.value)}
+                placeholder="Paris"
+                className="w-full px-3 py-2.5 rounded-xl border border-border bg-surface text-text-main text-sm"
+              />
+            </div>
           </div>
 
           {companies.length > 0 && (
@@ -103,8 +132,7 @@ export default function BuildingForm() {
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="w-full py-3 rounded-xl font-semibold text-sm text-white disabled:opacity-50"
-            style={{ background: 'var(--primary)' }}
+            className="w-full py-3 rounded-xl font-semibold text-sm bg-primary text-white disabled:opacity-50"
           >
             {saving ? 'Enregistrement...' : isEdit ? 'Enregistrer' : 'Créer l\'immeuble'}
           </button>

@@ -30,6 +30,24 @@ export default function ApartmentForm() {
 
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setForm(f => ({ ...f, [k]: e.target.value }));
 
+  const handleBuildingChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const bId = e.target.value;
+    if (!isEdit && bId) {
+      const b = buildings.find((b: any) => b.id === bId);
+      if (b) {
+        setForm(f => ({
+          ...f,
+          buildingId: bId,
+          address: b.address || f.address,
+          zipCode: b.zipCode || f.zipCode,
+          city: b.city || f.city,
+        }));
+        return;
+      }
+    }
+    setForm(f => ({ ...f, buildingId: bId }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true); setError('');
@@ -54,7 +72,7 @@ export default function ApartmentForm() {
             <label className="block text-xs text-text-secondary mb-1">Immeuble (optionnel)</label>
             <select
               value={form.buildingId}
-              onChange={set('buildingId')}
+              onChange={handleBuildingChange}
               className="w-full bg-surface border border-border rounded-xl px-3 py-2.5 text-text-main text-sm focus:outline-none focus:border-primary"
             >
               <option value="">Aucun immeuble</option>
