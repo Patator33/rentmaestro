@@ -4,6 +4,7 @@ import { api } from '../api/landlord';
 import { clearAuth } from '../lib/storage';
 import PullToRefresh from '../components/PullToRefresh';
 import GlobalSearch from '../components/GlobalSearch';
+import { useAutoRefresh } from '../hooks/useAutoRefresh';
 
 interface RentReview {
   leaseId: string;
@@ -100,11 +101,8 @@ export default function Dashboard() {
     }
   }, []);
 
-  useEffect(() => {
-    load();
-    const interval = setInterval(load, 60000);
-    return () => clearInterval(interval);
-  }, [load]);
+  useEffect(() => { load(); }, [load]);
+  useAutoRefresh(load);
 
   const handleLogout = async () => {
     await clearAuth();

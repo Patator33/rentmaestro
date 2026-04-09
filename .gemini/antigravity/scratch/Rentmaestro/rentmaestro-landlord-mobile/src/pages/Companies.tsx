@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/landlord';
 import PullToRefresh from '../components/PullToRefresh';
+import { useAutoRefresh } from '../hooks/useAutoRefresh';
 
 interface Company {
   id: string;
@@ -29,6 +30,7 @@ export default function Companies() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+  useAutoRefresh(load);
 
   return (
     <PullToRefresh onRefresh={load}>

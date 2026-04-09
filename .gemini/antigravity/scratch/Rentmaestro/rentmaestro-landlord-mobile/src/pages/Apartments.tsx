@@ -1,13 +1,19 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/landlord';
+import { useAutoRefresh } from '../hooks/useAutoRefresh';
 
 export default function Apartments() {
   const [apts, setApts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  useEffect(() => { api.getApartments().then(setApts).finally(() => setLoading(false)); }, []);
+  const load = useCallback(() => {
+    api.getApartments().then(setApts).finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+  useAutoRefresh(load);
 
   return (
     <div className="pb-nav safe-top overflow-y-auto" style={{ height: '100%' }}>

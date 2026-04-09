@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/landlord';
 import PullToRefresh from '../components/PullToRefresh';
+import { useAutoRefresh } from '../hooks/useAutoRefresh';
 
 export default function Buildings() {
   const [buildings, setBuildings] = useState<any[]>([]);
@@ -16,6 +17,7 @@ export default function Buildings() {
   };
 
   useEffect(() => { load(); }, []);
+  useAutoRefresh(load);
 
   return (
     <div className="pb-nav safe-top overflow-y-auto" style={{ height: '100%' }}>

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api/landlord';
 import PullToRefresh from '../components/PullToRefresh';
+import { useAutoRefresh } from '../hooks/useAutoRefresh';
 
 interface Task {
   id: string;
@@ -259,6 +260,7 @@ export default function Incidents() {
   }, []);
 
   useEffect(() => { load(showAll); }, [showAll, load]);
+  useAutoRefresh(() => load(showAll));
 
   const cycleStatus = async (item: Task, isIncident: boolean) => {
     const next = item.status === 'TODO' ? 'IN_PROGRESS' : item.status === 'IN_PROGRESS' ? 'DONE' : 'TODO';

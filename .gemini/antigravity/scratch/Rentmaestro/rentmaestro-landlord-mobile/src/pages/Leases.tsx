@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/landlord';
+import { useAutoRefresh } from '../hooks/useAutoRefresh';
 
 function leaseStatus(l: any): 'future' | 'active' | 'past' {
   const today = new Date();
@@ -17,7 +18,12 @@ export default function Leases() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  useEffect(() => { api.getLeases().then(setLeases).finally(() => setLoading(false)); }, []);
+  const load = useCallback(() => {
+    api.getLeases().then(setLeases).finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+  useAutoRefresh(load);
 
   const future = leases.filter(l => leaseStatus(l) === 'future');
   const active = leases.filter(l => leaseStatus(l) === 'active');

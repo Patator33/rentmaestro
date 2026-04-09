@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/landlord';
 import PullToRefresh from '../components/PullToRefresh';
+import { useAutoRefresh } from '../hooks/useAutoRefresh';
 
 interface RentItem {
   leaseId: string;
@@ -37,6 +38,7 @@ export default function Rents() {
   };
 
   useEffect(() => { load(month); }, [month]);
+  useAutoRefresh(() => load(month));
 
   const navigate = (dir: number) => {
     const [y, m] = month.split('-').map(Number);

@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/landlord';
+import { useAutoRefresh } from '../hooks/useAutoRefresh';
 
 interface Conversation {
   tenantId: string;
@@ -18,11 +19,14 @@ export default function Messages() {
   const [showPicker, setShowPicker] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
+  const load = useCallback(() => {
     Promise.all([api.getConversations(), api.getTenants()])
       .then(([c, t]) => { setConvs(c); setTenants(t); })
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => { load(); }, [load]);
+  useAutoRefresh(load);
 
   return (
     <div className="pb-nav safe-top overflow-y-auto" style={{ height: '100%' }}>
