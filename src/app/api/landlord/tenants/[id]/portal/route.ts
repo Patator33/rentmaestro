@@ -33,7 +33,7 @@ export async function POST(
             return NextResponse.json({ error: "Ce locataire n'a pas d'adresse email." }, { status: 400 });
         }
 
-        const baseUrl = process.env.APP_BASE_URL || 'http://localhost:3000';
+        const baseUrl = process.env.APP_BASE_URL || new URL(request.url).origin;
         const portalUrl = `${baseUrl}/portal/${tenant.portalToken}`;
         const apkUrl = `${baseUrl}/downloads/rentmaestro-tenant.apk`;
 

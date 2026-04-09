@@ -7,11 +7,11 @@ export const dynamic = 'force-dynamic';
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
     if (!verifyMobileToken(request)) return unauthorized();
     const { id } = await params;
-    const { name, address, companyId } = await request.json();
+    const { name, address, zipCode, city, companyId } = await request.json();
     if (!name || !address) return NextResponse.json({ error: 'Nom et adresse requis.' }, { status: 400 });
     const building = await prisma.building.update({
         where: { id },
-        data: { name, address, companyId: companyId || null },
+        data: { name, address, zipCode: zipCode || null, city: city || null, companyId: companyId || null },
     });
     return NextResponse.json(building);
 }

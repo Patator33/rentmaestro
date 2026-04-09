@@ -7,6 +7,14 @@ import { redirect } from "next/navigation";
 import { notifyN8n } from "@/lib/n8n";
 import { sendEmail } from "@/lib/email";
 import { logAction } from "@/lib/audit";
+import { headers } from "next/headers";
+
+async function getBaseUrl() {
+    const h = await headers();
+    const host = h.get('host') || 'localhost:3000';
+    const proto = h.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
+    return process.env.APP_BASE_URL || `${proto}://${host}`;
+}
 
 export async function createTenant(formData: FormData) {
     const rawData = {
@@ -129,7 +137,7 @@ export async function sendPortalInvite(tenantId: string) {
             return { success: false, error: "Ce locataire n'a pas d'adresse email" };
         }
 
-        const baseUrl = process.env.APP_BASE_URL || 'http://localhost:3000';
+        const baseUrl = await getBaseUrl();
         const portalUrl = `${baseUrl}/portal/${tenant.portalToken}`;
         const apkUrl = `${baseUrl}/downloads/rentmaestro-tenant.apk`;
 

@@ -4,6 +4,14 @@ import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { notifyN8n } from '@/lib/n8n';
 import { sendEmail } from '@/lib/email';
+import { headers } from 'next/headers';
+
+async function getBaseUrl() {
+    const h = await headers();
+    const host = h.get('host') || 'localhost:3000';
+    const proto = h.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
+    return process.env.APP_BASE_URL || `${proto}://${host}`;
+}
 
 export async function getMessages(tenantId: string) {
     return prisma.message.findMany({
@@ -24,7 +32,7 @@ export async function sendAdminMessage(tenantId: string, content: string) {
 
     // Notify tenant by email
     if (tenant.email && process.env.SMTP_USER) {
-        const baseUrl = process.env.APP_BASE_URL || 'http://localhost:3000';
+        const baseUrl = await getBaseUrl();
         const portalUrl = `${baseUrl}/portal/${tenant.portalToken}`;
         sendEmail({
             to: tenant.email,
@@ -68,7 +76,7 @@ export async function sendPortalMessage(tenantId: string, content: string, token
     }).catch(() => {});
 
     if (process.env.SMTP_USER) {
-        const baseUrl = process.env.APP_BASE_URL || 'http://localhost:3000';
+        const baseUrl = await getBaseUrl();
         const tenantUrl = `${baseUrl}/tenants/${tenant.id}`;
         sendEmail({
             to: process.env.SMTP_USER,
