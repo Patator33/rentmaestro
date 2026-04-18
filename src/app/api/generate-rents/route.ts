@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { calculateFutureProrata } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,11 +53,16 @@ export async function POST() {
 
             // Create PENDING payment for this month
             const totalAmount = lease.rentAmount + lease.chargesAmount;
+            const leaseStart = new Date(lease.startDate);
+            const nextPeriod = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 1));
+            const isFirstMonth = leaseStart >= period && leaseStart < nextPeriod;
+            const prorata = isFirstMonth ? calculateFutureProrata(totalAmount, leaseStart) : null;
+            const amount = prorata ? Math.round(prorata.amount * 100) / 100 : totalAmount;
             await prisma.rentPayment.create({
                 data: {
                     leaseId: lease.id,
                     period,
-                    amount: totalAmount,
+                    amount,
                     status: 'PENDING',
                 }
             });

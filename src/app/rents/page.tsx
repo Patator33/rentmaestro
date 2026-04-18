@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import styles from "./page.module.css";
-import { formatDate } from "@/lib/utils";
+import { formatDate, calculateFutureProrata } from "@/lib/utils";
 import { sendRentReminder } from "@/actions/rents";
 import PaymentEmailActions from "@/components/PaymentEmailActions";
 import MarkRentPaidButton from "@/components/MarkRentPaidButton";
@@ -90,19 +90,15 @@ export default async function RentsPage({
     // Summary totals
     let totalReceived = 0;
     let totalExpected = 0;
-    const daysInMonth = new Date(Date.UTC(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)).getUTCDate();
     const seenApartments = new Set<string>();
     let totalMonthlyCosts = 0;
     for (const lease of leases) {
         const payment = lease.payments[0];
         const totalAmount = lease.rentAmount + lease.chargesAmount;
         const leaseStart = new Date(lease.startDate);
-        const startDay = leaseStart.getUTCDate();
         const isFirstMonth = leaseStart >= startOfMonth && leaseStart < nextMonth;
-        const daysRemaining = daysInMonth - startDay;
-        const fallbackAmount = isFirstMonth && startDay > 1
-            ? Math.round((totalAmount / daysInMonth) * daysRemaining * 100) / 100
-            : totalAmount;
+        const prorata = isFirstMonth ? calculateFutureProrata(totalAmount, leaseStart) : null;
+        const fallbackAmount = prorata ? Math.round(prorata.amount * 100) / 100 : totalAmount;
         totalExpected += payment ? payment.amount : fallbackAmount;
         if (payment?.status === 'PAID') totalReceived += payment.amount;
         else if (payment?.status === 'PARTIAL' && (payment as any).paidAmount != null) totalReceived += (payment as any).paidAmount;
@@ -122,13 +118,9 @@ export default async function RentsPage({
         const isPaid = payment?.status === 'PAID';
         const totalAmount = lease.rentAmount + lease.chargesAmount;
         const leaseStart = new Date(lease.startDate);
-        const startDay = leaseStart.getUTCDate();
         const isFirstMonth = leaseStart >= startOfMonth && leaseStart < nextMonth;
-        const daysInMonth = new Date(Date.UTC(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)).getUTCDate();
-        const daysRemaining = daysInMonth - startDay;
-        const fallbackAmount = isFirstMonth && startDay > 1
-            ? Math.round((totalAmount / daysInMonth) * daysRemaining * 100) / 100
-            : totalAmount;
+        const prorata = isFirstMonth ? calculateFutureProrata(totalAmount, leaseStart) : null;
+        const fallbackAmount = prorata ? Math.round(prorata.amount * 100) / 100 : totalAmount;
         const displayAmount = payment ? payment.amount : fallbackAmount;
 
         return (

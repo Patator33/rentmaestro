@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyMobileToken, unauthorized } from '@/lib/mobile-auth';
+import { calculateFutureProrata } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,11 +44,16 @@ export async function GET(request: Request) {
         const payment = lease.payments[0] ?? null;
         const paymentDay = lease.tenant.paymentDay || 5;
         const isLate = isPastMonth || (isCurrentMonth && currentDay > paymentDay + 4);
+        const totalAmount = lease.rentAmount + lease.chargesAmount;
+        const leaseStart = new Date(lease.startDate);
+        const isFirstMonth = leaseStart >= startOfMonth && leaseStart < endOfMonth;
+        const prorata = isFirstMonth ? calculateFutureProrata(totalAmount, leaseStart) : null;
+        const fallbackAmount = prorata ? Math.round(prorata.amount * 100) / 100 : totalAmount;
         return {
             leaseId: lease.id,
             paymentId: payment?.id ?? null,
             period: startOfMonth.toISOString(),
-            amount: payment?.amount ?? (lease.rentAmount + lease.chargesAmount),
+            amount: payment?.amount ?? fallbackAmount,
             paidAmount: (payment as any)?.paidAmount ?? null,
             status: payment?.status ?? null,
             paidAt: payment?.paidAt ?? null,
