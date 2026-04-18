@@ -161,7 +161,11 @@ export default async function Home() {
   // Rent Review Alerts Logic
   const activeLeases = await prisma.lease.findMany({
     where: { isActive: true },
-    include: { tenant: true, apartment: true }
+    include: { tenant: true, apartment: true, documents: true }
+  });
+  const incompleteGed = activeLeases.filter((lease: any) => {
+    const types = (lease.documents as any[]).map(d => d.docType);
+    return !types.includes('BAIL') || !types.includes('EDL');
   });
 
   const now = new Date();
@@ -243,6 +247,35 @@ export default async function Home() {
                 </span>
               </div>
             ))}
+          </div>
+        </section>
+      )}
+
+      {/* Incomplete GED Alert */}
+      {incompleteGed.length > 0 && (
+        <section style={{ marginBottom: '3rem', padding: '1.5rem', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 'var(--radius-xl)' }}>
+          <h2 style={{ color: '#f59e0b', fontSize: '1.25rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            📎 GED incomplète ({incompleteGed.length} bail{incompleteGed.length > 1 ? 's' : ''})
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+            {(incompleteGed as any[]).map((lease: any) => {
+              const types = lease.documents.map((d: any) => d.docType);
+              const missing = [!types.includes('BAIL') && 'bail', !types.includes('EDL') && 'état des lieux'].filter(Boolean).join(' + ');
+              return (
+                <div key={lease.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <span style={{ color: 'var(--text-main)' }}>
+                    <strong>{lease.tenant.firstName} {lease.tenant.lastName}</strong>
+                    {' · '}
+                    <Link href={`/leases/${lease.id}`} style={{ color: '#f59e0b', textDecoration: 'underline' }}>
+                      {lease.apartment.name || lease.apartment.address}
+                    </Link>
+                  </span>
+                  <span style={{ fontSize: '0.85rem', color: '#f59e0b', fontWeight: 600 }}>
+                    Manquant : {missing}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </section>
       )}

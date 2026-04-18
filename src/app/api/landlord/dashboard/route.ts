@@ -67,6 +67,27 @@ export async function GET(request: Request) {
         leaseId: p.leaseId,
     }));
 
+    // Incomplete GED (missing BAIL or EDL)
+    const leasesWithDocs = await prisma.lease.findMany({
+        where: { isActive: true },
+        include: { tenant: true, apartment: true, documents: true },
+    });
+    const incompleteGed = leasesWithDocs
+        .filter(lease => {
+            const types = lease.documents.map(d => d.docType);
+            return !types.includes('BAIL') || !types.includes('EDL');
+        })
+        .map(lease => {
+            const types = lease.documents.map(d => d.docType);
+            const missing = [!types.includes('BAIL') && 'bail', !types.includes('EDL') && 'état des lieux'].filter(Boolean) as string[];
+            return {
+                leaseId: lease.id,
+                tenantName: `${lease.tenant.firstName} ${lease.tenant.lastName}`,
+                apartmentName: lease.apartment.name || lease.apartment.address,
+                missing,
+            };
+        });
+
     // Rent review alerts
     const leasesForReview = await prisma.lease.findMany({
         where: { isActive: true },
@@ -118,6 +139,7 @@ export async function GET(request: Request) {
         occupancyRate,
         currentMonth: startOfMonth.toISOString().slice(0, 7),
         rentReviews,
+        incompleteGed,
         partialPayments,
         unpaidThisMonth: unpaidThisMonth.map(p => ({
             paymentId: p.id,
