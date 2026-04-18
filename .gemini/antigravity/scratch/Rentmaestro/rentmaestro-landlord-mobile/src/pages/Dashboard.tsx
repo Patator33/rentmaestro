@@ -23,6 +23,13 @@ interface PartialPayment {
   apartment: { address: string; name: string | null };
 }
 
+interface IncompleteGed {
+  leaseId: string;
+  tenantName: string;
+  apartmentName: string;
+  missing: string[];
+}
+
 interface DashboardData {
   pendingRents: number;
   monthRevenue: number;
@@ -35,6 +42,7 @@ interface DashboardData {
   occupancyRate: number;
   currentMonth: string;
   rentReviews: RentReview[];
+  incompleteGed: IncompleteGed[];
   partialPayments: PartialPayment[];
   unpaidThisMonth: Array<{
     paymentId: string;
@@ -198,6 +206,26 @@ export default function Dashboard() {
                       <p className="text-xs font-semibold" style={{ color: '#f59e0b' }}>Reçu {p.paidAmount?.toFixed(2)} €</p>
                       <p className="text-xs" style={{ color: '#f59e0b' }}>Solde {p.remaining.toFixed(2)} €</p>
                     </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {data.incompleteGed?.length > 0 && (
+              <div className="rounded-xl p-3 mb-3" style={{ background: 'rgba(245,158,11,0.08)', border: '2px solid #f59e0b' }}>
+                <p className="text-xs uppercase tracking-wide mb-2 font-semibold" style={{ color: '#f59e0b' }}>📎 GED incomplète ({data.incompleteGed.length} bail{data.incompleteGed.length > 1 ? 's' : ''})</p>
+                {data.incompleteGed.map(g => (
+                  <div
+                    key={g.leaseId}
+                    className="flex items-center justify-between py-2 border-b border-border last:border-0 active:opacity-70"
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => navigate(`/leases/${g.leaseId}`)}
+                  >
+                    <div>
+                      <p className="text-text-main text-sm font-medium">{g.tenantName}</p>
+                      <p className="text-text-muted text-xs">{g.apartmentName}</p>
+                    </div>
+                    <p className="text-xs font-semibold" style={{ color: '#f59e0b' }}>Manquant : {g.missing.join(' + ')}</p>
                   </div>
                 ))}
               </div>
