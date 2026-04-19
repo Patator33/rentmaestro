@@ -18,7 +18,7 @@ export async function uploadDocument(formData: FormData) {
 
     // Save to public/uploads
     const uploadDir = path.join(process.cwd(), "public", "uploads");
-    const filename = `${Date.now()}-${file.name}`;
+    const filename = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
     const filepath = path.join(uploadDir, filename);
 
     await writeFile(filepath, buffer);
@@ -57,7 +57,7 @@ export async function uploadApartmentDocument(formData: FormData) {
 
     // Save to public/uploads
     const uploadDir = path.join(process.cwd(), "public", "uploads");
-    const filename = `${Date.now()}-${file.name}`;
+    const filename = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
     const filepath = path.join(uploadDir, filename);
 
     await writeFile(filepath, buffer);
@@ -94,7 +94,7 @@ export async function uploadLeaseDocument(formData: FormData) {
     const buffer = Buffer.from(bytes);
 
     const uploadDir = path.join(process.cwd(), "public", "uploads");
-    const filename = `${Date.now()}-${file.name}`;
+    const filename = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
     const filepath = path.join(uploadDir, filename);
 
     await writeFile(filepath, buffer);

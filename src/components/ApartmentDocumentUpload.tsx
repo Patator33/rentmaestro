@@ -95,7 +95,7 @@ export default function ApartmentDocumentUpload({ apartmentId, initialDocuments 
                 <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     {docs.map(doc => (
                         <li key={doc.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.6rem 1rem', background: 'var(--surface)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
-                            <a href={doc.url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary-color)', fontWeight: 500, fontSize: '0.9rem' }}>
+                            <a href={encodeURI(doc.url)} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary-color)', fontWeight: 500, fontSize: '0.9rem' }}>
                                 📄 {doc.name}
                             </a>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>

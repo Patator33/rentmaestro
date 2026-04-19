@@ -148,7 +148,7 @@ export default function LeaseDocumentUpload({ leaseId, initialDocuments }: Props
                                 }}>
                                     {doc.docType === 'BAIL' ? 'Bail' : doc.docType === 'EDL' ? 'EDL' : 'Autre'}
                                 </span>
-                                <a href={doc.url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary-color)', fontWeight: 500, fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                <a href={encodeURI(doc.url)} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary-color)', fontWeight: 500, fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                     {doc.name}
                                 </a>
                             </div>
