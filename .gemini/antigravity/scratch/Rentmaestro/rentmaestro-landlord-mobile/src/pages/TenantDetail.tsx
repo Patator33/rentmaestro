@@ -13,6 +13,7 @@ export default function TenantDetail() {
   const [archiveLoading, setArchiveLoading] = useState(false);
   const [notes, setNotes] = useState<any[]>([]);
   const [noteInput, setNoteInput] = useState('');
+  const [noteType, setNoteType] = useState('NOTE');
   const [noteLoading, setNoteLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -105,12 +106,20 @@ export default function TenantDetail() {
     }
   };
 
+  const NOTE_TYPES = [
+    { value: 'NOTE', label: '📝 Note' },
+    { value: 'CALL', label: '📞 Appel' },
+    { value: 'EMAIL', label: '📧 Email' },
+    { value: 'LETTER', label: '✉️ Courrier' },
+    { value: 'REMINDER', label: '⚠️ Relance' },
+  ];
+
   const handleAddNote = async () => {
     const content = noteInput.trim();
     if (!content) return;
     setNoteLoading(true);
     try {
-      const note = await api.addTenantNote(id!, content);
+      const note = await api.addTenantNote(id!, content, noteType);
       setNotes(n => [note, ...n]);
       setNoteInput('');
     } catch (e: unknown) {
@@ -251,34 +260,59 @@ export default function TenantDetail() {
 
         {/* Notes journal */}
         <div className="bg-surface rounded-xl border border-border p-3 mb-3">
-          <p className="text-text-muted text-xs uppercase tracking-wide mb-2">Journal</p>
-          <div className="flex gap-2 mb-3">
-            <input
-              type="text"
-              value={noteInput}
-              onChange={e => setNoteInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleAddNote()}
-              placeholder="Ajouter une note..."
-              className="flex-1 px-3 py-2 rounded-xl border border-border bg-bg text-text-main text-xs"
-            />
-            <button
-              onClick={handleAddNote}
-              disabled={noteLoading || !noteInput.trim()}
-              className="text-xs px-3 py-2 bg-primary/20 text-primary border border-primary/30 rounded-xl disabled:opacity-50"
-            >
-              {noteLoading ? '...' : '+'}
-            </button>
+          <p className="text-text-muted text-xs uppercase tracking-wide mb-2">Journal des échanges</p>
+          <div className="mb-2">
+            <div className="flex gap-1 flex-wrap mb-2">
+              {NOTE_TYPES.map(t => (
+                <button
+                  key={t.value}
+                  onClick={() => setNoteType(t.value)}
+                  className="text-xs px-2 py-1 rounded-lg border"
+                  style={{
+                    background: noteType === t.value ? 'rgba(43,140,238,0.2)' : 'transparent',
+                    borderColor: noteType === t.value ? 'rgba(43,140,238,0.5)' : 'var(--border-color)',
+                    color: noteType === t.value ? '#2B8CEE' : 'var(--text-secondary)',
+                    fontWeight: noteType === t.value ? 600 : 400,
+                  }}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={noteInput}
+                onChange={e => setNoteInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleAddNote()}
+                placeholder="Ajouter une note..."
+                className="flex-1 px-3 py-2 rounded-xl border border-border bg-bg text-text-main text-xs"
+              />
+              <button
+                onClick={handleAddNote}
+                disabled={noteLoading || !noteInput.trim()}
+                className="text-xs px-3 py-2 bg-primary/20 text-primary border border-primary/30 rounded-xl disabled:opacity-50"
+              >
+                {noteLoading ? '...' : '+'}
+              </button>
+            </div>
           </div>
           {notes.length === 0 ? (
             <p className="text-text-muted text-xs italic text-center py-2">Aucune note</p>
           ) : (
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {notes.map((n: any) => (
-                <div key={n.id} className="border-b border-border pb-2 last:border-0">
-                  <p className="text-text-secondary text-xs leading-relaxed">{n.content}</p>
-                  <p className="text-text-muted text-xs mt-0.5">{new Date(n.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-                </div>
-              ))}
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {notes.map((n: any) => {
+                const typeMeta = NOTE_TYPES.find(t => t.value === n.type) ?? NOTE_TYPES[0];
+                return (
+                  <div key={n.id} className="border-b border-border pb-2 last:border-0">
+                    <div className="flex items-start gap-1.5">
+                      <span className="text-xs shrink-0 mt-0.5">{typeMeta.label.split(' ')[0]}</span>
+                      <p className="text-text-secondary text-xs leading-relaxed flex-1">{n.content}</p>
+                    </div>
+                    <p className="text-text-muted text-xs mt-0.5 pl-5">{new Date(n.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

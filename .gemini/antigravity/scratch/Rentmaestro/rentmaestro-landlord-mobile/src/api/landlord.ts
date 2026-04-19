@@ -286,10 +286,10 @@ export const api = {
     return res.json();
   },
 
-  addTenantNote: async (tenantId: string, content: string) => {
+  addTenantNote: async (tenantId: string, content: string, type = 'NOTE') => {
     const res = await apiFetch(`/api/landlord/tenants/${tenantId}/notes`, {
       method: 'POST',
-      body: JSON.stringify({ content, type: 'NOTE' }),
+      body: JSON.stringify({ content, type }),
     });
     return res.json();
   },
