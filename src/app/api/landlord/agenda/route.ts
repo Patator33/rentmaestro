@@ -55,7 +55,7 @@ export async function GET(request: Request) {
         if (lease.endDate) {
             const end = new Date(lease.endDate);
             if (end >= today && end <= horizon) {
-                const days = diffDays(end, now);
+                const days = diffDays(end, today);
                 events.push({
                     date: end,
                     type: 'LEASE_END',
@@ -77,7 +77,7 @@ export async function GET(request: Request) {
 
         const leaseEndDate = lease.endDate ? new Date(lease.endDate) : null;
         if (nextReview >= today && nextReview <= horizon && (!leaseEndDate || leaseEndDate >= nextReview)) {
-            const days = diffDays(nextReview, now);
+            const days = diffDays(nextReview, today);
             events.push({
                 date: nextReview,
                 type: 'RENT_REVIEW',
@@ -97,7 +97,7 @@ export async function GET(request: Request) {
             type: 'LEASE_START',
             label: `Entrée — ${lease.tenant.firstName} ${lease.tenant.lastName}`,
             sublabel: lease.apartment.name || lease.apartment.address,
-            daysUntil: diffDays(new Date(lease.startDate), now),
+            daysUntil: diffDays(new Date(lease.startDate), today),
             urgency: 'low',
             leaseId: lease.id,
         });
@@ -107,7 +107,7 @@ export async function GET(request: Request) {
     for (const task of tasks) {
         if (task.dueDate) {
             const due = new Date(task.dueDate);
-            const days = diffDays(due, now);
+            const days = diffDays(due, today);
             events.push({
                 date: due,
                 type: 'TASK_DUE',

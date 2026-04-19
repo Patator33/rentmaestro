@@ -150,8 +150,9 @@ export default async function RentsPage({
                         </span>
                     ) : payment ? (() => {
                         const paymentDay = lease.tenant.paymentDay || 5;
+                        const notStartedYet = isFirstMonth && leaseStart > now;
                         const daysOverdue = now.getDate() - paymentDay;
-                        const isLate = daysOverdue > 4;
+                        const isLate = !notStartedYet && daysOverdue > 4;
                         return isLate ? (
                             <span className={styles.statusPending}>
                                 ⚠ En retard ({daysOverdue}j)

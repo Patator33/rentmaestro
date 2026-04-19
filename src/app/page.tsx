@@ -255,7 +255,7 @@ export default async function Home() {
       {incompleteGed.length > 0 && (
         <section style={{ marginBottom: '3rem', padding: '1.5rem', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 'var(--radius-xl)' }}>
           <h2 style={{ color: '#f59e0b', fontSize: '1.25rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            📎 GED incomplète ({incompleteGed.length} bail{incompleteGed.length > 1 ? 's' : ''})
+            📎 GED incomplète ({incompleteGed.length} {incompleteGed.length > 1 ? 'baux' : 'bail'})
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
             {(incompleteGed as any[]).map((lease: any) => {
