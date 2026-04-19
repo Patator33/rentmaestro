@@ -222,8 +222,8 @@ export default function LeaseDetail() {
             const DOC_LABEL: Record<string, string> = { BAIL: '📝 Bail', EDL: '🔑 État des lieux', AUTRE: '📄 Autre' };
             return (
               <div
-                className="rounded-xl p-3 mb-3"
-                style={{ background: 'var(--surface)', border: gedOk ? '1px solid var(--border)' : '2px solid #f59e0b' }}
+                className="bg-surface rounded-xl border border-border p-3 mb-3"
+                style={!gedOk ? { border: '2px solid #f59e0b' } : undefined}
               >
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-text-muted text-xs uppercase tracking-wide">Documents GED</p>

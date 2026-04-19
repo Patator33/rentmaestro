@@ -213,7 +213,7 @@ export default function Dashboard() {
 
             {data.incompleteGed?.length > 0 && (
               <div className="rounded-xl p-3 mb-3" style={{ background: 'rgba(245,158,11,0.08)', border: '2px solid #f59e0b' }}>
-                <p className="text-xs uppercase tracking-wide mb-2 font-semibold" style={{ color: '#f59e0b' }}>📎 GED incomplète ({data.incompleteGed.length} bail{data.incompleteGed.length > 1 ? 's' : ''})</p>
+                <p className="text-xs uppercase tracking-wide mb-2 font-semibold" style={{ color: '#f59e0b' }}>📎 GED incomplète ({data.incompleteGed.length} {data.incompleteGed.length > 1 ? 'baux' : 'bail'})</p>
                 {data.incompleteGed.map(g => (
                   <div
                     key={g.leaseId}
