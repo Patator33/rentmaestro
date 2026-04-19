@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api/landlord';
+import { getServerUrl } from '../lib/storage';
 import PullToRefresh from '../components/PullToRefresh';
 
 const DEPOSIT_LABELS: Record<string, { label: string; color: string }> = {
@@ -28,10 +29,12 @@ export default function LeaseDetail() {
   const [terminateModal, setTerminateModal] = useState(false);
   const [terminateDate, setTerminateDate] = useState(new Date().toISOString().split('T')[0]);
   const [terminateLoading, setTerminateLoading] = useState(false);
+  const [baseUrl, setBaseUrl] = useState('');
   const navigate = useNavigate();
 
   const load = useCallback(() => api.getLease(id!).then(setLease), [id]);
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { getServerUrl().then(setBaseUrl); }, []);
 
   const handleDepositPay = async () => {
     const amount = parseFloat(depositInput);
@@ -208,6 +211,47 @@ export default function LeaseDetail() {
               })}
             </div>
           )}
+
+          {/* GED — Documents du bail */}
+          {(() => {
+            const docs: any[] = lease.documents ?? [];
+            const types = docs.map((d: any) => d.docType);
+            const hasBail = types.includes('BAIL');
+            const hasEdl = types.includes('EDL');
+            const gedOk = hasBail && hasEdl;
+            const DOC_LABEL: Record<string, string> = { BAIL: '📝 Bail', EDL: '🔑 État des lieux', AUTRE: '📄 Autre' };
+            return (
+              <div
+                className="rounded-xl p-3 mb-3"
+                style={{ background: 'var(--surface)', border: gedOk ? '1px solid var(--border)' : '2px solid #f59e0b' }}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-text-muted text-xs uppercase tracking-wide">Documents GED</p>
+                  {!gedOk && (
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ color: '#f59e0b', background: 'rgba(245,158,11,0.15)' }}>
+                      {!hasBail && !hasEdl ? 'Bail + EDL manquants' : !hasBail ? 'Bail manquant' : 'EDL manquant'}
+                    </span>
+                  )}
+                </div>
+                {docs.length === 0 ? (
+                  <p className="text-text-muted text-xs italic">Aucun document</p>
+                ) : (
+                  docs.map((doc: any) => (
+                    <button
+                      key={doc.id}
+                      onClick={() => window.open(`${baseUrl}${encodeURI(doc.url)}`, '_blank')}
+                      className="w-full flex items-center justify-between py-2 border-b border-border last:border-0 active:opacity-70 text-left"
+                    >
+                      <span className="text-primary text-sm font-medium truncate flex-1 mr-2">
+                        {DOC_LABEL[doc.docType] ?? '📄'} {doc.name}
+                      </span>
+                      <span className="text-text-muted text-xs shrink-0">{(doc.size / 1024).toFixed(0)} Ko</span>
+                    </button>
+                  ))
+                )}
+              </div>
+            );
+          })()}
 
           {/* Résilier le bail */}
           {isActive && (
