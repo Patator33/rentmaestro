@@ -461,8 +461,8 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                             )}
                                         </div>
                                         <div className={styles.cardFooter} style={{ gap: '0.5rem' }}>
-                                            <Link href={`/leases/${lease.id}`} className="std-add-button" style={{ fontSize: '0.85rem', padding: '0.4rem 0.75rem' }} title="Documents du bail">
-                                                📎
+                                            <Link href={`/leases/${lease.id}`} className="std-add-button" style={{ fontSize: '0.85rem', padding: '0.4rem 0.75rem', ...(gedComplete(lease) ? { background: 'rgba(34,197,94,0.15)', color: '#22c55e', borderColor: 'rgba(34,197,94,0.3)' } : { background: 'rgba(239,68,68,0.1)', color: '#ef4444', borderColor: 'rgba(239,68,68,0.3)' }) }} title={gedComplete(lease) ? 'GED complète (bail + EDL)' : 'GED incomplète — bail et/ou état des lieux manquant'}>
+                                                📎{gedComplete(lease) ? ' ✓' : ' !'}
                                             </Link>
                                             <Link href={`/leases/${lease.id}/edit`} className="std-add-button" style={{ fontSize: '0.85rem', padding: '0.4rem 0.75rem' }}>
                                                 ✏️ Modifier

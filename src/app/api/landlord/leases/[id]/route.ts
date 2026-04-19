@@ -17,6 +17,7 @@ export async function GET(
             tenant: true,
             apartment: true,
             payments: { orderBy: { period: 'desc' } },
+            documents: { orderBy: { createdAt: 'asc' } },
         },
     });
 
