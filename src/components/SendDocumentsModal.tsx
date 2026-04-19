@@ -7,18 +7,20 @@ interface Props {
     leaseId: string;
     tenantEmail: string;
     coTenantEmail?: string | null;
+    leaseDocs: DocToSend[];
     companyDocs: DocToSend[];
     apartmentDocs: DocToSend[];
     globalDocs: DocToSend[];
 }
 
-export default function SendDocumentsModal({ leaseId, tenantEmail, coTenantEmail, companyDocs, apartmentDocs, globalDocs }: Props) {
+export default function SendDocumentsModal({ leaseId, tenantEmail, coTenantEmail, leaseDocs, companyDocs, apartmentDocs, globalDocs }: Props) {
     const [open, setOpen] = useState(false);
     const [checked, setChecked] = useState<Set<string>>(new Set());
     const [sending, setSending] = useState(false);
     const [result, setResult] = useState<{ success: boolean; error?: string } | null>(null);
 
     const allDocs = [
+        ...leaseDocs.map(d => ({ ...d, group: 'Bail' })),
         ...companyDocs.map(d => ({ ...d, group: 'Société' })),
         ...apartmentDocs.map(d => ({ ...d, group: 'Appartement' })),
         ...globalDocs.map(d => ({ ...d, group: 'GED Globale' })),
@@ -74,7 +76,7 @@ export default function SendDocumentsModal({ leaseId, tenantEmail, coTenantEmail
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Aucun document disponible. Ajoutez des documents dans la GED de la société, de l'appartement ou la GED globale.</p>
                 ) : (
                     <>
-                        {(['Société', 'Appartement', 'GED Globale'] as const).map(group => {
+                        {(['Bail', 'Société', 'Appartement', 'GED Globale'] as const).map(group => {
                             const groupDocs = allDocs.filter(d => d.group === group);
                             if (groupDocs.length === 0) return null;
                             return (

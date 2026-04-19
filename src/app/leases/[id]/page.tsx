@@ -73,6 +73,9 @@ export default async function LeaseDetailPage({ params }: { params: Promise<{ id
     const globalDocsForModal = globalDocs.map(d => ({
         name: d.name, url: d.url, docType: d.docType,
     }));
+    const leaseDocs = lease.documents.map(d => ({
+        name: d.name, url: d.url, docType: d.docType,
+    }));
 
     return (
         <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>
@@ -166,21 +169,24 @@ export default async function LeaseDetailPage({ params }: { params: Promise<{ id
                 </section>
             )}
 
-            <section>
-                <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '1rem' }}>📎 Documents du bail</h2>
+            <section style={{ background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '1.25rem', marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                    <h2 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>📎 Documents du bail</h2>
+                    <SendDocumentsModal
+                        leaseId={lease.id}
+                        tenantEmail={lease.tenant.email}
+                        coTenantEmail={lease.tenant.coTenantEmail}
+                        leaseDocs={leaseDocs}
+                        companyDocs={companyDocs}
+                        apartmentDocs={apartmentDocs}
+                        globalDocs={globalDocsForModal}
+                    />
+                </div>
                 <LeaseDocumentUpload leaseId={lease.id} initialDocuments={lease.documents} />
             </section>
 
             <div style={{ marginTop: '1.5rem', display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                 <Link href={`/leases/${lease.id}/edit`} className="std-add-button" style={{ fontSize: '0.9rem' }}>✏️ Modifier le bail</Link>
-                <SendDocumentsModal
-                    leaseId={lease.id}
-                    tenantEmail={lease.tenant.email}
-                    coTenantEmail={lease.tenant.coTenantEmail}
-                    companyDocs={companyDocs}
-                    apartmentDocs={apartmentDocs}
-                    globalDocs={globalDocsForModal}
-                />
             </div>
         </div>
     );
