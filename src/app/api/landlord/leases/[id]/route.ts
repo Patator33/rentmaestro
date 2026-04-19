@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyMobileToken, unauthorized } from '@/lib/mobile-auth';
+import { sendEmail } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,18 +12,26 @@ export async function GET(
     if (!verifyMobileToken(request)) return unauthorized();
     const { id } = await params;
 
-    const lease = await prisma.lease.findUnique({
-        where: { id },
-        include: {
-            tenant: true,
-            apartment: true,
-            payments: { orderBy: { period: 'desc' } },
-            documents: { orderBy: { createdAt: 'asc' } },
-        },
-    });
+    const [lease, globalDocuments] = await Promise.all([
+        prisma.lease.findUnique({
+            where: { id },
+            include: {
+                tenant: true,
+                apartment: {
+                    include: {
+                        company: { include: { documents: { orderBy: { createdAt: 'asc' } } } },
+                        documents: { orderBy: { createdAt: 'asc' } },
+                    },
+                },
+                payments: { orderBy: { period: 'desc' } },
+                documents: { orderBy: { createdAt: 'asc' } },
+            },
+        }),
+        prisma.globalDocument.findMany({ orderBy: { createdAt: 'asc' } }),
+    ]);
 
     if (!lease) return NextResponse.json({ error: 'Bail introuvable.' }, { status: 404 });
-    return NextResponse.json(lease);
+    return NextResponse.json({ ...lease, globalDocuments });
 }
 
 export async function PUT(
@@ -106,6 +115,49 @@ export async function POST(
             data: { isActive: false, endDate: terminationDate },
         });
         return NextResponse.json({ success: true });
+    }
+
+    if (body.action === 'sendDocuments') {
+        const docs: { name: string; url: string; docType: string }[] = body.docs ?? [];
+        if (docs.length === 0) return NextResponse.json({ error: 'Aucun document sélectionné' }, { status: 400 });
+
+        const lease = await prisma.lease.findUnique({
+            where: { id },
+            include: { tenant: true, apartment: true },
+        });
+        if (!lease) return NextResponse.json({ error: 'Bail introuvable' }, { status: 404 });
+        if (!lease.tenant.email) return NextResponse.json({ error: 'Email locataire manquant' }, { status: 400 });
+
+        const baseUrl = process.env.APP_BASE_URL || 'https://rentmaestro.nico33.net';
+        const docLines = docs.map(d =>
+            `<li style="margin:0.4rem 0"><a href="${baseUrl}${encodeURI(d.url)}" style="color:#2B8CEE">${d.name}</a></li>`
+        ).join('');
+
+        const html = `
+            <div style="font-family:sans-serif;color:#333;line-height:1.6;max-width:560px">
+                <h2>Bonjour ${lease.tenant.firstName},</h2>
+                <p>Veuillez trouver ci-dessous les documents relatifs à votre logement situé au <strong>${lease.apartment.address}, ${lease.apartment.city}</strong> :</p>
+                <ul style="padding-left:1.25rem">${docLines}</ul>
+                <p>N'hésitez pas à nous contacter pour toute question.</p>
+                <br />
+                <p>Cordialement,</p>
+                <p><strong>Votre propriétaire</strong><br /><em>Via Rentmaestro</em></p>
+            </div>
+        `;
+
+        const recipients = [lease.tenant.email];
+        if (lease.tenant.coTenantEmail) recipients.push(lease.tenant.coTenantEmail);
+
+        try {
+            await sendEmail({
+                to: recipients.join(','),
+                subject: `Documents — ${lease.apartment.name || lease.apartment.address}`,
+                html,
+            });
+            return NextResponse.json({ success: true });
+        } catch (e: any) {
+            return NextResponse.json({ error: e.message || 'Erreur envoi email' }, { status: 500 });
+        }
     }
 
     return NextResponse.json({ error: 'Action inconnue' }, { status: 400 });
