@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import styles from "./page.module.css";
 import { formatDate } from "@/lib/utils";
+import CompanyDocumentUpload from "@/components/CompanyDocumentUpload";
 
 export const dynamic = "force-dynamic";
 
@@ -12,15 +13,12 @@ export default async function CompanyDetailsPage({ params }: { params: Promise<{
     const company = await prisma.company.findUnique({
         where: { id },
         include: {
-            apartments: {
-                orderBy: { name: 'asc' }
-            }
+            apartments: { orderBy: { name: 'asc' } },
+            documents: { orderBy: { createdAt: 'asc' } },
         }
     });
 
-    if (!company) {
-        notFound();
-    }
+    if (!company) notFound();
 
     return (
         <div className={styles.container}>
@@ -38,27 +36,41 @@ export default async function CompanyDetailsPage({ params }: { params: Promise<{
                         <h1 className={styles.title}>
                             {company.name}
                             <span className={styles.badge} style={{ marginLeft: '1rem' }}>{company.type}</span>
+                            {(company as any).isPersonal && (
+                                <span style={{ marginLeft: '0.5rem', fontSize: '0.75rem', background: 'rgba(43,140,238,0.12)', color: 'var(--primary-color)', borderRadius: '12px', padding: '0.2rem 0.6rem', fontWeight: 500 }}>
+                                    Nom propre
+                                </span>
+                            )}
                         </h1>
                         <p className={styles.subtitle}>Créée le {formatDate(company.createdAt)}</p>
                     </div>
                 </div>
-                <Link href={`/companies/${company.id}/edit`} className={styles.editButton}>
-                    ✏️ Modifier
-                </Link>
+                {!(company as any).isPersonal && (
+                    <Link href={`/companies/${company.id}/edit`} className={styles.editButton}>
+                        ✏️ Modifier
+                    </Link>
+                )}
             </header>
 
+            {!(company as any).isPersonal && (
+                <section className={styles.section}>
+                    <h2 className={styles.sectionTitle}>Informations légales</h2>
+                    <div className={styles.infoGrid}>
+                        <div className={styles.infoItem}>
+                            <span className={styles.label}>SIRET</span>
+                            <span className={styles.value}>{company.siret || '-'}</span>
+                        </div>
+                        <div className={styles.infoItem}>
+                            <span className={styles.label}>Adresse du siège</span>
+                            <span className={styles.value}>{company.address || '-'}</span>
+                        </div>
+                    </div>
+                </section>
+            )}
+
             <section className={styles.section}>
-                <h2 className={styles.sectionTitle}>Informations légales</h2>
-                <div className={styles.infoGrid}>
-                    <div className={styles.infoItem}>
-                        <span className={styles.label}>SIRET</span>
-                        <span className={styles.value}>{company.siret || '-'}</span>
-                    </div>
-                    <div className={styles.infoItem}>
-                        <span className={styles.label}>Adresse du siège</span>
-                        <span className={styles.value}>{company.address || '-'}</span>
-                    </div>
-                </div>
+                <h2 className={styles.sectionTitle}>📎 GED — Documents</h2>
+                <CompanyDocumentUpload companyId={company.id} initialDocuments={company.documents} />
             </section>
 
             <section className={styles.section}>

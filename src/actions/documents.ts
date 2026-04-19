@@ -117,3 +117,81 @@ export async function deleteLeaseDocument(id: string, leaseId: string) {
     await prisma.leaseDocument.delete({ where: { id } });
     revalidatePath(`/leases/${leaseId}`);
 }
+
+export async function uploadCompanyDocument(formData: FormData) {
+    const file = formData.get("file") as File;
+    const companyId = formData.get("companyId") as string;
+    const docType = (formData.get("docType") as string) || "AUTRE";
+
+    if (!file || !companyId) throw new Error("File and company ID are required");
+
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+
+    const uploadDir = path.join(process.cwd(), "public", "uploads");
+    const filename = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
+    const filepath = path.join(uploadDir, filename);
+
+    await writeFile(filepath, buffer);
+
+    await prisma.companyDocument.create({
+        data: {
+            name: file.name,
+            url: `/uploads/${filename}`,
+            type: file.type,
+            docType,
+            size: file.size,
+            companyId,
+        },
+    });
+
+    revalidatePath(`/companies/${companyId}`);
+}
+
+export async function deleteCompanyDocument(id: string, companyId: string) {
+    await prisma.companyDocument.delete({ where: { id } });
+    revalidatePath(`/companies/${companyId}`);
+}
+
+export async function uploadGlobalDocument(formData: FormData) {
+    const file = formData.get("file") as File;
+    const docType = (formData.get("docType") as string) || "AUTRE";
+
+    if (!file) throw new Error("File is required");
+
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+
+    const uploadDir = path.join(process.cwd(), "public", "uploads");
+    const filename = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
+    const filepath = path.join(uploadDir, filename);
+
+    await writeFile(filepath, buffer);
+
+    await prisma.globalDocument.create({
+        data: {
+            name: file.name,
+            url: `/uploads/${filename}`,
+            type: file.type,
+            docType,
+            size: file.size,
+        },
+    });
+
+    revalidatePath("/global-ged");
+}
+
+export async function deleteGlobalDocument(id: string) {
+    await prisma.globalDocument.delete({ where: { id } });
+    revalidatePath("/global-ged");
+}
+
+export async function ensurePersonalCompany() {
+    const existing = await prisma.company.findFirst({ where: { isPersonal: true } });
+    if (!existing) {
+        await prisma.company.create({
+            data: { name: 'Bien en nom propre', type: 'NOM_PROPRE', isPersonal: true },
+        });
+    }
+    revalidatePath('/companies');
+}

@@ -183,16 +183,40 @@ model LeaseDocument {
 }
 
 model Company {
-  id          String      @id @default(uuid())
+  id          String            @id @default(uuid())
   name        String
-  type        String      // SCI, LMNP, NOM_PROPRE, etc.
+  type        String            // SCI, LMNP, NOM_PROPRE, etc.
   siret       String?
   address     String?
   logoUrl     String?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  isPersonal  Boolean           @default(false)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
   apartments  Apartment[]
   buildings   Building[]
+  documents   CompanyDocument[]
+}
+
+model CompanyDocument {
+  id        String   @id @default(uuid())
+  companyId String
+  name      String
+  url       String
+  type      String
+  docType   String   @default("AUTRE")
+  size      Int
+  createdAt DateTime @default(now())
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+}
+
+model GlobalDocument {
+  id        String   @id @default(uuid())
+  name      String
+  url       String
+  type      String
+  docType   String   @default("AUTRE")
+  size      Int
+  createdAt DateTime @default(now())
 }
 
 model Contact {

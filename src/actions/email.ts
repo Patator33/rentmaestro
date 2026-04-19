@@ -117,3 +117,56 @@ export async function sendReminderEmail(leaseId: string, periodStr: string) {
         return { success: false, error: error.message || "Erreur lors de l'envoi de l'email" };
     }
 }
+
+export interface DocToSend {
+    name: string;
+    url: string;
+    docType: string;
+}
+
+export async function sendDocumentsEmail(leaseId: string, selectedDocs: DocToSend[]) {
+    if (!leaseId || selectedDocs.length === 0) {
+        return { success: false, error: "Aucun document sélectionné." };
+    }
+
+    try {
+        const lease = await prisma.lease.findUnique({
+            where: { id: leaseId },
+            include: { tenant: true, apartment: true },
+        });
+        if (!lease) throw new Error("Bail introuvable");
+        if (!lease.tenant.email) throw new Error("Le locataire n'a pas d'adresse email.");
+
+        const baseUrl = process.env.APP_BASE_URL || 'https://rentmaestro.nico33.net';
+
+        const docLines = selectedDocs.map(d =>
+            `<li style="margin:0.4rem 0"><a href="${baseUrl}${encodeURI(d.url)}" style="color:#2B8CEE">${d.name}</a></li>`
+        ).join('');
+
+        const html = `
+            <div style="font-family:sans-serif;color:#333;line-height:1.6;max-width:560px">
+                <h2>Bonjour ${lease.tenant.firstName},</h2>
+                <p>Veuillez trouver ci-dessous les documents relatifs à votre logement situé au <strong>${lease.apartment.address}, ${lease.apartment.city}</strong> :</p>
+                <ul style="padding-left:1.25rem">${docLines}</ul>
+                <p>N'hésitez pas à nous contacter pour toute question.</p>
+                <br />
+                <p>Cordialement,</p>
+                <p><strong>Votre propriétaire</strong><br /><em>Via Rentmaestro</em></p>
+            </div>
+        `;
+
+        const recipients = [lease.tenant.email];
+        if (lease.tenant.coTenantEmail) recipients.push(lease.tenant.coTenantEmail);
+
+        await sendEmail({
+            to: recipients.join(','),
+            subject: `Documents — ${lease.apartment.name || lease.apartment.address}`,
+            html,
+        });
+
+        return { success: true };
+    } catch (error: any) {
+        console.error("Erreur sendDocumentsEmail:", error);
+        return { success: false, error: error.message || "Erreur lors de l'envoi" };
+    }
+}

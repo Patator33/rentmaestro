@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
 import LeaseDocumentUpload from "@/components/LeaseDocumentUpload";
+import SendDocumentsModal from "@/components/SendDocumentsModal";
 import { markDepositReceived, markDepositReturned, setDepositAmount } from "@/actions/leases";
 
 export const dynamic = "force-dynamic";
@@ -18,14 +19,22 @@ const DEPOSIT_LABELS: Record<string, string> = {
 
 export default async function LeaseDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
-    const lease = await prisma.lease.findUnique({
-        where: { id },
-        include: {
-            apartment: true,
-            tenant: true,
-            documents: { orderBy: { createdAt: 'desc' } },
-        }
-    });
+    const [lease, globalDocs] = await Promise.all([
+        prisma.lease.findUnique({
+            where: { id },
+            include: {
+                apartment: {
+                    include: {
+                        company: { include: { documents: { orderBy: { createdAt: 'asc' } } } },
+                        documents: { orderBy: { createdAt: 'asc' } },
+                    }
+                },
+                tenant: true,
+                documents: { orderBy: { createdAt: 'desc' } },
+            }
+        }),
+        prisma.globalDocument.findMany({ orderBy: { createdAt: 'asc' } }),
+    ]);
 
     if (!lease) notFound();
 
@@ -54,6 +63,16 @@ export default async function LeaseDetailPage({ params }: { params: Promise<{ id
         const amt = parseFloat(formData.get('depositAmount') as string);
         if (!isNaN(amt) && amt > 0) await setDepositAmount(id, amt);
     };
+
+    const companyDocs = lease.apartment.company?.documents.map(d => ({
+        name: d.name, url: d.url, docType: d.docType,
+    })) ?? [];
+    const apartmentDocs = lease.apartment.documents.map(d => ({
+        name: d.name, url: d.url, docType: (d as any).docType ?? 'AUTRE',
+    }));
+    const globalDocsForModal = globalDocs.map(d => ({
+        name: d.name, url: d.url, docType: d.docType,
+    }));
 
     return (
         <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>
@@ -152,8 +171,16 @@ export default async function LeaseDetailPage({ params }: { params: Promise<{ id
                 <LeaseDocumentUpload leaseId={lease.id} initialDocuments={lease.documents} />
             </section>
 
-            <div style={{ marginTop: '1.5rem', display: 'flex', gap: '0.75rem' }}>
+            <div style={{ marginTop: '1.5rem', display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                 <Link href={`/leases/${lease.id}/edit`} className="std-add-button" style={{ fontSize: '0.9rem' }}>✏️ Modifier le bail</Link>
+                <SendDocumentsModal
+                    leaseId={lease.id}
+                    tenantEmail={lease.tenant.email}
+                    coTenantEmail={lease.tenant.coTenantEmail}
+                    companyDocs={companyDocs}
+                    apartmentDocs={apartmentDocs}
+                    globalDocs={globalDocsForModal}
+                />
             </div>
         </div>
     );

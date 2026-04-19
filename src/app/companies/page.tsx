@@ -1,26 +1,42 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import styles from "./page.module.css";
+import { ensurePersonalCompany } from "@/actions/documents";
 
 export const dynamic = "force-dynamic";
 
+async function CreatePersonalCompanyButton() {
+    return (
+        <form action={ensurePersonalCompany}>
+            <button type="submit" style={{
+                background: 'rgba(43,140,238,0.1)', border: '1px dashed var(--primary-color)',
+                borderRadius: 'var(--radius-md)', padding: '0.75rem 1.25rem',
+                color: 'var(--primary-color)', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem',
+            }}>
+                + Créer l'entité «&nbsp;Bien en nom propre&nbsp;»
+            </button>
+        </form>
+    );
+}
+
 export default async function CompaniesPage() {
     const companies = await prisma.company.findMany({
-        include: {
-            _count: {
-                select: { apartments: true }
-            }
-        },
-        orderBy: { name: 'asc' }
+        include: { _count: { select: { apartments: true } } },
+        orderBy: [{ isPersonal: 'asc' }, { name: 'asc' }]
     });
+
+    const hasPersonal = companies.some(c => (c as any).isPersonal);
 
     return (
         <div className={styles.container}>
             <header className={styles.header}>
                 <h1 className={styles.title}>Sociétés</h1>
-                <Link href="/companies/new" className={styles.newButton}>
-                    + Nouvelle Société
-                </Link>
+                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                    {!hasPersonal && <CreatePersonalCompanyButton />}
+                    <Link href="/companies/new" className={styles.newButton}>
+                        + Nouvelle Société
+                    </Link>
+                </div>
             </header>
 
             {companies.length === 0 ? (
@@ -48,7 +64,14 @@ export default async function CompaniesPage() {
                                         {company.name}
                                     </Link>
                                 </div>
-                                <span className={styles.badge}>{company.type}</span>
+                                <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                                    <span className={styles.badge}>{company.type}</span>
+                                    {(company as any).isPersonal && (
+                                        <span style={{ fontSize: '0.7rem', background: 'rgba(43,140,238,0.12)', color: 'var(--primary-color)', borderRadius: '10px', padding: '0.15rem 0.5rem' }}>
+                                            nom propre
+                                        </span>
+                                    )}
+                                </div>
                             </div>
 
                             <div className={styles.cardContent}>
@@ -68,9 +91,11 @@ export default async function CompaniesPage() {
                                 <span className={styles.propertyCount}>
                                     {company._count.apartments} bien{company._count.apartments > 1 ? 's' : ''}
                                 </span>
-                                <Link href={`/companies/${company.id}/edit`} style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', textDecoration: 'none' }}>
-                                    ✏️ Modifier
-                                </Link>
+                                {!(company as any).isPersonal && (
+                                    <Link href={`/companies/${company.id}/edit`} style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', textDecoration: 'none' }}>
+                                        ✏️ Modifier
+                                    </Link>
+                                )}
                             </div>
                         </div>
                     ))}
