@@ -135,6 +135,17 @@ export async function sendRentReminder(leaseId: string, periodStr: string) {
             });
         }
         await logAction({ action: 'SEND_RENT_REMINDER', entity: 'Lease', entityId: leaseId, details: period.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }) });
+
+        const leaseForNote = await prisma.lease.findUnique({ where: { id: leaseId }, select: { tenantId: true } });
+        if (leaseForNote) {
+            await prisma.tenantNote.create({
+                data: {
+                    tenantId: leaseForNote.tenantId,
+                    content: `Relance loyer envoyée — ${period.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}`,
+                    type: 'REMINDER',
+                },
+            });
+        }
     } catch (error) {
         console.error("Erreur lors de l'envoi de la relance:", error);
         throw new Error("Impossible d'envoyer la relance.");
