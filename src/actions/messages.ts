@@ -36,12 +36,12 @@ export async function sendAdminMessage(tenantId: string, content: string) {
         const portalUrl = `${baseUrl}/portal/${tenant.portalToken}`;
         sendEmail({
             to: tenant.email,
-            subject: `💬 Vous avez un nouveau message de votre propriétaire`,
+            subject: `💬 Vous avez un nouveau message de Céline et Nicolas`,
             html: `
                 <div style="font-family:sans-serif;color:#333;max-width:500px;">
-                    <h2 style="color:#1e293b;">Message de votre propriétaire</h2>
+                    <h2 style="color:#1e293b;">Message de Céline et Nicolas</h2>
                     <p>Bonjour <strong>${tenant.firstName}</strong>,</p>
-                    <p>Votre propriétaire vous a envoyé un message :</p>
+                    <p>Céline et Nicolas vous ont envoyé un message :</p>
                     <blockquote style="border-left:3px solid #2b8cee;padding:0.75rem 1rem;margin:1rem 0;background:#f8fafc;color:#334155;">
                         ${content.trim().replace(/\n/g, '<br>')}
                     </blockquote>

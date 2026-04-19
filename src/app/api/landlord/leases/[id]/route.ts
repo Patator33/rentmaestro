@@ -133,15 +133,20 @@ export async function POST(
             `<li style="margin:0.4rem 0"><a href="${baseUrl}${encodeURI(d.url)}" style="color:#2B8CEE">${d.name}</a></li>`
         ).join('');
 
+        const portalLink = lease.tenant.portalToken
+            ? `<p>Retrouvez tous vos documents sur votre <a href="${baseUrl}/portal/${lease.tenant.portalToken}" style="color:#2b8cee;">espace locataire →</a></p>`
+            : '';
+
         const html = `
             <div style="font-family:sans-serif;color:#333;line-height:1.6;max-width:560px">
                 <h2>Bonjour ${lease.tenant.firstName},</h2>
                 <p>Veuillez trouver ci-dessous les documents relatifs à votre logement situé au <strong>${lease.apartment.address}, ${lease.apartment.city}</strong> :</p>
                 <ul style="padding-left:1.25rem">${docLines}</ul>
                 <p>N'hésitez pas à nous contacter pour toute question.</p>
+                ${portalLink}
                 <br />
                 <p>Cordialement,</p>
-                <p><strong>Votre propriétaire</strong><br /><em>Via Rentmaestro</em></p>
+                <p><strong>Céline et Nicolas</strong><br /><em>Via Rentmaestro</em></p>
             </div>
         `;
 

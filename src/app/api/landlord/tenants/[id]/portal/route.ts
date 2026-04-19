@@ -43,7 +43,7 @@ export async function POST(
             html: `
                 <div style="font-family: sans-serif; color: #333; max-width: 560px; line-height: 1.6;">
                     <h2 style="color: #1e293b;">Bonjour ${tenant.firstName},</h2>
-                    <p>Votre propriétaire vous invite à accéder à votre <strong>espace locataire RentMaestro</strong>.</p>
+                    <p>Céline et Nicolas vous invitent à accéder à votre <strong>espace locataire RentMaestro</strong>.</p>
                     <p>Vous y trouverez :</p>
                     <ul>
                         <li>Votre historique de paiements et quittances</li>

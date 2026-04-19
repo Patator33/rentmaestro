@@ -83,6 +83,11 @@ export async function sendReminderEmail(leaseId: string, periodStr: string) {
             : payment.amount.toFixed(2);
         const amount = remainingAmount;
 
+        const baseUrl = process.env.APP_BASE_URL || 'https://rentmaestro.nico33.net';
+        const portalLink = payment.lease.tenant.portalToken
+            ? `<p>Vous pouvez consulter votre espace locataire en ligne : <a href="${baseUrl}/portal/${payment.lease.tenant.portalToken}" style="color:#2b8cee;">Mon espace locataire →</a></p>`
+            : '';
+
         const html = `
             <div style="font-family: sans-serif; color: #333; line-height: 1.6;">
                 <h2>Bonjour ${payment.lease.tenant.firstName},</h2>
@@ -90,9 +95,10 @@ export async function sendReminderEmail(leaseId: string, periodStr: string) {
                 <p>Le montant dû est de <strong>${amount} €</strong> pour le logement situé au ${payment.lease.apartment.address}, ${payment.lease.apartment.city}.</p>
                 <p>Si vous avez déjà procédé au règlement, merci de ne pas tenir compte de cet email.</p>
                 <p>Dans le cas contraire, nous vous invitons à régulariser la situation dans les meilleurs délais.</p>
+                ${portalLink}
                 <br />
                 <p>Cordialement,</p>
-                <p><strong>Votre propriétaire</strong><br /><em>Via Rentmaestro</em></p>
+                <p><strong>Céline et Nicolas</strong><br /><em>Via Rentmaestro</em></p>
             </div>
         `;
 
@@ -143,15 +149,20 @@ export async function sendDocumentsEmail(leaseId: string, selectedDocs: DocToSen
             `<li style="margin:0.4rem 0"><a href="${baseUrl}${encodeURI(d.url)}" style="color:#2B8CEE">${d.name}</a></li>`
         ).join('');
 
+        const portalLink = lease.tenant.portalToken
+            ? `<p>Retrouvez tous vos documents sur votre <a href="${baseUrl}/portal/${lease.tenant.portalToken}" style="color:#2b8cee;">espace locataire →</a></p>`
+            : '';
+
         const html = `
             <div style="font-family:sans-serif;color:#333;line-height:1.6;max-width:560px">
                 <h2>Bonjour ${lease.tenant.firstName},</h2>
                 <p>Veuillez trouver ci-dessous les documents relatifs à votre logement situé au <strong>${lease.apartment.address}, ${lease.apartment.city}</strong> :</p>
                 <ul style="padding-left:1.25rem">${docLines}</ul>
                 <p>N'hésitez pas à nous contacter pour toute question.</p>
+                ${portalLink}
                 <br />
                 <p>Cordialement,</p>
-                <p><strong>Votre propriétaire</strong><br /><em>Via Rentmaestro</em></p>
+                <p><strong>Céline et Nicolas</strong><br /><em>Via Rentmaestro</em></p>
             </div>
         `;
 

@@ -7,13 +7,14 @@ import { sendPortalMessage, markMessagesRead } from '@/actions/messages';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
-type Tab = 'home' | 'payments' | 'incidents' | 'messages';
+type Tab = 'home' | 'payments' | 'incidents' | 'messages' | 'documents';
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
     { id: 'home', label: 'Accueil', icon: '🏠' },
     { id: 'payments', label: 'Paiements', icon: '💳' },
     { id: 'incidents', label: 'Incidents', icon: '🔧' },
     { id: 'messages', label: 'Messages', icon: '💬' },
+    { id: 'documents', label: 'Documents', icon: '📁' },
 ];
 
 // APK color palette (matches rentmaestro-mobile tailwind.config.js)
@@ -67,6 +68,20 @@ interface Lease {
     payments: Payment[];
 }
 
+interface PortalDoc {
+    name: string;
+    url: string;
+    docType: string;
+}
+
+interface PortalDocuments {
+    leaseDocs: PortalDoc[];
+    tenantDocs: PortalDoc[];
+    apartmentDocs: PortalDoc[];
+    companyDocs: PortalDoc[];
+    globalDocs: PortalDoc[];
+}
+
 export interface PortalShellProps {
     tenantId: string;
     firstName: string;
@@ -76,6 +91,7 @@ export interface PortalShellProps {
     allPayments: Payment[];
     initialTasks: Task[];
     initialMessages: Message[];
+    portalDocuments: PortalDocuments;
 }
 
 function PaymentBadge({ status }: { status: string }) {
@@ -112,7 +128,7 @@ function TaskBadge({ status }: { status: string }) {
 
 export default function PortalShell({
     tenantId, firstName, lastName, token,
-    currentLease, allPayments, initialTasks, initialMessages,
+    currentLease, allPayments, initialTasks, initialMessages, portalDocuments,
 }: PortalShellProps) {
     const [activeTab, setActiveTab] = useState<Tab>('home');
     const [tasks, setTasks] = useState<Task[]>(initialTasks);
@@ -175,6 +191,52 @@ export default function PortalShell({
             setMsgText('');
         }
     };
+
+    // ─── DOCUMENTS TAB ──────────────────────────────────────────
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+    const docGroups = [
+        { label: 'Documents du bail', docs: portalDocuments.leaseDocs },
+        { label: 'Mes documents', docs: portalDocuments.tenantDocs },
+        { label: 'Logement', docs: portalDocuments.apartmentDocs },
+        { label: 'Documents propriétaire', docs: portalDocuments.companyDocs },
+        { label: 'Documents généraux', docs: portalDocuments.globalDocs },
+    ].filter(g => g.docs.length > 0);
+
+    const hasAnyDoc = docGroups.length > 0;
+
+    const DocumentsTab = (
+        <div>
+            <h1 style={{ fontSize: '1.25rem', fontWeight: 700, color: C.tm, marginBottom: '1rem' }}>Documents</h1>
+            {!hasAnyDoc ? (
+                <p style={{ fontSize: '0.875rem', color: C.ts }}>Aucun document disponible pour le moment.</p>
+            ) : (
+                docGroups.map(group => (
+                    <div key={group.label} style={{ marginBottom: '1rem' }}>
+                        <p style={{ fontSize: '0.65rem', color: C.mu, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.5rem' }}>
+                            {group.label}
+                        </p>
+                        {group.docs.map(doc => (
+                            <a
+                                key={doc.url}
+                                href={doc.url.startsWith('http') ? doc.url : `${baseUrl}${doc.url}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                    padding: '0.6rem 0.875rem', marginBottom: '0.35rem',
+                                    background: C.surface, borderRadius: '10px', border: `1px solid ${C.border}`,
+                                    textDecoration: 'none', gap: '0.5rem',
+                                }}
+                            >
+                                <span style={{ fontSize: '0.875rem', color: C.tm, wordBreak: 'break-word', flex: 1 }}>📄 {doc.name}</span>
+                                {doc.docType && <span style={{ fontSize: '0.7rem', color: C.mu, flexShrink: 0 }}>{doc.docType}</span>}
+                            </a>
+                        ))}
+                    </div>
+                ))
+            )}
+        </div>
+    );
 
     // ─── Shared card style ───────────────────────────────────────
     const card: React.CSSProperties = {
@@ -436,6 +498,7 @@ export default function PortalShell({
     );
 
     const isMessagesTab = activeTab === 'messages';
+    const isScrollableTab = activeTab !== 'messages';
 
     return (
         <>
@@ -449,6 +512,7 @@ export default function PortalShell({
                     {activeTab === 'payments' && PaymentsTab}
                     {activeTab === 'incidents' && IncidentsTab}
                     {activeTab === 'messages' && MobileMessagesTab}
+                    {activeTab === 'documents' && DocumentsTab}
                 </div>
 
                 <nav style={{ flexShrink: 0, background: C.surface, borderTop: `1px solid ${C.border}`, paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
@@ -605,13 +669,39 @@ export default function PortalShell({
                         </section>
 
                         {/* Messages */}
-                        <section>
+                        <section style={{ marginBottom: '2rem' }}>
                             <TenantMessaging
                                 tenantId={tenantId}
                                 initialMessages={initialMessages}
                                 portalToken={token}
                             />
                         </section>
+
+                        {/* Documents */}
+                        {hasAnyDoc && (
+                            <section>
+                                <h2 style={{ fontSize: '1.2rem', color: 'var(--text-main)', marginBottom: '1rem' }}>📁 Vos Documents</h2>
+                                {docGroups.map(group => (
+                                    <div key={group.label} style={{ marginBottom: '1.25rem' }}>
+                                        <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>{group.label}</p>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                                            {group.docs.map(doc => (
+                                                <a
+                                                    key={doc.url}
+                                                    href={doc.url.startsWith('http') ? doc.url : doc.url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.6rem 1rem', background: 'var(--surface-active)', borderRadius: '8px', border: '1px solid var(--border-color)', textDecoration: 'none', gap: '1rem' }}
+                                                >
+                                                    <span style={{ fontSize: '0.9rem', color: 'var(--text-main)' }}>📄 {doc.name}</span>
+                                                    {doc.docType && <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', flexShrink: 0 }}>{doc.docType}</span>}
+                                                </a>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </section>
+                        )}
                     </>
                 )}
             </div>

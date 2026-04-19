@@ -47,6 +47,11 @@ export async function POST(request: Request) {
     const tenant = payment.lease.tenant;
     const apartment = payment.lease.apartment;
 
+    const baseUrl = process.env.APP_BASE_URL || 'https://rentmaestro.nico33.net';
+    const portalLink = tenant.portalToken
+        ? `<p>Vous pouvez consulter votre espace locataire en ligne : <a href="${baseUrl}/portal/${tenant.portalToken}" style="color:#2b8cee;">Mon espace locataire →</a></p>`
+        : '';
+
     const html = `
         <div style="font-family: sans-serif; color: #333; line-height: 1.6;">
             <h2>Bonjour ${tenant.firstName},</h2>
@@ -54,9 +59,10 @@ export async function POST(request: Request) {
             <p>Le montant dû est de <strong>${amount} €</strong> pour le logement situé au ${apartment.address}, ${apartment.city}.</p>
             <p>Si vous avez déjà procédé au règlement, merci de ne pas tenir compte de cet email.</p>
             <p>Dans le cas contraire, nous vous invitons à régulariser la situation dans les meilleurs délais.</p>
+            ${portalLink}
             <br />
             <p>Cordialement,</p>
-            <p><strong>Votre propriétaire</strong><br /><em>Via Rentmaestro</em></p>
+            <p><strong>Céline et Nicolas</strong><br /><em>Via Rentmaestro</em></p>
         </div>
     `;
 
