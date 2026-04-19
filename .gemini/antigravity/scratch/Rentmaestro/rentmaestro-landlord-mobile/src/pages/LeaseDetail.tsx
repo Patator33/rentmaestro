@@ -29,6 +29,10 @@ export default function LeaseDetail() {
   const [terminateModal, setTerminateModal] = useState(false);
   const [terminateDate, setTerminateDate] = useState(new Date().toISOString().split('T')[0]);
   const [terminateLoading, setTerminateLoading] = useState(false);
+  const [sendDocsModal, setSendDocsModal] = useState(false);
+  const [checkedDocs, setCheckedDocs] = useState<Set<string>>(new Set());
+  const [sendingDocs, setSendingDocs] = useState(false);
+  const [sendDocsResult, setSendDocsResult] = useState<string>('');
   const [baseUrl, setBaseUrl] = useState('');
   const navigate = useNavigate();
 
@@ -49,6 +53,24 @@ export default function LeaseDetail() {
     } finally {
       setDepositLoading(false);
     }
+  };
+
+  const handleSendDocs = async () => {
+    const allDocs = buildAllDocs(lease);
+    const selected = allDocs.filter(d => checkedDocs.has(d.url));
+    if (selected.length === 0) return;
+    setSendingDocs(true); setSendDocsResult('');
+    try {
+      const res = await api.sendDocuments(id!, selected);
+      if (res.success) {
+        setSendDocsResult('✓ Email envoyé');
+        setTimeout(() => { setSendDocsModal(false); setCheckedDocs(new Set()); setSendDocsResult(''); }, 1400);
+      } else {
+        setSendDocsResult(`Erreur : ${res.error}`);
+      }
+    } catch (e: any) {
+      setSendDocsResult(`Erreur : ${e.message}`);
+    } finally { setSendingDocs(false); }
   };
 
   const handleTerminate = async () => {
@@ -227,11 +249,20 @@ export default function LeaseDetail() {
               >
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-text-muted text-xs uppercase tracking-wide">Documents GED</p>
-                  {!gedOk && (
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ color: '#f59e0b', background: 'rgba(245,158,11,0.15)' }}>
-                      {!hasBail && !hasEdl ? 'Bail + EDL manquants' : !hasBail ? 'Bail manquant' : 'EDL manquant'}
-                    </span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {!gedOk && (
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ color: '#f59e0b', background: 'rgba(245,158,11,0.15)' }}>
+                        {!hasBail && !hasEdl ? 'Bail + EDL manquants' : !hasBail ? 'Bail manquant' : 'EDL manquant'}
+                      </span>
+                    )}
+                    <button
+                      onClick={() => { setCheckedDocs(new Set()); setSendDocsResult(''); setSendDocsModal(true); }}
+                      className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                      style={{ color: '#2B8CEE', background: 'rgba(43,140,238,0.15)' }}
+                    >
+                      📧 Envoyer
+                    </button>
+                  </div>
                 </div>
                 {docs.length === 0 ? (
                   <p className="text-text-muted text-xs italic">Aucun document</p>
@@ -309,6 +340,61 @@ export default function LeaseDetail() {
       </div>
     )}
 
+    {/* Send documents modal */}
+    {sendDocsModal && (
+      <div
+        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'flex-end', zIndex: 50 }}
+        onClick={e => e.target === e.currentTarget && setSendDocsModal(false)}
+      >
+        <div style={{ background: '#1e293b', borderRadius: '20px 20px 0 0', padding: '1.5rem', paddingBottom: 'calc(1.5rem + 72px)', width: '100%', maxHeight: '80vh', overflowY: 'auto' }}>
+          <div className="flex items-center justify-between mb-1">
+            <h3 className="text-text-main font-bold text-base">📧 Envoyer des documents</h3>
+            <button onClick={() => setSendDocsModal(false)} className="text-text-muted text-lg">✕</button>
+          </div>
+          <p className="text-text-muted text-xs mb-4">
+            À : {lease.tenant?.email}{lease.tenant?.coTenantEmail ? `, ${lease.tenant.coTenantEmail}` : ''}
+          </p>
+          {buildAllDocs(lease).length === 0 ? (
+            <p className="text-text-muted text-sm italic mb-4">Aucun document disponible.</p>
+          ) : (
+            buildDocGroups(lease).map(group => group.docs.length === 0 ? null : (
+              <div key={group.label} className="mb-3">
+                <p className="text-text-muted text-xs uppercase tracking-wide mb-1">{group.label}</p>
+                {group.docs.map((doc: any) => (
+                  <label key={doc.url} className="flex items-center gap-3 py-2 border-b border-border last:border-0 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={checkedDocs.has(doc.url)}
+                      onChange={() => setCheckedDocs(prev => { const n = new Set(prev); n.has(doc.url) ? n.delete(doc.url) : n.add(doc.url); return n; })}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-text-main text-sm flex-1 truncate">{doc.name}</span>
+                    <span className="text-text-muted text-xs shrink-0">{doc.docType}</span>
+                  </label>
+                ))}
+              </div>
+            ))
+          )}
+          {sendDocsResult && (
+            <p className={`text-sm text-center mb-3 ${sendDocsResult.startsWith('✓') ? 'text-green-400' : 'text-red-400'}`}>{sendDocsResult}</p>
+          )}
+          <div className="flex gap-3 mt-2">
+            <button onClick={() => setSendDocsModal(false)} className="flex-1 py-3 rounded-xl border border-border text-text-secondary text-sm">
+              Annuler
+            </button>
+            <button
+              onClick={handleSendDocs}
+              disabled={checkedDocs.size === 0 || sendingDocs}
+              className="flex-1 py-3 rounded-xl font-semibold text-sm text-white disabled:opacity-50"
+              style={{ background: '#2B8CEE' }}
+            >
+              {sendingDocs ? 'Envoi…' : `Envoyer${checkedDocs.size > 0 ? ` (${checkedDocs.size})` : ''}`}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
     {/* Terminate modal */}
     {terminateModal && (
       <div
@@ -345,6 +431,24 @@ export default function LeaseDetail() {
     )}
     </>
   );
+}
+
+function buildAllDocs(lease: any) {
+  return [
+    ...(lease.documents ?? []),
+    ...(lease.apartment?.company?.documents ?? []),
+    ...(lease.apartment?.documents ?? []),
+    ...(lease.globalDocuments ?? []),
+  ];
+}
+
+function buildDocGroups(lease: any) {
+  return [
+    { label: 'Bail', docs: lease.documents ?? [] },
+    { label: 'Société', docs: lease.apartment?.company?.documents ?? [] },
+    { label: 'Appartement', docs: lease.apartment?.documents ?? [] },
+    { label: 'GED Globale', docs: lease.globalDocuments ?? [] },
+  ];
 }
 
 function Row({ label, value, bold }: { label: string; value: string; bold?: boolean }) {

@@ -7,13 +7,20 @@ export default function ApartmentForm() {
   const navigate = useNavigate();
   const isEdit = !!id;
 
-  const [form, setForm] = useState({ name: '', address: '', complement: '', city: '', zipCode: '', rent: '', charges: '', mortgageAmount: '', insuranceAmount: '', taxAmount: '', defaultDeposit: '', buildingId: '' });
+  const [form, setForm] = useState({
+    name: '', address: '', complement: '', city: '', zipCode: '',
+    rent: '', charges: '', mortgageAmount: '', insuranceAmount: '',
+    taxAmount: '', defaultDeposit: '', buildingId: '', companyId: '',
+  });
   const [buildings, setBuildings] = useState<any[]>([]);
+  const [companies, setCompanies] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    api.getBuildings().then(setBuildings).catch(() => {});
+    Promise.all([api.getBuildings(), api.getCompanies()])
+      .then(([b, c]) => { setBuildings(b); setCompanies(c); })
+      .catch(() => {});
     if (isEdit) {
       api.getApartment(id!).then(a => setForm({
         name: a.name || '', address: a.address || '', complement: a.complement || '',
@@ -24,24 +31,20 @@ export default function ApartmentForm() {
         taxAmount: a.taxAmount != null ? String(a.taxAmount) : '',
         defaultDeposit: a.defaultDeposit != null ? String(a.defaultDeposit) : '',
         buildingId: a.building?.id || '',
+        companyId: a.company?.id || '',
       }));
     }
   }, [id]);
 
-  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setForm(f => ({ ...f, [k]: e.target.value }));
+  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+    setForm(f => ({ ...f, [k]: e.target.value }));
 
   const handleBuildingChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const bId = e.target.value;
     if (!isEdit && bId) {
       const b = buildings.find((b: any) => b.id === bId);
       if (b) {
-        setForm(f => ({
-          ...f,
-          buildingId: bId,
-          address: b.address || f.address,
-          zipCode: b.zipCode || f.zipCode,
-          city: b.city || f.city,
-        }));
+        setForm(f => ({ ...f, buildingId: bId, address: b.address || f.address, zipCode: b.zipCode || f.zipCode, city: b.city || f.city }));
         return;
       }
     }
@@ -68,6 +71,19 @@ export default function ApartmentForm() {
           <h1 className="text-xl font-bold text-text-main">{isEdit ? 'Modifier' : 'Nouvel'} appartement</h1>
         </div>
         <form onSubmit={handleSubmit} className="space-y-3">
+          <div>
+            <label className="block text-xs text-text-secondary mb-1">Société / entité juridique</label>
+            <select
+              value={form.companyId}
+              onChange={set('companyId')}
+              className="w-full bg-surface border border-border rounded-xl px-3 py-2.5 text-text-main text-sm focus:outline-none focus:border-primary"
+            >
+              <option value="">Aucune société</option>
+              {companies.map((c: any) => (
+                <option key={c.id} value={c.id}>{c.name}{c.type && c.type !== c.name ? ` (${c.type})` : ''}</option>
+              ))}
+            </select>
+          </div>
           <div>
             <label className="block text-xs text-text-secondary mb-1">Immeuble (optionnel)</label>
             <select
