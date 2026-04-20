@@ -17,6 +17,7 @@
     "nodemailer": "^8.0.1",
     "otplib": "^13.3.0",
     "papaparse": "^5.5.3",
+    "pdf-lib": "^1.17.1",
     "puppeteer": "^24.37.5",
     "qrcode": "^1.5.4",
     "react": "19.2.3",

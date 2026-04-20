@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
 import { generateQuittanceHtml } from "@/lib/quittance";
+import { buildSigningPdf } from "@/lib/pdf-signing";
 import { revalidatePath } from "next/cache";
 
 function getMonthYear(date: Date): string {
@@ -130,9 +131,7 @@ export async function sendSigningEmail(leaseId: string, docType: 'bail' | 'edl')
             where: { id: leaseId },
             include: {
                 tenant: true,
-                apartment: {
-                    include: { documents: true },
-                },
+                apartment: { include: { documents: true } },
             },
         });
         if (!lease) throw new Error("Bail introuvable");
@@ -142,51 +141,39 @@ export async function sendSigningEmail(leaseId: string, docType: 'bail' | 'edl')
         const doc = lease.apartment.documents.find((d: any) => d.docType === aptDocType);
         if (!doc) throw new Error(docType === 'bail' ? "Aucun bail type déposé sur cet appartement." : "Aucun état des lieux déposé sur cet appartement.");
 
+        // Build PDF with cover page containing tenant coordinates
+        const pdfBuffer = await buildSigningPdf(doc.url, lease, docType);
+
         const baseUrl = process.env.APP_BASE_URL || 'https://rentmaestro.nico33.net';
-        const docUrl = doc.url.startsWith('http') ? doc.url : `${baseUrl}${doc.url}`;
         const portalLink = lease.tenant.portalToken
-            ? `<p style="margin-top:1rem">Retrouvez tous vos documents sur votre <a href="${baseUrl}/portal/${lease.tenant.portalToken}" style="color:#2b8cee;">espace locataire →</a></p>`
+            ? `<p style="margin-top:1rem">Retrouvez vos documents sur votre <a href="${baseUrl}/portal/${lease.tenant.portalToken}" style="color:#2b8cee;">espace locataire →</a></p>`
             : '';
 
         const isBail = docType === 'bail';
-        const tenantName = `${lease.tenant.firstName} ${lease.tenant.lastName}`;
         const aptAddress = `${lease.apartment.address}, ${lease.apartment.zipCode} ${lease.apartment.city}`;
-
-        const infoBlock = isBail ? `
-            <table style="width:100%;border-collapse:collapse;margin:1rem 0;font-size:0.9rem;">
-                <tr><td style="padding:0.3rem 0;color:#64748b;width:140px">Locataire</td><td style="font-weight:600;color:#1e293b">${tenantName}</td></tr>
-                <tr><td style="padding:0.3rem 0;color:#64748b">Logement</td><td style="color:#1e293b">${aptAddress}</td></tr>
-                <tr><td style="padding:0.3rem 0;color:#64748b">Loyer HC</td><td style="color:#1e293b">${lease.rentAmount.toFixed(2)} €</td></tr>
-                <tr><td style="padding:0.3rem 0;color:#64748b">Charges</td><td style="color:#1e293b">${lease.chargesAmount.toFixed(2)} €</td></tr>
-                <tr><td style="padding:0.3rem 0;color:#64748b">Loyer CC</td><td style="font-weight:700;color:#2b8cee">${(lease.rentAmount + lease.chargesAmount).toFixed(2)} €</td></tr>
-                <tr><td style="padding:0.3rem 0;color:#64748b">Début du bail</td><td style="color:#1e293b">${new Date(lease.startDate).toLocaleDateString('fr-FR')}</td></tr>
-                ${lease.depositAmount ? `<tr><td style="padding:0.3rem 0;color:#64748b">Caution</td><td style="color:#1e293b">${lease.depositAmount.toFixed(2)} €</td></tr>` : ''}
-            </table>
-        ` : `
-            <table style="width:100%;border-collapse:collapse;margin:1rem 0;font-size:0.9rem;">
-                <tr><td style="padding:0.3rem 0;color:#64748b;width:140px">Locataire</td><td style="font-weight:600;color:#1e293b">${tenantName}</td></tr>
-                <tr><td style="padding:0.3rem 0;color:#64748b">Logement</td><td style="color:#1e293b">${aptAddress}</td></tr>
-                <tr><td style="padding:0.3rem 0;color:#64748b">Date d'entrée</td><td style="color:#1e293b">${new Date(lease.startDate).toLocaleDateString('fr-FR')}</td></tr>
-            </table>
-        `;
 
         const subject = isBail
             ? `Bail de location à signer — ${lease.apartment.name || lease.apartment.address}`
             : `État des lieux — ${lease.apartment.name || lease.apartment.address}`;
 
         const intro = isBail
-            ? `Veuillez trouver ci-dessous le bail de location relatif à votre logement. Merci de le <strong>signer et nous le retourner</strong> dès que possible.`
-            : `Veuillez trouver ci-dessous l'état des lieux de votre logement. Merci de le <strong>signer et nous le retourner</strong> dès que possible.`;
+            ? `Veuillez trouver en pièce jointe le bail de location. Merci de le <strong>signer et nous le retourner</strong> dès que possible.`
+            : `Veuillez trouver en pièce jointe l'état des lieux. Merci de le <strong>signer et nous le retourner</strong> dès que possible.`;
 
         const html = `
             <div style="font-family:sans-serif;color:#333;line-height:1.6;max-width:560px">
                 <h2>Bonjour ${lease.tenant.firstName},</h2>
                 <p>${intro}</p>
-                ${infoBlock}
-                <a href="${docUrl}" style="display:inline-block;padding:0.7rem 1.4rem;background:#2b8cee;color:white;text-decoration:none;border-radius:8px;font-weight:600;font-size:0.95rem;">
-                    📄 Télécharger le document →
-                </a>
-                <p style="color:#64748b;font-size:0.82rem;margin-top:0.4rem">${docUrl}</p>
+                <table style="width:100%;border-collapse:collapse;margin:1rem 0;font-size:0.9rem;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">
+                    <tr style="background:#f8fafc"><td style="padding:0.5rem 0.75rem;color:#64748b;width:140px;font-weight:600">Logement</td><td style="padding:0.5rem 0.75rem;color:#1e293b">${aptAddress}</td></tr>
+                    ${isBail ? `
+                    <tr><td style="padding:0.5rem 0.75rem;color:#64748b;font-weight:600">Loyer CC</td><td style="padding:0.5rem 0.75rem;font-weight:700;color:#2b8cee">${(lease.rentAmount + lease.chargesAmount).toFixed(2)} €</td></tr>
+                    <tr style="background:#f8fafc"><td style="padding:0.5rem 0.75rem;color:#64748b;font-weight:600">Début</td><td style="padding:0.5rem 0.75rem;color:#1e293b">${new Date(lease.startDate).toLocaleDateString('fr-FR')}</td></tr>
+                    ${lease.depositAmount ? `<tr><td style="padding:0.5rem 0.75rem;color:#64748b;font-weight:600">Caution</td><td style="padding:0.5rem 0.75rem;color:#1e293b">${lease.depositAmount.toFixed(2)} €</td></tr>` : ''}
+                    ` : `
+                    <tr><td style="padding:0.5rem 0.75rem;color:#64748b;font-weight:600">Date d'entrée</td><td style="padding:0.5rem 0.75rem;color:#1e293b">${new Date(lease.startDate).toLocaleDateString('fr-FR')}</td></tr>
+                    `}
+                </table>
                 ${portalLink}
                 <br />
                 <p>Cordialement,</p>
@@ -194,10 +181,19 @@ export async function sendSigningEmail(leaseId: string, docType: 'bail' | 'edl')
             </div>
         `;
 
+        const filename = isBail
+            ? `bail-${lease.tenant.lastName.toLowerCase()}-${lease.apartment.city.toLowerCase()}.pdf`
+            : `etat-des-lieux-${lease.tenant.lastName.toLowerCase()}-${lease.apartment.city.toLowerCase()}.pdf`;
+
         const recipients = [lease.tenant.email];
         if (lease.tenant.coTenantEmail) recipients.push(lease.tenant.coTenantEmail);
 
-        await sendEmail({ to: recipients.join(','), subject, html });
+        await sendEmail({
+            to: recipients.join(','),
+            subject,
+            html,
+            attachments: [{ filename, content: pdfBuffer, contentType: 'application/pdf' }],
+        });
         return { success: true };
     } catch (error: any) {
         console.error("Erreur sendSigningEmail:", error);
