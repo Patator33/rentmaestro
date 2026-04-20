@@ -6,7 +6,7 @@ import TerminateLeaseButton from "@/components/TerminateLeaseButton";
 import DeleteLeaseButton from "@/components/DeleteLeaseButton";
 import DepositStatusButton from "@/components/DepositStatusButton";
 import ViewToggle from "@/components/ViewToggle";
-import ClickableRow from "@/components/ClickableRow";
+import ClickableRow, { ClickableCard } from "@/components/ClickableRow";
 import { formatDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -336,7 +336,7 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                     }
 
                                     return (
-                                        <div key={lease.id} className={styles.card} style={{ borderColor: 'var(--accent-color)', background: 'rgba(255, 165, 0, 0.05)' }}>
+                                        <ClickableCard key={lease.id} href={`/leases/${lease.id}`} className={styles.card} style={{ borderColor: 'var(--accent-color)', background: 'rgba(255, 165, 0, 0.05)' }}>
                                             <div className={styles.cardHeader}>
                                                 <span className={styles.statusBadge} style={{ background: 'rgba(255, 165, 0, 0.15)', color: 'var(--accent-color)' }}>À VENIR</span>
                                                 <h3 className={styles.cardTitle}>
@@ -379,7 +379,7 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                                 />
                                                 <DeleteLeaseButton id={lease.id} className="std-add-button" style={{ fontSize: '0.85rem', padding: '0.4rem 0.75rem' }} />
                                             </div>
-                                        </div>
+                                        </ClickableCard>
                                     );
                                 })}
                             </div>
@@ -425,7 +425,7 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                 }
 
                                 return (
-                                    <div key={lease.id} className={styles.card}>
+                                    <ClickableCard key={lease.id} href={`/leases/${lease.id}`} className={styles.card}>
                                         <div className={styles.cardHeader}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                                 <span className={`${styles.statusBadge} ${styles.statusActive}`}>ACTIF</span>
@@ -476,7 +476,7 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                                 label={lease.endDate ? "Modifier fin" : "Terminer"}
                                             />
                                         </div>
-                                    </div>
+                                    </ClickableCard>
                                 );
                             })}
                         </div>
@@ -488,7 +488,7 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                             <h2 className={styles.sectionTitle}>Historique ({pastLeases.length})</h2>
                             <div className={styles.grid}>
                                 {pastLeases.map((lease) => (
-                                    <div key={lease.id} className={styles.historyCard}>
+                                    <ClickableCard key={lease.id} href={`/leases/${lease.id}`} className={styles.historyCard}>
                                         <div className={styles.cardHeader}>
                                             <span className={`${styles.statusBadge} ${styles.statusInactive}`}>TERMINÉ</span>
                                             <h3 className={styles.cardTitle}>
@@ -525,7 +525,7 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                             </Link>
                                             <DeleteLeaseButton id={lease.id} />
                                         </div>
-                                    </div>
+                                    </ClickableCard>
                                 ))}
                             </div>
                         </>
