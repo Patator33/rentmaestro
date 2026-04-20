@@ -61,6 +61,33 @@ export async function buildSigningPdf(
     const templateBytes = await readFile(filePath);
     const templateDoc = await PDFDocument.load(templateBytes);
 
+    // If the PDF has AcroForm fields, fill them and return directly (no cover page)
+    const form = templateDoc.getForm();
+    const fields = form.getFields();
+    if (fields.length > 0) {
+        const tenantName = `${lease.tenant.firstName} ${lease.tenant.lastName}`;
+        const coTenantName = lease.tenant.coTenantFirstName
+            ? `${lease.tenant.coTenantFirstName} ${lease.tenant.coTenantLastName ?? ''}`.trim()
+            : null;
+        const fullName = coTenantName ? `${tenantName} / ${coTenantName}` : tenantName;
+        const dateDebut = new Date(lease.startDate).toLocaleDateString('fr-FR');
+
+        const tryFill = (name: string, value: string) => {
+            try { form.getTextField(name).setText(value); } catch { /* field absent */ }
+        };
+        tryFill('nom_locataire', fullName);
+        tryFill('date_debut', dateDebut);
+        tryFill('loyer_hc', `${lease.rentAmount.toFixed(2)} EUR`);
+        tryFill('charges', `${lease.chargesAmount.toFixed(2)} EUR`);
+        tryFill('loyer_cc', `${(lease.rentAmount + lease.chargesAmount).toFixed(2)} EUR`);
+        if (lease.depositAmount) tryFill('caution', `${lease.depositAmount.toFixed(2)} EUR`);
+        tryFill('adresse_bien', `${lease.apartment.address}, ${lease.apartment.zipCode} ${lease.apartment.city}`);
+
+        form.flatten();
+        const bytes = await templateDoc.save();
+        return Buffer.from(bytes);
+    }
+
     // Build cover page
     const coverDoc = await PDFDocument.create();
     const page = coverDoc.addPage([595.28, 841.89]); // A4
