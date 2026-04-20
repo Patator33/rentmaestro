@@ -72,8 +72,9 @@ export async function buildSigningPdf(
         const fullName = coTenantName ? `${tenantName} / ${coTenantName}` : tenantName;
         const dateDebut = new Date(lease.startDate).toLocaleDateString('fr-FR');
 
+        const fieldMap = new Map(fields.map(f => [f.getName().trim(), f.getName()]));
         const tryFill = (name: string, value: string) => {
-            try { form.getTextField(name).setText(value); } catch { /* field absent */ }
+            try { form.getTextField(fieldMap.get(name) ?? name).setText(value); } catch { /* field absent */ }
         };
         tryFill('nom_locataire', fullName);
         tryFill('date_debut', dateDebut);
