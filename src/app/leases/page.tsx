@@ -6,6 +6,7 @@ import TerminateLeaseButton from "@/components/TerminateLeaseButton";
 import DeleteLeaseButton from "@/components/DeleteLeaseButton";
 import DepositStatusButton from "@/components/DepositStatusButton";
 import ViewToggle from "@/components/ViewToggle";
+import ClickableRow from "@/components/ClickableRow";
 import { formatDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -161,7 +162,7 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                     </thead>
                                     <tbody>
                                         {futureLeases.map((lease) => (
-                                            <tr key={lease.id}>
+                                            <ClickableRow key={lease.id} href={`/leases/${lease.id}`}>
                                                 <td style={{ fontWeight: 600 }}>
                                                     <Link href={`/apartments/${lease.apartment.id}`} style={{ color: 'var(--primary-color)' }}>
                                                         {lease.apartment.name || lease.apartment.address}
@@ -187,7 +188,7 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                                     ) : '—'}
                                                 </td>
                                                 <td>{actionButtons(lease)}</td>
-                                            </tr>
+                                            </ClickableRow>
                                         ))}
                                     </tbody>
                                 </table>
@@ -216,7 +217,7 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                 </thead>
                                 <tbody>
                                     {activeLeases.map((lease) => (
-                                        <tr key={lease.id}>
+                                        <ClickableRow key={lease.id} href={`/leases/${lease.id}`}>
                                             <td style={{ fontWeight: 600 }}>
                                                 <Link href={`/apartments/${lease.apartment.id}`} style={{ color: 'var(--primary-color)' }}>
                                                     {lease.apartment.name || lease.apartment.address}
@@ -247,7 +248,7 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                                 ) : '—'}
                                             </td>
                                             <td>{actionButtons(lease)}</td>
-                                        </tr>
+                                        </ClickableRow>
                                     ))}
                                 </tbody>
                             </table>
@@ -274,7 +275,7 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                     </thead>
                                     <tbody>
                                         {pastLeases.map((lease) => (
-                                            <tr key={lease.id} style={{ opacity: 0.7 }}>
+                                            <ClickableRow key={lease.id} href={`/leases/${lease.id}`} style={{ opacity: 0.7 }}>
                                                 <td style={{ fontWeight: 600 }}>
                                                     <Link href={`/apartments/${lease.apartment.id}`} style={{ color: 'var(--primary-color)' }}>
                                                         {lease.apartment.name || lease.apartment.address}
@@ -297,7 +298,7 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                                     ) : '—'}
                                                 </td>
                                                 <td>{actionButtons(lease)}</td>
-                                            </tr>
+                                            </ClickableRow>
                                         ))}
                                     </tbody>
                                 </table>
