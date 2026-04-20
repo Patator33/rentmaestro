@@ -260,6 +260,22 @@ export const api = {
     return res.json();
   },
 
+  sendBailType: async (leaseId: string) => {
+    const res = await apiFetch(`/api/landlord/leases/${leaseId}`, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'sendBailType' }),
+    });
+    return res.json();
+  },
+
+  sendEdl: async (leaseId: string) => {
+    const res = await apiFetch(`/api/landlord/leases/${leaseId}`, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'sendEdl' }),
+    });
+    return res.json();
+  },
+
   deleteApartment: async (id: string) => {
     const res = await apiFetch(`/api/landlord/apartments/${id}`, { method: 'DELETE' });
     return res.json();

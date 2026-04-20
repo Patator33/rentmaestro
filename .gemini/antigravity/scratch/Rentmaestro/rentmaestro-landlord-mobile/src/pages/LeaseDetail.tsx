@@ -33,6 +33,8 @@ export default function LeaseDetail() {
   const [checkedDocs, setCheckedDocs] = useState<Set<string>>(new Set());
   const [sendingDocs, setSendingDocs] = useState(false);
   const [sendDocsResult, setSendDocsResult] = useState<string>('');
+  const [signingLoading, setSigningLoading] = useState<'bail' | 'edl' | null>(null);
+  const [signingResult, setSigningResult] = useState<string>('');
   const [baseUrl, setBaseUrl] = useState('');
   const navigate = useNavigate();
 
@@ -71,6 +73,24 @@ export default function LeaseDetail() {
     } catch (e: any) {
       setSendDocsResult(`Erreur : ${e.message}`);
     } finally { setSendingDocs(false); }
+  };
+
+  const handleSigningSend = async (type: 'bail' | 'edl') => {
+    setSigningLoading(type);
+    setSigningResult('');
+    try {
+      const res = type === 'bail' ? await api.sendBailType(id!) : await api.sendEdl(id!);
+      if (res.success) {
+        setSigningResult('✓ Email envoyé !');
+        setTimeout(() => setSigningResult(''), 3000);
+      } else {
+        setSigningResult(`Erreur : ${res.error}`);
+      }
+    } catch (e: any) {
+      setSigningResult(`Erreur : ${e.message}`);
+    } finally {
+      setSigningLoading(null);
+    }
   };
 
   const handleTerminate = async () => {
@@ -237,10 +257,13 @@ export default function LeaseDetail() {
           {/* GED — Documents du bail */}
           {(() => {
             const docs: any[] = lease.documents ?? [];
+            const aptDocs: any[] = lease.apartment?.documents ?? [];
             const types = docs.map((d: any) => d.docType);
             const hasBail = types.includes('BAIL');
-            const hasEdl = types.includes('EDL');
-            const gedOk = hasBail && hasEdl;
+            const hasEdlDoc = types.includes('EDL');
+            const gedOk = hasBail && hasEdlDoc;
+            const hasBailType = aptDocs.some((d: any) => d.docType === 'BAIL_TYPE');
+            const hasEdlType = aptDocs.some((d: any) => d.docType === 'ETAT_DES_LIEUX');
             const DOC_LABEL: Record<string, string> = { BAIL: '📝 Bail', EDL: '🔑 État des lieux', AUTRE: '📄 Autre' };
             return (
               <div
@@ -252,7 +275,7 @@ export default function LeaseDetail() {
                   <div className="flex items-center gap-2">
                     {!gedOk && (
                       <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ color: '#f59e0b', background: 'rgba(245,158,11,0.15)' }}>
-                        {!hasBail && !hasEdl ? 'Bail + EDL manquants' : !hasBail ? 'Bail manquant' : 'EDL manquant'}
+                        {!hasBail && !hasEdlDoc ? 'Bail + EDL manquants' : !hasBail ? 'Bail manquant' : 'EDL manquant'}
                       </span>
                     )}
                     <button
@@ -264,6 +287,36 @@ export default function LeaseDetail() {
                     </button>
                   </div>
                 </div>
+
+                {/* Quick signing buttons */}
+                {(hasBailType || hasEdlType) && (
+                  <div className="flex gap-2 mb-2 flex-wrap">
+                    {hasBailType && (
+                      <button
+                        onClick={() => handleSigningSend('bail')}
+                        disabled={signingLoading !== null}
+                        className="text-xs px-3 py-1.5 rounded-lg font-semibold"
+                        style={{ background: 'rgba(43,140,238,0.12)', color: '#2B8CEE', border: '1px solid rgba(43,140,238,0.3)', opacity: signingLoading !== null ? 0.5 : 1 }}
+                      >
+                        {signingLoading === 'bail' ? '…' : '📝 Envoyer bail à signer'}
+                      </button>
+                    )}
+                    {hasEdlType && (
+                      <button
+                        onClick={() => handleSigningSend('edl')}
+                        disabled={signingLoading !== null}
+                        className="text-xs px-3 py-1.5 rounded-lg font-semibold"
+                        style={{ background: 'rgba(43,140,238,0.12)', color: '#2B8CEE', border: '1px solid rgba(43,140,238,0.3)', opacity: signingLoading !== null ? 0.5 : 1 }}
+                      >
+                        {signingLoading === 'edl' ? '…' : '🏠 Envoyer état des lieux'}
+                      </button>
+                    )}
+                  </div>
+                )}
+                {signingResult !== '' && (
+                  <p className="text-xs mb-2" style={{ color: signingResult.startsWith('✓') ? '#22c55e' : '#ef4444' }}>{signingResult}</p>
+                )}
+
                 {docs.length === 0 ? (
                   <p className="text-text-muted text-xs italic">Aucun document</p>
                 ) : (
