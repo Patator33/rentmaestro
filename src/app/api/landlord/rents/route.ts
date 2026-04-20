@@ -23,9 +23,12 @@ export async function GET(request: Request) {
     const startOfMonth = new Date(Date.UTC(year, month, 1));
     const endOfMonth = new Date(Date.UTC(year, month + 1, 1));
 
+    const isCurrentMonth = year === now.getUTCFullYear() && month === now.getUTCMonth();
+    const startDateUpperBound = isCurrentMonth ? now : endOfMonth;
+
     const leases = await prisma.lease.findMany({
         where: {
-            startDate: { lt: endOfMonth },
+            startDate: { lte: startDateUpperBound },
             OR: [{ endDate: null }, { endDate: { gte: startOfMonth } }],
         },
         include: {
@@ -37,7 +40,6 @@ export async function GET(request: Request) {
     });
 
     const currentDay = now.getUTCDate();
-    const isCurrentMonth = year === now.getUTCFullYear() && month === now.getUTCMonth();
     const isPastMonth = year < now.getUTCFullYear() || (year === now.getUTCFullYear() && month < now.getUTCMonth());
 
     const result = leases.map(lease => {
