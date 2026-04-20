@@ -47,6 +47,7 @@ export async function deleteDocument(id: string, tenantId: string) {
 export async function uploadApartmentDocument(formData: FormData) {
     const file = formData.get("file") as File;
     const apartmentId = formData.get("apartmentId") as string;
+    const docType = (formData.get("docType") as string) || "AUTRE";
 
     if (!file || !apartmentId) {
         throw new Error("File and apartment ID are required");
@@ -68,6 +69,7 @@ export async function uploadApartmentDocument(formData: FormData) {
             name: file.name,
             url: `/uploads/${filename}`,
             type: file.type,
+            docType,
             size: file.size,
             apartmentId,
         },

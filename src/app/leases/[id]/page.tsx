@@ -76,6 +76,8 @@ export default async function LeaseDetailPage({ params }: { params: Promise<{ id
     const leaseDocs = lease.documents.map(d => ({
         name: d.name, url: d.url, docType: d.docType,
     }));
+    const hasBailType = lease.apartment.documents.some((d: any) => d.docType === 'BAIL_TYPE');
+    const hasEdl = lease.apartment.documents.some((d: any) => d.docType === 'ETAT_DES_LIEUX');
 
     return (
         <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>
@@ -180,6 +182,8 @@ export default async function LeaseDetailPage({ params }: { params: Promise<{ id
                         companyDocs={companyDocs}
                         apartmentDocs={apartmentDocs}
                         globalDocs={globalDocsForModal}
+                        hasBailType={hasBailType}
+                        hasEdl={hasEdl}
                     />
                 </div>
                 <LeaseDocumentUpload leaseId={lease.id} initialDocuments={lease.documents} />

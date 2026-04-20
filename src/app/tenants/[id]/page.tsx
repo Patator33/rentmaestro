@@ -136,6 +136,8 @@ export default async function TenantDetailsPage({ params }: { params: Promise<{ 
                                 const leaseDocs = lease.documents.map(d => ({ name: d.name, url: d.url, docType: d.docType }));
                                 const companyDocs = (lease.apartment as any).company?.documents.map((d: any) => ({ name: d.name, url: d.url, docType: d.docType })) ?? [];
                                 const apartmentDocs = (lease.apartment as any).documents.map((d: any) => ({ name: d.name, url: d.url, docType: (d as any).docType ?? 'AUTRE' }));
+                                const hasBailType = (lease.apartment as any).documents.some((d: any) => d.docType === 'BAIL_TYPE');
+                                const hasEdl = (lease.apartment as any).documents.some((d: any) => d.docType === 'ETAT_DES_LIEUX');
                                 return (
                                     <div key={lease.id} style={{
                                         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -169,6 +171,8 @@ export default async function TenantDetailsPage({ params }: { params: Promise<{ 
                                                     companyDocs={companyDocs}
                                                     apartmentDocs={apartmentDocs}
                                                     globalDocs={globalDocsForModal}
+                                                    hasBailType={hasBailType}
+                                                    hasEdl={hasEdl}
                                                 />
                                             )}
                                         </div>

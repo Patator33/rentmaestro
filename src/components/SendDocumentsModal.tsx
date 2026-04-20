@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { sendDocumentsEmail, DocToSend } from '@/actions/email';
+import { sendDocumentsEmail, sendSigningEmail, DocToSend } from '@/actions/email';
 
 interface Props {
     leaseId: string;
@@ -11,12 +11,15 @@ interface Props {
     companyDocs: DocToSend[];
     apartmentDocs: DocToSend[];
     globalDocs: DocToSend[];
+    hasBailType?: boolean;
+    hasEdl?: boolean;
 }
 
-export default function SendDocumentsModal({ leaseId, tenantEmail, coTenantEmail, leaseDocs, companyDocs, apartmentDocs, globalDocs }: Props) {
+export default function SendDocumentsModal({ leaseId, tenantEmail, coTenantEmail, leaseDocs, companyDocs, apartmentDocs, globalDocs, hasBailType, hasEdl }: Props) {
     const [open, setOpen] = useState(false);
     const [checked, setChecked] = useState<Set<string>>(new Set());
     const [sending, setSending] = useState(false);
+    const [signingLoading, setSigningLoading] = useState<'bail' | 'edl' | null>(null);
     const [result, setResult] = useState<{ success: boolean; error?: string } | null>(null);
 
     const allDocs = [
@@ -47,7 +50,19 @@ export default function SendDocumentsModal({ leaseId, tenantEmail, coTenantEmail
         }
     };
 
+    const handleSigningSend = async (type: 'bail' | 'edl') => {
+        setSigningLoading(type);
+        setResult(null);
+        const res = await sendSigningEmail(leaseId, type);
+        setResult(res);
+        setSigningLoading(null);
+        if (res.success) {
+            setTimeout(() => { setOpen(false); setResult(null); }, 1500);
+        }
+    };
+
     const recipients = coTenantEmail ? `${tenantEmail}, ${coTenantEmail}` : tenantEmail;
+    const hasQuickActions = hasBailType || hasEdl;
 
     if (!open) {
         return (
@@ -62,7 +77,7 @@ export default function SendDocumentsModal({ leaseId, tenantEmail, coTenantEmail
 
     return (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-            <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius-md)', padding: '1.5rem', width: '100%', maxWidth: '500px', maxHeight: '80vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.5)', border: '1px solid var(--border-color)' }}>
+            <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius-md)', padding: '1.5rem', width: '100%', maxWidth: '500px', maxHeight: '85vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.5)', border: '1px solid var(--border-color)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                     <h2 style={{ fontSize: '1.1rem', fontWeight: 700 }}>📧 Envoyer des documents</h2>
                     <button onClick={() => { setOpen(false); setChecked(new Set()); setResult(null); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem', color: 'var(--text-secondary)' }}>✕</button>
@@ -72,10 +87,40 @@ export default function SendDocumentsModal({ leaseId, tenantEmail, coTenantEmail
                     Destinataire(s) : <strong>{recipients}</strong>
                 </p>
 
+                {/* Quick signing actions */}
+                {hasQuickActions && (
+                    <div style={{ marginBottom: '1.25rem', padding: '0.875rem', background: 'rgba(43,140,238,0.06)', borderRadius: '10px', border: '1px solid rgba(43,140,238,0.2)' }}>
+                        <p style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--primary-color)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.6rem' }}>Envoi pour signature</p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                            {hasBailType && (
+                                <button
+                                    onClick={() => handleSigningSend('bail')}
+                                    disabled={signingLoading !== null || sending}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.55rem 0.9rem', borderRadius: '8px', border: '1px solid rgba(43,140,238,0.35)', background: 'rgba(43,140,238,0.1)', color: 'var(--primary-color)', cursor: 'pointer', fontWeight: 600, fontSize: '0.88rem', opacity: signingLoading !== null ? 0.6 : 1 }}
+                                >
+                                    <span>📝</span>
+                                    <span>{signingLoading === 'bail' ? 'Envoi en cours…' : 'Envoyer bail à signer'}</span>
+                                </button>
+                            )}
+                            {hasEdl && (
+                                <button
+                                    onClick={() => handleSigningSend('edl')}
+                                    disabled={signingLoading !== null || sending}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.55rem 0.9rem', borderRadius: '8px', border: '1px solid rgba(43,140,238,0.35)', background: 'rgba(43,140,238,0.1)', color: 'var(--primary-color)', cursor: 'pointer', fontWeight: 600, fontSize: '0.88rem', opacity: signingLoading !== null ? 0.6 : 1 }}
+                                >
+                                    <span>🏠</span>
+                                    <span>{signingLoading === 'edl' ? 'Envoi en cours…' : 'Envoyer état des lieux'}</span>
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                )}
+
                 {allDocs.length === 0 ? (
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Aucun document disponible. Ajoutez des documents dans la GED de la société, de l'appartement ou la GED globale.</p>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Aucun autre document disponible.</p>
                 ) : (
                     <>
+                        <p style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.6rem' }}>Autres documents</p>
                         {(['Bail', 'Société', 'Appartement', 'GED Globale'] as const).map(group => {
                             const groupDocs = allDocs.filter(d => d.group === group);
                             if (groupDocs.length === 0) return null;
@@ -120,6 +165,12 @@ export default function SendDocumentsModal({ leaseId, tenantEmail, coTenantEmail
                             </button>
                         </div>
                     </>
+                )}
+
+                {result && allDocs.length === 0 && (
+                    <div style={{ padding: '0.6rem 0.9rem', borderRadius: '8px', marginTop: '0.75rem', background: result.success ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)', color: result.success ? '#22c55e' : '#ef4444', fontSize: '0.88rem' }}>
+                        {result.success ? '✓ Email envoyé avec succès !' : `Erreur : ${result.error}`}
+                    </div>
                 )}
             </div>
         </div>

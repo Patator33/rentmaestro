@@ -165,6 +165,77 @@ export async function POST(
         }
     }
 
+    if (body.action === 'sendBailType' || body.action === 'sendEdl') {
+        const docType = body.action === 'sendBailType' ? 'BAIL_TYPE' : 'ETAT_DES_LIEUX';
+        const emailType = body.action === 'sendBailType' ? 'bail' : 'edl';
+
+        const lease = await prisma.lease.findUnique({
+            where: { id },
+            include: {
+                tenant: true,
+                apartment: { include: { documents: true } },
+            },
+        });
+        if (!lease) return NextResponse.json({ error: 'Bail introuvable' }, { status: 404 });
+        if (!lease.tenant.email) return NextResponse.json({ error: 'Email locataire manquant' }, { status: 400 });
+
+        const doc = (lease.apartment as any).documents.find((d: any) => d.docType === docType);
+        if (!doc) return NextResponse.json({ error: body.action === 'sendBailType' ? 'Aucun bail type sur cet appartement' : 'Aucun état des lieux sur cet appartement' }, { status: 404 });
+
+        const baseUrl = process.env.APP_BASE_URL || 'https://rentmaestro.nico33.net';
+        const aptAddress = `${lease.apartment.address}, ${lease.apartment.zipCode} ${lease.apartment.city}`;
+        const tenantName = `${lease.tenant.firstName} ${lease.tenant.lastName}`;
+        const docUrl = doc.url.startsWith('http') ? doc.url : `${baseUrl}${doc.url}`;
+        const portalLink = lease.tenant.portalToken
+            ? `<p>Retrouvez vos documents sur votre <a href="${baseUrl}/portal/${lease.tenant.portalToken}" style="color:#2b8cee;">espace locataire →</a></p>`
+            : '';
+
+        const isBail = emailType === 'bail';
+        const infoBlock = isBail ? `
+            <table style="width:100%;border-collapse:collapse;margin:1rem 0;font-size:0.9rem;">
+                <tr><td style="padding:0.3rem 0;color:#64748b;width:140px">Locataire</td><td style="font-weight:600;color:#1e293b">${tenantName}</td></tr>
+                <tr><td style="padding:0.3rem 0;color:#64748b">Logement</td><td style="color:#1e293b">${aptAddress}</td></tr>
+                <tr><td style="padding:0.3rem 0;color:#64748b">Loyer CC</td><td style="font-weight:700;color:#2b8cee">${(lease.rentAmount + lease.chargesAmount).toFixed(2)} €</td></tr>
+                <tr><td style="padding:0.3rem 0;color:#64748b">Début du bail</td><td style="color:#1e293b">${new Date(lease.startDate).toLocaleDateString('fr-FR')}</td></tr>
+                ${lease.depositAmount ? `<tr><td style="padding:0.3rem 0;color:#64748b">Caution</td><td style="color:#1e293b">${lease.depositAmount.toFixed(2)} €</td></tr>` : ''}
+            </table>` : `
+            <table style="width:100%;border-collapse:collapse;margin:1rem 0;font-size:0.9rem;">
+                <tr><td style="padding:0.3rem 0;color:#64748b;width:140px">Locataire</td><td style="font-weight:600;color:#1e293b">${tenantName}</td></tr>
+                <tr><td style="padding:0.3rem 0;color:#64748b">Logement</td><td style="color:#1e293b">${aptAddress}</td></tr>
+                <tr><td style="padding:0.3rem 0;color:#64748b">Date d'entrée</td><td style="color:#1e293b">${new Date(lease.startDate).toLocaleDateString('fr-FR')}</td></tr>
+            </table>`;
+
+        const subject = isBail
+            ? `Bail de location à signer — ${lease.apartment.name || lease.apartment.address}`
+            : `État des lieux — ${lease.apartment.name || lease.apartment.address}`;
+        const intro = isBail
+            ? `Veuillez trouver ci-dessous le bail de location. Merci de le <strong>signer et nous le retourner</strong> dès que possible.`
+            : `Veuillez trouver ci-dessous l'état des lieux. Merci de le <strong>signer et nous le retourner</strong> dès que possible.`;
+
+        const html = `
+            <div style="font-family:sans-serif;color:#333;line-height:1.6;max-width:560px">
+                <h2>Bonjour ${lease.tenant.firstName},</h2>
+                <p>${intro}</p>
+                ${infoBlock}
+                <a href="${docUrl}" style="display:inline-block;padding:0.7rem 1.4rem;background:#2b8cee;color:white;text-decoration:none;border-radius:8px;font-weight:600;">
+                    📄 Télécharger le document →
+                </a>
+                ${portalLink}
+                <br /><p>Cordialement,</p>
+                <p><strong>Céline et Nicolas</strong><br /><em>Via Rentmaestro</em></p>
+            </div>`;
+
+        const recipients = [lease.tenant.email];
+        if (lease.tenant.coTenantEmail) recipients.push(lease.tenant.coTenantEmail);
+
+        try {
+            await sendEmail({ to: recipients.join(','), subject, html });
+            return NextResponse.json({ success: true });
+        } catch (e: any) {
+            return NextResponse.json({ error: e.message || 'Erreur envoi email' }, { status: 500 });
+        }
+    }
+
     return NextResponse.json({ error: 'Action inconnue' }, { status: 400 });
 }
 

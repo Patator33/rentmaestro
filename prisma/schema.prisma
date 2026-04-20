@@ -165,6 +165,7 @@ model ApartmentDocument {
   name        String
   url         String
   type        String
+  docType     String    @default("AUTRE")
   size        Int
   createdAt   DateTime  @default(now())
   apartment   Apartment @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
