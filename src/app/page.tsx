@@ -99,10 +99,10 @@ async function getStats() {
   const currentMonthStart = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
   const nextMonthStart = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 1));
 
-  // Count active leases this period
+  // Count active leases this period (exclude future-starting leases)
   const activeLeasesThisMonth = await prisma.lease.count({
     where: {
-      startDate: { lt: nextMonthStart },
+      startDate: { lte: now },
       OR: [{ endDate: null }, { endDate: { gte: currentMonthStart } }]
     }
   });

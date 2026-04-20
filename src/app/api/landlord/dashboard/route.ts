@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     const [activeLeasesThisMonth, paidPayments, openIncidents, openTasks, unreadMessages] = await Promise.all([
         prisma.lease.count({
             where: {
-                startDate: { lt: nextMonth },
+                startDate: { lte: now },
                 OR: [{ endDate: null }, { endDate: { gte: startOfMonth } }],
             }
         }),
@@ -113,7 +113,11 @@ export async function GET(request: Request) {
 
     // Upcoming rents: leases active this month with PENDING/LATE payment
     const unpaidThisMonthRaw = await prisma.rentPayment.findMany({
-        where: { period: startOfMonth, status: { in: ['PENDING', 'LATE'] } },
+        where: {
+            period: startOfMonth,
+            status: { in: ['PENDING', 'LATE'] },
+            lease: { startDate: { lte: now } },
+        },
         include: { lease: { include: { tenant: true, apartment: true } } },
         take: 10,
         orderBy: { createdAt: 'asc' },

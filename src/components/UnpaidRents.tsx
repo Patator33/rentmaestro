@@ -10,7 +10,8 @@ export default async function UnpaidRents() {
     const allUnpaid = await prisma.rentPayment.findMany({
         where: {
             period: { gte: currentMonthStart },
-            status: { in: ['PENDING', 'LATE'] }
+            status: { in: ['PENDING', 'LATE'] },
+            lease: { startDate: { lte: now } },
         },
         include: {
             lease: {
