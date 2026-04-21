@@ -56,9 +56,9 @@ export default function LeaseForm() {
         setForm(f => ({
           ...f,
           apartmentId: aptId,
-          rentAmount: apt.rent ? String(apt.rent) : f.rentAmount,
-          chargesAmount: apt.charges ? String(apt.charges) : f.chargesAmount,
-          depositAmount: apt.defaultDeposit ? String(apt.defaultDeposit) : f.depositAmount,
+          rentAmount: apt.rent != null ? String(apt.rent) : f.rentAmount,
+          chargesAmount: apt.charges != null ? String(apt.charges) : f.chargesAmount,
+          depositAmount: apt.defaultDeposit != null ? String(apt.defaultDeposit) : f.depositAmount,
         }));
         return;
       }
