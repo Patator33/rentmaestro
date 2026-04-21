@@ -20,17 +20,14 @@ export async function createLease(formData: FormData) {
         throw new Error("Données invalides. Veuillez vérifier le formulaire.");
     }
 
+    let newLeaseId: string;
     try {
         if (terminateLeaseId) {
             const endDate = new Date(startDate);
             endDate.setDate(endDate.getDate() - 1);
-
             await prisma.lease.update({
                 where: { id: terminateLeaseId },
-                data: {
-                    isActive: false,
-                    endDate: endDate
-                }
+                data: { isActive: false, endDate },
             });
         }
 
@@ -47,12 +44,14 @@ export async function createLease(formData: FormData) {
             },
         });
         await logAction({ action: 'CREATE_LEASE', entity: 'Lease', entityId: newLease.id, details: `Loyer: ${rentAmount}€` });
-        revalidatePath("/", "layout");
-        redirect(`/leases/${newLease.id}/welcome-email`);
+        newLeaseId = newLease.id;
     } catch (error) {
         console.error("Erreur lors de la création du bail:", error);
         throw new Error("Impossible de créer le contrat. Veuillez réessayer.");
     }
+
+    revalidatePath("/", "layout");
+    redirect(`/leases/${newLeaseId}/welcome-email`);
 }
 
 export async function terminateLease(id: string, endDateStr?: string | null) {
