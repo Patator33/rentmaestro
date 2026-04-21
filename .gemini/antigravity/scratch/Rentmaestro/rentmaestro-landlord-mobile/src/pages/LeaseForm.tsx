@@ -73,9 +73,13 @@ export default function LeaseForm() {
     e.preventDefault();
     setLoading(true); setError('');
     try {
-      if (isEdit) await api.updateLease(id!, form);
-      else await api.createLease(form);
-      navigate('/leases');
+      if (isEdit) {
+        await api.updateLease(id!, form);
+        navigate('/leases');
+      } else {
+        const newLease = await api.createLease(form);
+        navigate(`/leases/${newLease.id}/welcome-email`);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur');
     } finally { setLoading(false); }

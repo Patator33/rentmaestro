@@ -21,6 +21,7 @@ import ApartmentForm from './pages/ApartmentForm';
 import Leases from './pages/Leases';
 import LeaseDetail from './pages/LeaseDetail';
 import LeaseForm from './pages/LeaseForm';
+import WelcomeEmail from './pages/WelcomeEmail';
 import Companies from './pages/Companies';
 import CompanyDetail from './pages/CompanyDetail';
 import CompanyForm from './pages/CompanyForm';
@@ -113,6 +114,7 @@ export default function App() {
           <Route path="/leases/new" element={<AppShell><LeaseForm /></AppShell>} />
           <Route path="/leases/:id" element={<AppShell><LeaseDetail /></AppShell>} />
           <Route path="/leases/:id/edit" element={<AppShell><LeaseForm /></AppShell>} />
+          <Route path="/leases/:id/welcome-email" element={<AppShell><WelcomeEmail /></AppShell>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthGuard>

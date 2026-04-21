@@ -276,6 +276,19 @@ export const api = {
     return res.json();
   },
 
+  getWelcomeEmailPreview: async (leaseId: string) => {
+    const res = await apiFetch(`/api/landlord/leases/${leaseId}/welcome-email`);
+    return res.json() as Promise<{ subject: string; body: string; recipients: string[]; hasEmail: boolean }>;
+  },
+
+  sendWelcomeEmail: async (leaseId: string, subject: string, body: string) => {
+    const res = await apiFetch(`/api/landlord/leases/${leaseId}/welcome-email`, {
+      method: 'POST',
+      body: JSON.stringify({ subject, body }),
+    });
+    return res.json();
+  },
+
   deleteApartment: async (id: string) => {
     const res = await apiFetch(`/api/landlord/apartments/${id}`, { method: 'DELETE' });
     return res.json();
