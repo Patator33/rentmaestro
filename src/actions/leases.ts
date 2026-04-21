@@ -47,13 +47,12 @@ export async function createLease(formData: FormData) {
             },
         });
         await logAction({ action: 'CREATE_LEASE', entity: 'Lease', entityId: newLease.id, details: `Loyer: ${rentAmount}€` });
+        revalidatePath("/", "layout");
+        redirect(`/leases/${newLease.id}/welcome-email`);
     } catch (error) {
         console.error("Erreur lors de la création du bail:", error);
         throw new Error("Impossible de créer le contrat. Veuillez réessayer.");
     }
-
-    revalidatePath("/", "layout");
-    redirect("/leases");
 }
 
 export async function terminateLease(id: string, endDateStr?: string | null) {

@@ -15,6 +15,7 @@ const GESTION_ITEMS = [
     { href: "/leases", label: "📜 Baux" },
     { href: "/companies", label: "🏛️ Sociétés" },
     { href: "/global-ged", label: "📁 GED Globale" },
+    { href: "/gestion/parametres", label: "⚙️ Paramètres" },
 ];
 
 const NAV_ITEMS = [
