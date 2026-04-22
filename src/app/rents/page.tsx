@@ -40,11 +40,10 @@ export default async function RentsPage({
     // Find active leases for this period
     // Active if startDate <= today (or end of month for past months) AND (no endDate OR endDate >= start of month)
     const isCurrentMonth = startOfMonth.getFullYear() === now.getFullYear() && startOfMonth.getMonth() === now.getMonth();
-    const startDateUpperBound = isCurrentMonth ? now : nextMonth;
 
     const rawLeases = await prisma.lease.findMany({
         where: {
-            startDate: { lte: startDateUpperBound },
+            startDate: { lte: nextMonth },
             OR: [
                 { endDate: null },
                 { endDate: { gte: startOfMonth } }

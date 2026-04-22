@@ -24,11 +24,10 @@ export async function GET(request: Request) {
     const endOfMonth = new Date(Date.UTC(year, month + 1, 1));
 
     const isCurrentMonth = year === now.getUTCFullYear() && month === now.getUTCMonth();
-    const startDateUpperBound = isCurrentMonth ? now : endOfMonth;
 
     const leases = await prisma.lease.findMany({
         where: {
-            startDate: { lte: startDateUpperBound },
+            startDate: { lte: endOfMonth },
             OR: [{ endDate: null }, { endDate: { gte: startOfMonth } }],
         },
         include: {
@@ -45,7 +44,8 @@ export async function GET(request: Request) {
     const result = leases.map(lease => {
         const payment = lease.payments[0] ?? null;
         const paymentDay = lease.tenant.paymentDay || 5;
-        const isLate = isPastMonth || (isCurrentMonth && currentDay > paymentDay + 4);
+        const notStartedYet = isFirstMonth && leaseStart > now;
+        const isLate = !notStartedYet && (isPastMonth || (isCurrentMonth && currentDay > paymentDay + 4));
         const totalAmount = lease.rentAmount + lease.chargesAmount;
         const leaseStart = new Date(lease.startDate);
         const isFirstMonth = leaseStart >= startOfMonth && leaseStart < endOfMonth;

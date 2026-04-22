@@ -12,6 +12,7 @@ const PUBLIC_PATHS = [
     '/api/portal',
     '/api/verify',
     '/api/landlord',
+    '/uploads',
 ];
 
 function isPublic(pathname: string): boolean {
