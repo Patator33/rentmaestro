@@ -215,9 +215,9 @@ export default async function RentsPage({
                             buttonStyle={styles.actionButton}
                         />
 
-                        {isPaid && (
+                        {isPaid && payment?.id && (
                             <a
-                                href={`/api/quittance?leaseId=${lease.id}&period=${currentMonthStr}`}
+                                href={`/api/quittance/${payment.id}/pdf`}
                                 download
                                 className={`${styles.actionButton}`}
                                 style={{ textDecoration: 'none', background: 'rgba(34,197,94,0.15)', color: '#22c55e' }}

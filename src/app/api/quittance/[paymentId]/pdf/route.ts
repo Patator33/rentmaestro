@@ -60,8 +60,10 @@ export async function GET(
         await browser.close();
 
         // 4. Send the PDF as a downloadable attachment
-        const monthName = format(new Date(payment.period), 'MMMM_yyyy', { locale: fr });
-        const filename = `Quittance_Loyer_${monthName}.pdf`;
+        const year = format(new Date(payment.period), 'yyyy');
+        const month = format(new Date(payment.period), 'MM');
+        const lastName = payment.lease.tenant.lastName.replace(/\s+/g, '_');
+        const filename = `Quittance_loyer_${lastName}_${year}_${month}.pdf`;
 
         // Using Array.from to convert Uint8Array properly for NextResponse body if needed, 
         // or just wrapping it in a Buffer
