@@ -44,11 +44,11 @@ export async function GET(request: Request) {
     const result = leases.map(lease => {
         const payment = lease.payments[0] ?? null;
         const paymentDay = lease.tenant.paymentDay || 5;
-        const notStartedYet = isFirstMonth && leaseStart > now;
-        const isLate = !notStartedYet && (isPastMonth || (isCurrentMonth && currentDay > paymentDay + 4));
         const totalAmount = lease.rentAmount + lease.chargesAmount;
         const leaseStart = new Date(lease.startDate);
         const isFirstMonth = leaseStart >= startOfMonth && leaseStart < endOfMonth;
+        const notStartedYet = isFirstMonth && leaseStart > now;
+        const isLate = !notStartedYet && (isPastMonth || (isCurrentMonth && currentDay > paymentDay + 4));
         const prorata = isFirstMonth ? calculateFutureProrata(totalAmount, leaseStart) : null;
         const fallbackAmount = prorata ? Math.round(prorata.amount * 100) / 100 : totalAmount;
         return {
