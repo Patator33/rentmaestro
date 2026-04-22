@@ -16,6 +16,7 @@ const GESTION_ITEMS = [
     { href: "/companies", label: "🏛️ Sociétés" },
     { href: "/global-ged", label: "📁 GED Globale" },
     { href: "/gestion/parametres", label: "⚙️ Paramètres" },
+    { href: "/settings/security", label: "🔐 Sécurité" },
 ];
 
 const NAV_ITEMS = [
@@ -25,7 +26,6 @@ const NAV_ITEMS = [
     { href: "/travaux", label: "🔧 Travaux" },
     { href: "/stats", label: "📈 Stats" },
     { href: "/reconciliation", label: "🔄 Banque" },
-    { href: "/settings/security", label: "🔐 Sécurité" },
 ];
 
 export default function NavBar() {

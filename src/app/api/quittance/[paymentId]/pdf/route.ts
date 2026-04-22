@@ -30,7 +30,7 @@ export async function GET(
         // 1. Generate the HTML string using our shared utility
         const baseUrl = process.env.APP_BASE_URL || new URL(request.url).origin;
         const verifyUrl = `${baseUrl}/api/verify/${paymentId}`;
-        const htmlContent = generateQuittanceHtml(payment.lease, payment.period, verifyUrl);
+        const htmlContent = generateQuittanceHtml(payment.lease, payment.period, verifyUrl, payment.amount);
 
         // 2. Launch Puppeteer
         // In local development, this defaults to the bundled Chromium.

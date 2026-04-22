@@ -93,7 +93,10 @@ export async function GET(
         });
         await browser.close();
 
-        const filename = `Quittance_Loyer_${format(new Date(payment.period), 'MMMM_yyyy', { locale: fr })}.pdf`;
+        const year = format(new Date(payment.period), 'yyyy');
+        const month = format(new Date(payment.period), 'MM');
+        const lastName = payment.lease.tenant.lastName.replace(/\s+/g, '_');
+        const filename = `Quittance_loyer_${lastName}_${year}_${month}.pdf`;
         return new NextResponse(Buffer.from(pdfBuffer), {
             headers: {
                 'Content-Type': 'application/pdf',
