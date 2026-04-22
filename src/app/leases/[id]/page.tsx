@@ -87,7 +87,15 @@ export default async function LeaseDetailPage({ params }: { params: Promise<{ id
                 {lease.apartment.name || lease.apartment.address}
             </h1>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
-                {lease.tenant.firstName} {lease.tenant.lastName} · Du {formatDate(lease.startDate)}{lease.endDate ? ` au ${formatDate(lease.endDate)}` : ' (en cours)'}
+                <Link href={`/tenants/${lease.tenant.id}`} style={{ color: 'var(--primary-color)', fontWeight: 600 }}>
+                    {lease.tenant.firstName} {lease.tenant.lastName}
+                </Link>
+                {lease.tenant.coTenantFirstName && (
+                    <> · <Link href={`/tenants/${lease.tenant.id}`} style={{ color: 'var(--primary-color)', fontWeight: 600 }}>
+                        {lease.tenant.coTenantFirstName} {lease.tenant.coTenantLastName}
+                    </Link></>
+                )}
+                {' · '}Du {formatDate(lease.startDate)}{lease.endDate ? ` au ${formatDate(lease.endDate)}` : ' (en cours)'}
             </p>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem', background: 'var(--surface)', padding: '1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>

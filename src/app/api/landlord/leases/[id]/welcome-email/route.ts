@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { sendEmail } from '@/lib/email';
 import { verifyMobileToken, unauthorized } from '@/lib/mobile-auth';
+import { calculateFutureProrata } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +17,7 @@ Voici un récapitulatif de votre contrat :
 - Loyer charges comprises : {{loyer_cc}} €
 - Dépôt de garantie : {{caution}} €
 - Date d'entrée : {{date_debut}}
+- Premier mois (prorata) : {{prorata_premier_mois}} €
 
 N'hésitez pas à nous contacter pour toute question.
 
@@ -52,6 +54,11 @@ async function buildPreview(id: string) {
         loyer_cc: (lease.rentAmount + lease.chargesAmount).toFixed(2),
         caution: lease.depositAmount ? lease.depositAmount.toFixed(2) : '—',
         date_debut: new Date(lease.startDate).toLocaleDateString('fr-FR'),
+        prorata_premier_mois: (() => {
+            const total = lease.rentAmount + lease.chargesAmount;
+            const prorata = calculateFutureProrata(total, new Date(lease.startDate));
+            return prorata ? Math.round(prorata.amount * 100) / 100 + '' : total.toFixed(2);
+        })(),
     };
 
     const recipients = [lease.tenant.email!];

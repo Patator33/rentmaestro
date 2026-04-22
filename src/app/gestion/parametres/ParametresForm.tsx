@@ -13,6 +13,7 @@ const VARIABLES = [
     { name: '{{loyer_cc}}', desc: 'Loyer charges comprises' },
     { name: '{{caution}}', desc: 'Dépôt de garantie' },
     { name: '{{date_debut}}', desc: 'Date de début du bail' },
+    { name: '{{prorata_premier_mois}}', desc: 'Montant du premier mois (prorata si entrée en cours de mois)' },
 ];
 
 type SaveState = 'idle' | 'dirty' | 'saving' | 'saved';
