@@ -51,13 +51,24 @@ export async function GET(request: Request) {
         const isLate = !notStartedYet && (isPastMonth || (isCurrentMonth && currentDay > paymentDay + 4));
         const prorata = isFirstMonth ? calculateFutureProrata(totalAmount, leaseStart) : null;
         const fallbackAmount = prorata ? Math.round(prorata.amount * 100) / 100 : totalAmount;
+
+        // Auto-fix: PARTIAL where paidAmount covers the expected amount → mark as PAID in DB
+        let effectiveStatus = payment?.status ?? null;
+        if (payment?.status === 'PARTIAL') {
+            const paid = (payment as any).paidAmount ?? 0;
+            if (paid >= fallbackAmount - 0.01) {
+                effectiveStatus = 'PAID';
+                prisma.rentPayment.update({ where: { id: payment.id }, data: { status: 'PAID', paidAmount: null } }).catch(() => {});
+            }
+        }
+
         return {
             leaseId: lease.id,
             paymentId: payment?.id ?? null,
             period: startOfMonth.toISOString(),
             amount: fallbackAmount,
-            paidAmount: (payment as any)?.paidAmount ?? null,
-            status: payment?.status ?? null,
+            paidAmount: effectiveStatus === 'PAID' ? null : ((payment as any)?.paidAmount ?? null),
+            status: effectiveStatus,
             paidAt: payment?.paidAt ?? null,
             isLate,
             tenant: { id: lease.tenant.id, firstName: lease.tenant.firstName, lastName: lease.tenant.lastName },

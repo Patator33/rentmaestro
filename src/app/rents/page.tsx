@@ -117,13 +117,14 @@ export default async function RentsPage({
 
     const renderRow = (lease: typeof leases[0]) => {
         const payment = lease.payments[0];
-        const isPaid = payment?.status === 'PAID';
         const totalAmount = lease.rentAmount + lease.chargesAmount;
         const leaseStart = new Date(lease.startDate);
         const isFirstMonth = leaseStart >= startOfMonth && leaseStart < nextMonth;
         const prorata = isFirstMonth ? calculateFutureProrata(totalAmount, leaseStart) : null;
         const fallbackAmount = prorata ? Math.round(prorata.amount * 100) / 100 : totalAmount;
-        const displayAmount = payment ? payment.amount : fallbackAmount;
+        const isEffectivelyPaid = payment?.status === 'PARTIAL' && payment?.paidAmount != null && (payment.paidAmount as number) >= fallbackAmount - 0.01;
+        const isPaid = payment?.status === 'PAID' || isEffectivelyPaid;
+        const displayAmount = fallbackAmount;
 
         return (
             <tr key={lease.id}>
@@ -146,7 +147,7 @@ export default async function RentsPage({
                             <span style={{ display: 'inline-block', background: 'rgba(245,158,11,0.15)', color: '#f59e0b', fontWeight: 700, fontSize: '0.8rem', padding: '0.15rem 0.4rem', borderRadius: '4px' }}>💰 Partiel</span>
                             {payment.paidAmount != null && (
                                 <span style={{ display: 'block', fontSize: '0.8em', color: '#f59e0b', marginTop: '0.15rem' }}>
-                                    Reçu : {payment.paidAmount.toFixed(2)} € — Solde : {(payment.amount - payment.paidAmount).toFixed(2)} €
+                                    Reçu : {(payment.paidAmount as number).toFixed(2)} € — Solde : {Math.max(0, fallbackAmount - (payment.paidAmount as number)).toFixed(2)} €
                                 </span>
                             )}
                         </span>
@@ -184,7 +185,7 @@ export default async function RentsPage({
                             <MarkRentPaidButton
                                 leaseId={lease.id}
                                 periodStr={currentMonthStr}
-                                defaultAmount={payment?.amount ?? fallbackAmount}
+                                defaultAmount={fallbackAmount}
                                 existingPaidAmount={payment?.status === 'PARTIAL' && payment?.paidAmount != null ? (payment.paidAmount as number) : undefined}
                                 buttonStyle={`${styles.actionButton} ${styles.paidButton}`}
                             />
