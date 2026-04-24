@@ -114,6 +114,25 @@ export default function ApartmentForm() {
           <button type="submit" disabled={loading} className="w-full bg-primary text-white font-semibold py-3 rounded-xl disabled:opacity-50">
             {loading ? 'Enregistrement...' : 'Enregistrer'}
           </button>
+
+          {isEdit && (
+            <button
+              type="button"
+              onClick={async () => {
+                if (!confirm('Supprimer cet appartement ? Cette action est irréversible.')) return;
+                try {
+                  await api.deleteApartment(id!);
+                  navigate('/apartments');
+                } catch (e: any) {
+                  alert(e.message || 'Erreur lors de la suppression');
+                }
+              }}
+              className="w-full py-3 rounded-xl font-semibold text-sm border"
+              style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', borderColor: 'rgba(239,68,68,0.3)' }}
+            >
+              🗑 Supprimer cet appartement
+            </button>
+          )}
         </form>
       </div>
     </div>

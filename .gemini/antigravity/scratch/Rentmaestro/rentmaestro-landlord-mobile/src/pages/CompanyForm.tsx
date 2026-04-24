@@ -113,6 +113,25 @@ export default function CompanyForm() {
           >
             {saving ? 'Enregistrement...' : isEdit ? 'Enregistrer' : 'Créer la société'}
           </button>
+
+          {isEdit && (
+            <button
+              type="button"
+              onClick={async () => {
+                if (!confirm('Supprimer cette société ? Cette action est irréversible.')) return;
+                try {
+                  await api.deleteCompany(id!);
+                  navigate('/companies');
+                } catch (e: any) {
+                  alert(e.message || 'Erreur lors de la suppression');
+                }
+              }}
+              className="w-full py-3 rounded-xl font-semibold text-sm border"
+              style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', borderColor: 'rgba(239,68,68,0.3)' }}
+            >
+              🗑 Supprimer cette société
+            </button>
+          )}
         </div>
       </div>
     </div>

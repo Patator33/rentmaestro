@@ -220,6 +220,11 @@ export const api = {
     return res.json();
   },
 
+  deleteLease: async (id: string) => {
+    const res = await apiFetch(`/api/landlord/leases/${id}`, { method: 'DELETE' });
+    return res.json();
+  },
+
   generatePortalToken: async (tenantId: string) => {
     const res = await apiFetch(`/api/landlord/tenants/${tenantId}/portal`, {
       method: 'POST',

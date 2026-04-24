@@ -63,6 +63,25 @@ export default function TenantForm() {
           <button type="submit" disabled={loading} className="w-full bg-primary text-white font-semibold py-3 rounded-xl disabled:opacity-50">
             {loading ? 'Enregistrement...' : 'Enregistrer'}
           </button>
+
+          {isEdit && (
+            <button
+              type="button"
+              onClick={async () => {
+                if (!confirm('Supprimer ce locataire ? Cette action est irréversible.')) return;
+                try {
+                  await api.deleteTenant(id!);
+                  navigate('/tenants');
+                } catch (e: any) {
+                  alert(e.message || 'Erreur lors de la suppression');
+                }
+              }}
+              className="w-full py-3 rounded-xl font-semibold text-sm border"
+              style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', borderColor: 'rgba(239,68,68,0.3)' }}
+            >
+              🗑 Supprimer ce locataire
+            </button>
+          )}
         </form>
       </div>
     </div>
