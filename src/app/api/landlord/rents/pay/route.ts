@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyMobileToken, unauthorized } from '@/lib/mobile-auth';
 import { notifyN8n } from '@/lib/n8n';
+import { calculateFutureProrata } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,7 +24,14 @@ export async function POST(request: Request) {
     } else {
         const lease = await prisma.lease.findUnique({ where: { id: leaseId } });
         if (!lease) return NextResponse.json({ error: 'Bail introuvable.' }, { status: 404 });
-        expectedAmount = lease.rentAmount + lease.chargesAmount;
+        const totalAmount = lease.rentAmount + lease.chargesAmount;
+        const leaseStart = new Date(lease.startDate);
+        const period = new Date(periodStr);
+        const periodStart = new Date(Date.UTC(period.getFullYear(), period.getMonth(), 1));
+        const periodEnd = new Date(Date.UTC(period.getFullYear(), period.getMonth() + 1, 1));
+        const isFirstMonth = leaseStart >= periodStart && leaseStart < periodEnd;
+        const prorata = isFirstMonth ? calculateFutureProrata(totalAmount, leaseStart) : null;
+        expectedAmount = prorata ? Math.round(prorata.amount * 100) / 100 : totalAmount;
     }
 
     // Accumulate with any prior partial payment

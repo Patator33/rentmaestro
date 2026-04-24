@@ -55,7 +55,7 @@ export async function GET(request: Request) {
             leaseId: lease.id,
             paymentId: payment?.id ?? null,
             period: startOfMonth.toISOString(),
-            amount: payment?.amount ?? fallbackAmount,
+            amount: fallbackAmount,
             paidAmount: (payment as any)?.paidAmount ?? null,
             status: payment?.status ?? null,
             paidAt: payment?.paidAt ?? null,
