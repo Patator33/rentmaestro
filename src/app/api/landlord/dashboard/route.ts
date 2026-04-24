@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyMobileToken, unauthorized } from '@/lib/mobile-auth';
+import { calculateFutureProrata } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,12 +12,13 @@ export async function GET(request: Request) {
     const startOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
     const nextMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
 
-    const [activeLeasesThisMonth, paidPayments, openIncidents, openTasks, unreadMessages] = await Promise.all([
-        prisma.lease.count({
+    const [leasesThisMonth, paidPayments, openIncidents, openTasks, unreadMessages] = await Promise.all([
+        prisma.lease.findMany({
             where: {
                 startDate: { lte: now },
                 OR: [{ endDate: null }, { endDate: { gte: startOfMonth } }],
-            }
+            },
+            include: { payments: { where: { period: startOfMonth } } },
         }),
         prisma.rentPayment.aggregate({
             where: { period: startOfMonth, status: 'PAID' },
@@ -33,11 +35,25 @@ export async function GET(request: Request) {
         }),
     ]);
 
-    // pendingRents = active leases this month minus paid ones
-    const paidThisMonth = await prisma.rentPayment.count({
-        where: { period: startOfMonth, status: 'PAID' }
-    });
-    const pendingRents = activeLeasesThisMonth - paidThisMonth;
+    const activeLeasesThisMonth = leasesThisMonth.length;
+
+    // A lease is considered paid if status=PAID or if paidAmount >= expected prorata (old bug fix)
+    const fullyPaidCount = leasesThisMonth.filter(lease => {
+        const payment = lease.payments[0];
+        if (!payment) return false;
+        if (payment.status === 'PAID') return true;
+        if (payment.status === 'PARTIAL') {
+            const total = lease.rentAmount + lease.chargesAmount;
+            const leaseStart = new Date(lease.startDate);
+            const isFirstMonth = leaseStart >= startOfMonth && leaseStart < nextMonth;
+            const prorata = isFirstMonth ? calculateFutureProrata(total, leaseStart) : null;
+            const expected = prorata ? Math.round(prorata.amount * 100) / 100 : total;
+            return ((payment as any).paidAmount ?? 0) >= expected - 0.01;
+        }
+        return false;
+    }).length;
+
+    const pendingRents = activeLeasesThisMonth - fullyPaidCount;
 
     // Active leases count (by date, excludes future leases)
     const todayMidnight = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
@@ -57,15 +73,28 @@ export async function GET(request: Request) {
         where: { period: startOfMonth, status: 'PARTIAL' },
         include: { lease: { include: { tenant: true, apartment: true } } },
     });
-    const partialPayments = partialPaymentsRaw.map(p => ({
-        paymentId: p.id,
-        amount: p.amount,
-        paidAmount: (p as any).paidAmount,
-        remaining: p.amount - ((p as any).paidAmount ?? 0),
-        tenant: { id: p.lease.tenant.id, firstName: p.lease.tenant.firstName, lastName: p.lease.tenant.lastName },
-        apartment: { address: p.lease.apartment.address, name: p.lease.apartment.name },
-        leaseId: p.leaseId,
-    }));
+    const partialPayments = partialPaymentsRaw
+        .map(p => {
+            const total = p.lease.rentAmount + p.lease.chargesAmount;
+            const leaseStart = new Date(p.lease.startDate);
+            const isFirstMonth = leaseStart >= startOfMonth && leaseStart < nextMonth;
+            const prorata = isFirstMonth ? calculateFutureProrata(total, leaseStart) : null;
+            const expectedAmount = prorata ? Math.round(prorata.amount * 100) / 100 : total;
+            const paidAmount = (p as any).paidAmount ?? 0;
+            const remaining = expectedAmount - paidAmount;
+            // Skip if paidAmount already covers the expected amount (was incorrectly stored as PARTIAL)
+            if (remaining < 0.01) return null;
+            return {
+                paymentId: p.id,
+                amount: expectedAmount,
+                paidAmount,
+                remaining,
+                tenant: { id: p.lease.tenant.id, firstName: p.lease.tenant.firstName, lastName: p.lease.tenant.lastName },
+                apartment: { address: p.lease.apartment.address, name: p.lease.apartment.name },
+                leaseId: p.leaseId,
+            };
+        })
+        .filter(Boolean);
 
     // Incomplete GED (missing BAIL or EDL)
     const leasesWithDocs = await prisma.lease.findMany({
