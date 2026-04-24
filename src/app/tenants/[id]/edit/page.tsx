@@ -1,8 +1,9 @@
 import Link from "next/link";
 import styles from "../../new/page.module.css"; // Reuse styling
-import { updateTenant } from "@/actions/tenants";
+import { updateTenant, deleteTenant } from "@/actions/tenants";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
+import DeleteButton from "@/components/DeleteButton";
 
 export default async function EditTenantPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -107,6 +108,13 @@ export default async function EditTenantPage({ params }: { params: Promise<{ id:
 
                 <button type="submit" className={styles.submitButton}>Enregistrer les modifications</button>
             </form>
+            <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-color)' }}>
+                <DeleteButton
+                    deleteAction={deleteTenant.bind(null, tenant.id)}
+                    confirmMessage={`Supprimer le locataire ${tenant.firstName} ${tenant.lastName} ? Cette action est irréversible.`}
+                    redirectTo="/tenants"
+                />
+            </div>
         </div>
     );
 }

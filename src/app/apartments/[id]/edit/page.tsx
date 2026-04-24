@@ -1,9 +1,10 @@
 import Link from "next/link";
 import styles from "../../new/page.module.css"; // Reuse styling
-import { updateApartment } from "@/actions/apartments";
+import { updateApartment, deleteApartment } from "@/actions/apartments";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import BuildingSelectorWithCreate from "@/components/BuildingSelectorWithCreate";
+import DeleteButton from "@/components/DeleteButton";
 
 export default async function EditApartmentPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -146,6 +147,13 @@ export default async function EditApartmentPage({ params }: { params: Promise<{ 
 
                 <button type="submit" className={styles.submitButton}>Enregistrer les modifications</button>
             </form>
+            <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-color)' }}>
+                <DeleteButton
+                    deleteAction={deleteApartment.bind(null, apartment.id)}
+                    confirmMessage={`Supprimer l'appartement "${apartment.name || apartment.address}" ? Cette action est irréversible.`}
+                    redirectTo="/apartments"
+                />
+            </div>
         </div>
     );
 }

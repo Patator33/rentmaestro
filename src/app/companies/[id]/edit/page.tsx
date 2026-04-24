@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import CompanyForm from "@/components/CompanyForm";
 import Link from "next/link";
 import styles from "@/components/CompanyForm.module.css";
+import { deleteCompany } from "@/actions/companies";
+import DeleteButton from "@/components/DeleteButton";
 
 export default async function EditCompanyPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -22,6 +24,13 @@ export default async function EditCompanyPage({ params }: { params: Promise<{ id
             </Link>
             <h1 className={styles.title}>Modifier {company.name}</h1>
             <CompanyForm company={company} />
+            <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-color)' }}>
+                <DeleteButton
+                    deleteAction={deleteCompany.bind(null, company.id)}
+                    confirmMessage={`Supprimer la société "${company.name}" ? Cette action est irréversible.`}
+                    redirectTo="/companies"
+                />
+            </div>
         </div>
     );
 }

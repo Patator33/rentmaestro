@@ -234,6 +234,20 @@ export async function POST(
     return NextResponse.json({ error: 'Action inconnue' }, { status: 400 });
 }
 
+export async function DELETE(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    if (!verifyMobileToken(request)) return unauthorized();
+    const { id } = await params;
+    try {
+        await prisma.lease.delete({ where: { id } });
+        return NextResponse.json({ success: true });
+    } catch (e: any) {
+        return NextResponse.json({ error: e.message || 'Erreur suppression bail' }, { status: 500 });
+    }
+}
+
 export async function OPTIONS() {
     return new NextResponse(null, { status: 204 });
 }

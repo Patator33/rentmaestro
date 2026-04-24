@@ -1,9 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import { updateLease } from '@/actions/leases'
+import { updateLease, deleteLease } from '@/actions/leases'
 import styles from '@/app/leases/new/page.module.css'
 import DateInput from '@/components/DateInput'
+import DeleteButton from '@/components/DeleteButton'
 import type { Apartment, Tenant, Lease } from '@prisma/client'
 
 type LeaseWithRelations = Lease & { apartment: Apartment; tenant: Tenant }
@@ -114,6 +115,13 @@ export default function EditLeaseForm({ lease }: { lease: LeaseWithRelations }) 
                     Enregistrer les modifications
                 </button>
             </form>
+            <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-color)' }}>
+                <DeleteButton
+                    deleteAction={deleteLease.bind(null, lease.id)}
+                    confirmMessage={`Supprimer le bail de ${lease.tenant.firstName} ${lease.tenant.lastName} pour "${lease.apartment.name || lease.apartment.address}" ? Cette action est irréversible.`}
+                    redirectTo="/leases"
+                />
+            </div>
         </div>
     );
 }
