@@ -1,8 +1,11 @@
 import { Preferences } from '@capacitor/preferences';
+import { NativeBiometric } from 'capacitor-native-biometric';
 
 const TOKEN_KEY = 'landlord_jwt';
 const EMAIL_KEY = 'landlord_email';
 const SERVER_URL_KEY = 'landlord_server_url';
+const BIOMETRIC_ENABLED_KEY = 'landlord_biometric_enabled';
+const BIOMETRIC_SERVER = 'rentmaestro.landlord';
 
 export async function saveAuth(token: string, email: string) {
   await Preferences.set({ key: TOKEN_KEY, value: token });
@@ -31,4 +34,39 @@ export async function saveServerUrl(url: string) {
 export async function getServerUrl(): Promise<string> {
   const { value } = await Preferences.get({ key: SERVER_URL_KEY });
   return value || (import.meta.env.VITE_BACKEND_URL as string) || 'http://localhost:3000';
+}
+
+export async function isBiometricAvailable(): Promise<boolean> {
+  try {
+    const { isAvailable } = await NativeBiometric.isAvailable({ useFallback: false });
+    return isAvailable;
+  } catch {
+    return false;
+  }
+}
+
+export async function isBiometricEnabled(): Promise<boolean> {
+  const { value } = await Preferences.get({ key: BIOMETRIC_ENABLED_KEY });
+  return value === 'true';
+}
+
+export async function saveBiometricCredentials(email: string, password: string): Promise<void> {
+  await NativeBiometric.setCredentials({ username: email, password, server: BIOMETRIC_SERVER });
+  await Preferences.set({ key: BIOMETRIC_ENABLED_KEY, value: 'true' });
+}
+
+export async function getBiometricCredentials(): Promise<{ username: string; password: string }> {
+  await NativeBiometric.verifyIdentity({
+    reason: 'Accédez à RentMaestro Pro',
+    title: 'Connexion biométrique',
+    subtitle: 'Utilisez votre empreinte digitale',
+    negativeButtonText: 'Annuler',
+    maxAttempts: 3,
+  });
+  return NativeBiometric.getCredentials({ server: BIOMETRIC_SERVER });
+}
+
+export async function clearBiometricCredentials(): Promise<void> {
+  try { await NativeBiometric.deleteCredentials({ server: BIOMETRIC_SERVER }); } catch {}
+  await Preferences.remove({ key: BIOMETRIC_ENABLED_KEY });
 }

@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/landlord';
-import { saveAuth, saveServerUrl, getServerUrl } from '../lib/storage';
+import {
+  saveAuth, saveServerUrl, getServerUrl,
+  isBiometricAvailable, isBiometricEnabled,
+  saveBiometricCredentials, getBiometricCredentials,
+} from '../lib/storage';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -11,11 +15,37 @@ export default function Login() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [bioAvailable, setBioAvailable] = useState(false);
+  const [bioEnabled, setBioEnabled] = useState(false);
+  const [bioLoading, setBioLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     getServerUrl().then(setServerUrl);
+    Promise.all([isBiometricAvailable(), isBiometricEnabled()]).then(([avail, enabled]) => {
+      setBioAvailable(avail);
+      setBioEnabled(enabled);
+      if (avail && enabled) triggerBiometric();
+    });
   }, []);
+
+  const triggerBiometric = async () => {
+    setBioLoading(true);
+    setError('');
+    try {
+      const { username, password: pwd } = await getBiometricCredentials();
+      const { token, email: userEmail } = await api.login(username, pwd);
+      await saveAuth(token, userEmail);
+      navigate('/', { replace: true });
+    } catch (err: any) {
+      // USER_CANCEL or failure — just show the form silently
+      if (!err?.message?.includes('Cancel') && !err?.message?.includes('cancel')) {
+        setError('Échec de l\'authentification biométrique.');
+      }
+    } finally {
+      setBioLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,6 +56,15 @@ export default function Login() {
       if (trimmed) await saveServerUrl(trimmed);
       const { token, email: userEmail } = await api.login(email.trim(), password);
       await saveAuth(token, userEmail);
+
+      // Propose biometric setup after first successful manual login
+      if (bioAvailable && !bioEnabled) {
+        const accept = window.confirm('Activer la connexion par empreinte digitale pour les prochaines fois ?');
+        if (accept) {
+          try { await saveBiometricCredentials(email.trim(), password); } catch {}
+        }
+      }
+
       navigate('/', { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur de connexion');
@@ -43,7 +82,24 @@ export default function Login() {
           <p className="text-text-secondary mt-1 text-sm">Espace Bailleur</p>
         </div>
 
+        {bioAvailable && bioEnabled && (
+          <button
+            type="button"
+            onClick={triggerBiometric}
+            disabled={bioLoading}
+            className="w-full mb-6 py-4 rounded-xl font-semibold text-base flex items-center justify-center gap-3 disabled:opacity-50"
+            style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1', border: '1.5px solid rgba(99,102,241,0.3)' }}
+          >
+            <span className="text-2xl">{bioLoading ? '⏳' : '👆'}</span>
+            {bioLoading ? 'Vérification...' : 'Connexion par empreinte'}
+          </button>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
+          {bioEnabled && (
+            <p className="text-center text-text-muted text-xs">— ou avec mot de passe —</p>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-text-secondary mb-1">Email</label>
             <input
