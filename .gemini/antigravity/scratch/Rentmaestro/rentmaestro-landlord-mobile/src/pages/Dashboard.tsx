@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/landlord';
-import { clearAuth, clearBiometricCredentials } from '../lib/storage';
+import { clearAuth } from '../lib/storage';
 import PullToRefresh from '../components/PullToRefresh';
 import GlobalSearch from '../components/GlobalSearch';
 import { useAutoRefresh } from '../hooks/useAutoRefresh';
@@ -114,7 +114,6 @@ export default function Dashboard() {
 
   const handleLogout = async () => {
     await clearAuth();
-    await clearBiometricCredentials();
     navigate('/login', { replace: true });
   };
 
