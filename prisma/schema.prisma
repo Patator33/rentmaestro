@@ -258,12 +258,24 @@ model Inspection {
 }
 
 model User {
-  id            String   @id @default(uuid())
-  email         String   @unique
+  id            String    @id @default(uuid())
+  email         String    @unique
   passwordHash  String
   totpSecret    String?
-  totpEnabled   Boolean  @default(false)
-  createdAt     DateTime @default(now())
+  totpEnabled   Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  passkeys      Passkey[]
+}
+
+model Passkey {
+  id           String   @id @default(uuid())
+  userId       String
+  credentialId String   @unique
+  publicKey    Bytes
+  counter      BigInt   @default(0)
+  transports   String?
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model PushSubscription {

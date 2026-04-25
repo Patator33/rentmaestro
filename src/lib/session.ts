@@ -6,6 +6,7 @@ export interface SessionData {
     userId?: string;
     email?: string;
     pendingTotp?: boolean; // password ok but TOTP not yet verified
+    pendingPasskeyChallenge?: string; // WebAuthn challenge in progress
 }
 
 export const SESSION_OPTIONS: SessionOptions = {

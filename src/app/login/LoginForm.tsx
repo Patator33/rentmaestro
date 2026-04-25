@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Logo from '@/components/Logo';
+import { startAuthentication, browserSupportsWebAuthn } from '@simplewebauthn/browser';
 
 function Form() {
     const searchParams = useSearchParams();
@@ -13,6 +14,12 @@ function Form() {
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [webAuthnSupported, setWebAuthnSupported] = useState(false);
+    const [bioLoading, setBioLoading] = useState(false);
+
+    useEffect(() => {
+        setWebAuthnSupported(browserSupportsWebAuthn());
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -39,6 +46,33 @@ function Form() {
         }
     };
 
+    const handlePasskey = async () => {
+        setBioLoading(true);
+        setError('');
+        try {
+            const startRes = await fetch('/api/auth/passkey/login/start', { method: 'POST' });
+            if (!startRes.ok) throw new Error((await startRes.json()).error);
+            const options = await startRes.json();
+
+            const credential = await startAuthentication({ optionsJSON: options });
+
+            const finishRes = await fetch('/api/auth/passkey/login/finish', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(credential),
+            });
+            if (!finishRes.ok) throw new Error((await finishRes.json()).error);
+
+            window.location.href = from;
+        } catch (e: any) {
+            if (e.name !== 'NotAllowedError') {
+                setError(e.message || 'Authentification échouée.');
+            }
+        } finally {
+            setBioLoading(false);
+        }
+    };
+
     return (
         <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-color)' }}>
             <div style={{ width: '100%', maxWidth: '420px', padding: '2rem' }}>
@@ -50,6 +84,32 @@ function Form() {
 
                 <div style={{ background: 'var(--surface)', borderRadius: '12px', border: '1px solid var(--border-color)', padding: '2rem' }}>
                     <h2 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '1.5rem' }}>Connexion</h2>
+
+                    {webAuthnSupported && (
+                        <>
+                            <button
+                                type="button"
+                                onClick={handlePasskey}
+                                disabled={bioLoading}
+                                style={{
+                                    width: '100%', padding: '0.75rem', marginBottom: '1.25rem',
+                                    background: 'rgba(99,102,241,0.1)', color: '#6366f1',
+                                    border: '1.5px solid rgba(99,102,241,0.35)', borderRadius: '8px',
+                                    fontWeight: 600, fontSize: '1rem', cursor: bioLoading ? 'not-allowed' : 'pointer',
+                                    opacity: bioLoading ? 0.7 : 1, fontFamily: 'inherit',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem',
+                                }}
+                            >
+                                <span style={{ fontSize: '1.3rem' }}>{bioLoading ? '⏳' : '🪪'}</span>
+                                {bioLoading ? 'Vérification...' : 'Se connecter avec Windows Hello'}
+                            </button>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
+                                <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }} />
+                                <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>ou</span>
+                                <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }} />
+                            </div>
+                        </>
+                    )}
 
                     {error && (
                         <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', padding: '0.75rem', color: 'var(--error)', fontSize: '0.9rem', marginBottom: '1rem' }}>

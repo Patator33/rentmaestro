@@ -5,7 +5,9 @@ import TotpSetup from '@/components/TotpSetup';
 import PushNotificationToggle from '@/components/PushNotificationToggle';
 import UserManagement from '@/components/UserManagement';
 import BackupRestore from '@/components/BackupRestore';
+import PasskeySetup from '@/components/PasskeySetup';
 import Link from 'next/link';
+import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +17,8 @@ export default async function SecuritySettingsPage() {
 
     const user = await getUserById(session.userId);
     if (!user) redirect('/login');
+
+    const passkeyCount = await prisma.passkey.count({ where: { userId: user.id } });
 
     return (
         <div style={{ maxWidth: '700px', margin: '0 auto', padding: '2rem' }}>
@@ -27,6 +31,7 @@ export default async function SecuritySettingsPage() {
                 Gérez l'authentification de votre compte <strong>{user.email}</strong>
             </p>
 
+            <PasskeySetup passkeyCount={passkeyCount} />
             <TotpSetup totpEnabled={user.totpEnabled} />
             <PushNotificationToggle />
 
