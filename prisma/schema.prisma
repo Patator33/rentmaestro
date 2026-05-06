@@ -1,0 +1,310 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Building {
+  id         String      @id @default(uuid())
+  name       String
+  address    String
+  complement String?
+  zipCode    String?
+  city       String?
+  companyId  String?
+  company    Company?    @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  apartments Apartment[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+}
+
+model Apartment {
+  id              String    @id @default(uuid())
+  name            String?
+  address         String
+  complement      String?
+  city            String
+  zipCode         String
+  rent            Float
+  charges         Float
+  description     String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  comment         String?
+  mortgageAmount  Float?
+  insuranceAmount Float?
+  taxAmount       Float?
+  defaultDeposit  Float?
+  availableFrom   DateTime?
+  soldAt          DateTime?
+  companyId       String?
+  company         Company?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  buildingId      String?
+  building        Building? @relation(fields: [buildingId], references: [id], onDelete: SetNull)
+  leases          Lease[]
+  expenses        Expense[]
+  tasks           Task[]
+  documents       ApartmentDocument[]
+  contacts        Contact[]
+}
+
+model Tenant {
+  id                String           @id @default(uuid())
+  firstName         String
+  lastName          String
+  email             String           @unique
+  phone             String?
+  coTenantFirstName String?
+  coTenantLastName  String?
+  coTenantEmail     String?
+  coTenantPhone     String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  paymentDay        Int?             @default(5)
+  portalToken       String?          @unique
+  isArchived        Boolean          @default(false)
+  leases            Lease[]
+  documents         TenantDocument[]
+  notes             TenantNote[]
+  tasks             Task[]
+  messages          Message[]
+}
+
+model TenantDocument {
+  id        String   @id @default(uuid())
+  name      String
+  url       String
+  type      String
+  size      Int
+  createdAt DateTime @default(now())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+model TenantNote {
+  id        String   @id @default(uuid())
+  content   String
+  type      String   @default("NOTE") // NOTE, CALL, EMAIL, LETTER, REMINDER
+  createdAt DateTime @default(now())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+model Lease {
+  id                 String        @id @default(uuid())
+  apartmentId        String
+  tenantId           String
+  startDate          DateTime
+  endDate            DateTime?
+  rentAmount         Float
+  chargesAmount      Float
+  depositAmount      Float?
+  depositPaidAmount  Float?   // partial amount already received toward deposit
+  depositStatus      String? // PENDING, PARTIAL_RECEIVED, RECEIVED, TO_RETURN, RETURNED, DEDUCTED
+  depositReturnedAt  DateTime?
+  isActive           Boolean       @default(true)
+  lastRentReviewDate DateTime?
+  guarantorType      String?       // NONE, PRIVATE, VISALE
+  guarantorFirstName String?
+  guarantorLastName  String?
+  guarantorEmail     String?
+  guarantorPhone     String?
+  guarantorVisaleOk  Boolean       @default(false)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  apartment          Apartment     @relation(fields: [apartmentId], references: [id])
+  tenant             Tenant        @relation(fields: [tenantId], references: [id])
+  payments           RentPayment[]
+  inspections        Inspection[]
+  documents          LeaseDocument[]
+}
+
+model RentPayment {
+  id              String    @id @default(uuid())
+  leaseId         String
+  period          DateTime
+  amount          Float
+  paidAmount      Float?
+  status          String // PAID, PENDING, LATE, PARTIAL
+  paidAt          DateTime?
+  sentAt          DateTime? // Used for LATE/PENDING reminders
+  receiptSentAt   DateTime? // Used for PAID receipts
+  createdAt       DateTime  @default(now())
+  lease           Lease     @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+}
+
+model Expense {
+  id          String    @id @default(uuid())
+  apartmentId String
+  category    String // TAX, INSURANCE, MAINTENANCE, MANAGEMENT, OTHER
+  description String
+  amount      Float
+  date        DateTime
+  recurring   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  apartment   Apartment @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
+}
+
+model Task {
+  id          String     @id @default(cuid())
+  apartmentId String
+  apartment   Apartment  @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  status      String     @default("TODO") // TODO, IN_PROGRESS, DONE
+  cost        Float?
+  dueDate     DateTime?
+  scheduledAt DateTime?
+  tenantId    String?
+  tenant      Tenant?    @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model ApartmentDocument {
+  id          String    @id @default(uuid())
+  apartmentId String
+  name        String
+  url         String
+  type        String
+  docType     String    @default("AUTRE")
+  size        Int
+  createdAt   DateTime  @default(now())
+  apartment   Apartment @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
+}
+
+model LeaseDocument {
+  id        String   @id @default(uuid())
+  leaseId   String
+  name      String
+  url       String
+  type      String
+  docType   String   @default("AUTRE")
+  size      Int
+  createdAt DateTime @default(now())
+  lease     Lease    @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+}
+
+model Company {
+  id          String            @id @default(uuid())
+  name        String
+  type        String            // SCI, LMNP, NOM_PROPRE, etc.
+  siret       String?
+  address     String?
+  logoUrl     String?
+  isPersonal  Boolean           @default(false)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  apartments  Apartment[]
+  buildings   Building[]
+  documents   CompanyDocument[]
+}
+
+model CompanyDocument {
+  id        String   @id @default(uuid())
+  companyId String
+  name      String
+  url       String
+  type      String
+  docType   String   @default("AUTRE")
+  size      Int
+  createdAt DateTime @default(now())
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+}
+
+model GlobalDocument {
+  id        String   @id @default(uuid())
+  name      String
+  url       String
+  type      String
+  docType   String   @default("AUTRE")
+  size      Int
+  createdAt DateTime @default(now())
+}
+
+model Contact {
+  id          String     @id @default(uuid())
+  name        String
+  role        String     // ARTISAN, SYNDIC, INSURANCE, OTHER
+  email       String?
+  phone       String?
+  address     String?
+  comment     String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  apartmentId String?
+  apartment   Apartment? @relation(fields: [apartmentId], references: [id], onDelete: SetNull)
+}
+
+model Message {
+  id         String    @id @default(uuid())
+  tenantId   String
+  content    String
+  fromTenant Boolean   @default(false)
+  readAt     DateTime?
+  createdAt  DateTime  @default(now())
+  tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+model Inspection {
+  id        String   @id @default(uuid())
+  leaseId   String
+  type      String   // ENTRY, EXIT
+  date      DateTime
+  rooms     String   @default("[]") // kept for backward compat
+  notes     String?
+  fileUrl   String?  // uploaded inspection document
+  fileName  String?
+  createdAt DateTime @default(now())
+  lease     Lease    @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String
+  totpSecret    String?
+  totpEnabled   Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  passkeys      Passkey[]
+}
+
+model Passkey {
+  id           String   @id @default(uuid())
+  userId       String
+  credentialId String   @unique
+  publicKey    Bytes
+  counter      BigInt   @default(0)
+  transports   String?
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userEmail String?
+  action    String
+  entity    String?
+  entityId  String?
+  details   String?
+  ip        String?
+  createdAt DateTime @default(now())
+}
+
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}

@@ -1,0 +1,9 @@
+﻿node_modules/
+.next/
+.env
+*.db
+*.db-journal
+design_files/
+.claude/
+.gemini/
+prisma/seed.js

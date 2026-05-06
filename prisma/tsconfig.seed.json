@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+        "module": "CommonJS",
+        "target": "ES2019",
+        "lib": [
+            "ES2019",
+            "DOM"
+        ],
+        "moduleResolution": "node",
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "strict": false
+    },
+    "include": [
+        "seed.ts"
+    ]
+}

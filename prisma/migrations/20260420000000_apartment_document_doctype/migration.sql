@@ -1,0 +1,1 @@
+ALTER TABLE "ApartmentDocument" ADD COLUMN "docType" TEXT NOT NULL DEFAULT 'AUTRE';

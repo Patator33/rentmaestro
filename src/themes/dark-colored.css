@@ -1,0 +1,38 @@
+/* ── Thème : Foncé Coloré (design Claude) ──────────────────────────── */
+[data-theme="dark-colored"] {
+  --primary-color:   #a3e635;
+  --primary-hover:   #84cc16;
+  --accent-color:    #67e8f9;
+  --secondary-color: #a3e635;
+
+  --success: #a3e635;
+  --warning: #fbbf24;
+  --error:   #f87171;
+  --info:    #67e8f9;
+
+  --background:     #0e0f12;
+  --surface:        #16181d;
+  --surface-hover:  #1c1f26;
+  --surface-active: #262932;
+
+  --text-main:      #e8eaf0;
+  --text-secondary: #a8aebc;
+  --text-muted:     #7a8090;
+
+  --border-color: #262932;
+
+  --shadow-glow:  0 0 20px rgba(163, 230, 53, 0.15);
+  --primary-glow: 0 4px 16px rgba(163, 230, 53, 0.20);
+  --focus-ring:   0 0 0 2px rgba(163, 230, 53, 0.12);
+
+  --btn-text:        #0e0f12;
+  --avatar-gradient: linear-gradient(135deg, #a3e635, #67e8f9);
+  --avatar-text:     #0e0f12;
+
+  --pill-ok-bg:      rgba(163, 230, 53, 0.10);
+  --pill-ok-border:  rgba(163, 230, 53, 0.35);
+  --pill-ok-color:   #a3e635;
+  --pill-info-bg:     rgba(103, 232, 249, 0.10);
+  --pill-info-border: rgba(103, 232, 249, 0.35);
+  --pill-info-color:  #67e8f9;
+}
