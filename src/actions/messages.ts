@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { notifyN8n } from '@/lib/n8n';
 import { sendEmail } from '@/lib/email';
 import { headers } from 'next/headers';
+import { getSetting } from '@/actions/settings';
 
 async function getBaseUrl() {
     const h = await headers();
@@ -74,6 +75,16 @@ export async function sendPortalMessage(tenantId: string, content: string, token
         tenantName: `${tenant.firstName} ${tenant.lastName}`,
         message: content.trim(),
     }).catch(() => {});
+
+    // Home Assistant webhook
+    const haWebhook = await getSetting('ha_webhook_url').catch(() => null);
+    if (haWebhook) {
+        fetch(haWebhook, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tenant: `${tenant.firstName} ${tenant.lastName}`, message: content.trim() }),
+        }).catch(() => {});
+    }
 
     if (process.env.SMTP_USER) {
         const baseUrl = await getBaseUrl();

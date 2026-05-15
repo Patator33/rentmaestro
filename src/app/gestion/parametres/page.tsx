@@ -1,4 +1,6 @@
 import { getSetting } from '@/actions/settings';
+import { cookies } from 'next/headers';
+import { THEME_COOKIE, DEFAULT_THEME, type ThemeId } from '@/themes/index';
 import ParametresForm from './ParametresForm';
 
 export const dynamic = 'force-dynamic';
@@ -21,7 +23,12 @@ Cordialement,
 Céline et Nicolas`;
 
 export default async function ParametresPage() {
-    const subject = await getSetting('welcome_email_subject') ?? DEFAULT_SUBJECT;
-    const body = await getSetting('welcome_email_body') ?? DEFAULT_BODY;
-    return <ParametresForm defaultSubject={subject} defaultBody={body} />;
+    const [subject, body, haWebhook, store] = await Promise.all([
+        getSetting('welcome_email_subject').then(v => v ?? DEFAULT_SUBJECT),
+        getSetting('welcome_email_body').then(v => v ?? DEFAULT_BODY),
+        getSetting('ha_webhook_url').then(v => v ?? ''),
+        cookies(),
+    ]);
+    const currentTheme = (store.get(THEME_COOKIE)?.value ?? DEFAULT_THEME) as ThemeId;
+    return <ParametresForm defaultSubject={subject} defaultBody={body} defaultHaWebhook={haWebhook} currentTheme={currentTheme} />;
 }
