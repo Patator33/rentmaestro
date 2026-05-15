@@ -6,6 +6,7 @@ import { ToastProvider } from "@/components/Toast";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import RefreshOnFocus from "@/components/RefreshOnFocus";
 import { THEME_COOKIE, DEFAULT_THEME } from "@/themes/index";
+import { prisma } from "@/lib/prisma";
 import "./globals.css";
 
 const inter = Inter({
@@ -43,7 +44,11 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const theme = (await cookies()).get(THEME_COOKIE)?.value ?? DEFAULT_THEME;
+  const [dbTheme, cookieStore] = await Promise.all([
+    prisma.setting.findUnique({ where: { key: 'theme' } }),
+    cookies(),
+  ]);
+  const theme = dbTheme?.value ?? cookieStore.get(THEME_COOKIE)?.value ?? DEFAULT_THEME;
   return (
     <html lang="fr" data-theme={theme}>
       <body className={`${inter.variable} ${jetbrainsMono.variable}`}>

@@ -23,12 +23,13 @@ Cordialement,
 Céline et Nicolas`;
 
 export default async function ParametresPage() {
-    const [subject, body, haWebhook, store] = await Promise.all([
+    const [subject, body, haWebhook, dbTheme, store] = await Promise.all([
         getSetting('welcome_email_subject').then(v => v ?? DEFAULT_SUBJECT),
         getSetting('welcome_email_body').then(v => v ?? DEFAULT_BODY),
         getSetting('ha_webhook_url').then(v => v ?? ''),
+        getSetting('theme'),
         cookies(),
     ]);
-    const currentTheme = (store.get(THEME_COOKIE)?.value ?? DEFAULT_THEME) as ThemeId;
+    const currentTheme = (dbTheme ?? store.get(THEME_COOKIE)?.value ?? DEFAULT_THEME) as ThemeId;
     return <ParametresForm defaultSubject={subject} defaultBody={body} defaultHaWebhook={haWebhook} currentTheme={currentTheme} />;
 }
