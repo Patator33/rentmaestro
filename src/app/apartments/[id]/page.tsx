@@ -70,6 +70,23 @@ export default async function ApartmentDetailsPage({ params }: { params: Promise
             </header>
 
             <section className={styles.detailsGrid}>
+                {(apartment as any).surface && (
+                    <div className={styles.detailItem}>
+                        <span className={styles.label}>Surface</span>
+                        <span className={styles.value}>{(apartment as any).surface} m²</span>
+                    </div>
+                )}
+                {(apartment as any).dpe && (
+                    <div className={styles.detailItem}>
+                        <span className={styles.label}>DPE</span>
+                        <span className={styles.value} style={{
+                            fontWeight: 700,
+                            color: ({ A:'#22c55e', B:'#84cc16', C:'#a3e635', D:'#facc15', E:'#fb923c', F:'#f87171', G:'#ef4444' } as Record<string,string>)[(apartment as any).dpe] ?? 'inherit'
+                        }}>
+                            {(apartment as any).dpe}
+                        </span>
+                    </div>
+                )}
                 <div className={styles.detailItem}>
                     <span className={styles.label}>Loyer</span>
                     <span className={styles.value}>{apartment.rent.toFixed(2)} €</span>

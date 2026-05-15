@@ -30,6 +30,8 @@ export const apartmentSchema = z.object({
     insuranceAmount: z.number().min(0, "L'assurance doit être positive").optional().nullable(),
     taxAmount: z.number().min(0, "Les impôts doivent être positifs").optional().nullable(),
     companyId: z.string().optional().nullable(),
+    surface: z.number().min(0).optional().nullable(),
+    dpe: z.string().optional().nullable(),
 });
 
 export const taskSchema = z.object({

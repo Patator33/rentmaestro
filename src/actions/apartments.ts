@@ -23,6 +23,8 @@ export async function createApartment(formData: FormData) {
         companyId: formData.get("companyId") as string || null,
         buildingId: formData.get("buildingId") as string || null,
         availableFrom: formData.get("availableFrom") ? new Date(formData.get("availableFrom") as string) : null,
+        surface: formData.get("surface") ? parseFloat(formData.get("surface") as string) : null,
+        dpe: formData.get("dpe") as string || null,
     };
 
     try {
@@ -76,6 +78,8 @@ export async function updateApartment(id: string, formData: FormData) {
         buildingId: formData.get("buildingId") as string || null,
         availableFrom: formData.get("availableFrom") ? new Date(formData.get("availableFrom") as string) : null,
         soldAt: formData.get("soldAt") ? new Date(formData.get("soldAt") as string) : null,
+        surface: formData.get("surface") ? parseFloat(formData.get("surface") as string) : null,
+        dpe: formData.get("dpe") as string || null,
     };
 
     try {

@@ -112,6 +112,22 @@ export default async function EditApartmentPage({ params }: { params: Promise<{ 
                     </div>
                 </div>
 
+                <div className={styles.row}>
+                    <div className={styles.formGroup}>
+                        <label htmlFor="surface" className={styles.label}>Surface (m²)</label>
+                        <input type="number" step="0.1" id="surface" name="surface" defaultValue={(apartment as any).surface || ''} className={styles.input} placeholder="45.5" />
+                    </div>
+                    <div className={styles.formGroup}>
+                        <label htmlFor="dpe" className={styles.label}>DPE</label>
+                        <select id="dpe" name="dpe" defaultValue={(apartment as any).dpe || ''} className={styles.input}>
+                            <option value="">Non renseigné</option>
+                            {['A','B','C','D','E','F','G'].map(c => (
+                                <option key={c} value={c}>{c}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+
                 <div className={styles.formGroup}>
                     <label htmlFor="description" className={styles.label}>Description</label>
                     <textarea id="description" name="description" defaultValue={apartment.description || ''} className={styles.textarea} placeholder="T2 lumineux..." />
