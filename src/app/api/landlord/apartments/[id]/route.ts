@@ -38,7 +38,7 @@ export async function PUT(
     if (!verifyMobileToken(request)) return unauthorized();
     const { id } = await params;
     const body = await request.json();
-    const { name, address, complement, city, zipCode, rent, charges, mortgageAmount, insuranceAmount, taxAmount, defaultDeposit, description, buildingId, companyId } = body;
+    const { name, address, complement, city, zipCode, rent, charges, mortgageAmount, insuranceAmount, taxAmount, defaultDeposit, description, buildingId, companyId, surface, dpe } = body;
 
     if (!address || !city || !zipCode) {
         return NextResponse.json({ error: 'Adresse, ville et code postal requis.' }, { status: 400 });
@@ -61,6 +61,8 @@ export async function PUT(
             description: description || null,
             buildingId: buildingId || null,
             companyId: companyId || null,
+            surface: surface ? parseFloat(surface) : null,
+            dpe: dpe || null,
         },
     });
 

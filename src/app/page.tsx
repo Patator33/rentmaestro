@@ -127,7 +127,18 @@ async function getRecentAlerts() {
     take: 5,
   });
 
-  return { rentReviews, partialPayments, openIncidents, unreadMessages, lateLeases };
+  const incompleteGed = activeLeases
+    .filter((lease: any) => {
+      const types = lease.documents.map((d: any) => d.docType);
+      return !types.includes('BAIL') || !types.includes('EDL');
+    })
+    .map((lease: any) => {
+      const types = lease.documents.map((d: any) => d.docType);
+      const missing = [!types.includes('BAIL') && 'bail', !types.includes('EDL') && 'état des lieux'].filter(Boolean);
+      return { leaseId: lease.id, tenantName: `${lease.tenant.firstName} ${lease.tenant.lastName}`, apartmentName: lease.apartment.name || lease.apartment.address, missing };
+    });
+
+  return { rentReviews, partialPayments, openIncidents, unreadMessages, lateLeases, incompleteGed };
 }
 
 async function getUpcomingEvents() {
@@ -242,6 +253,26 @@ export default async function Home() {
                 </Link>
                 <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontStyle: 'italic', flex: 1, padding: '0 12px', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   "{msg.content.length > 60 ? msg.content.slice(0, 60) + '…' : msg.content}"
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {alerts.incompleteGed.length > 0 && (
+        <div className={`${styles.alertBanner} ${styles.warn}`}>
+          <div style={{ width: '100%' }}>
+            <div className={styles.alertTitle}>GED incomplète — {alerts.incompleteGed.length} bail(s)</div>
+            {alerts.incompleteGed.map((item: any) => (
+              <div key={item.leaseId} className={styles.alertItem}>
+                <span>
+                  <strong>{item.tenantName}</strong>
+                  {' · '}
+                  <Link href={`/leases/${item.leaseId}`} style={{ color: 'var(--warning)' }}>{item.apartmentName}</Link>
+                </span>
+                <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                  {item.missing.join(', ').toUpperCase()} manquant
                 </span>
               </div>
             ))}
