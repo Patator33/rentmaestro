@@ -102,19 +102,19 @@ export default function ApartmentDetail() {
                     <span className="text-primary text-xs font-medium">{apt.building.name}</span>
                   </button>
                 )}
-                {(apt.surface != null || apt.dpe) && (
-                  <div className="flex items-center gap-3 mt-2 pt-2 border-t border-border">
-                    {apt.surface != null && (
-                      <span className="text-text-secondary text-xs">{apt.surface} m²</span>
-                    )}
-                    {apt.dpe && (
-                      <span className="text-xs font-bold px-2 py-0.5 rounded"
-                        style={{ color: '#fff', background: ({ A:'#22c55e', B:'#84cc16', C:'#a3e635', D:'#facc15', E:'#fb923c', F:'#f87171', G:'#ef4444' } as Record<string,string>)[apt.dpe] ?? '#6b7280' }}>
-                        DPE {apt.dpe}
-                      </span>
-                    )}
-                  </div>
-                )}
+                <div className="flex items-center gap-3 mt-2 pt-2 border-t border-border">
+                  <span className="text-text-secondary text-xs">
+                    {apt.surface != null ? `${apt.surface} m²` : '— m²'}
+                  </span>
+                  {apt.dpe ? (
+                    <span className="text-xs font-bold px-2 py-0.5 rounded"
+                      style={{ color: '#fff', background: ({ A:'#22c55e', B:'#84cc16', C:'#a3e635', D:'#facc15', E:'#fb923c', F:'#f87171', G:'#ef4444' } as Record<string,string>)[apt.dpe] ?? '#6b7280' }}>
+                      DPE {apt.dpe}
+                    </span>
+                  ) : (
+                    <span className="text-text-muted text-xs">DPE —</span>
+                  )}
+                </div>
               </div>
 
               <div className="bg-surface rounded-xl border border-border p-3 mb-3">
