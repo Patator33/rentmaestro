@@ -32,9 +32,10 @@ export default function ParametresForm({
     const [body, setBody] = useState(defaultBody);
     const [haWebhook, setHaWebhook] = useState(defaultHaWebhook);
     const [saveState, setSaveState] = useState<SaveState>('idle');
+    const [haSaveState, setHaSaveState] = useState<SaveState>('idle');
     const [themePending, startThemeTransition] = useTransition();
 
-    const isDirty = subject !== defaultSubject || body !== defaultBody || haWebhook !== defaultHaWebhook;
+    const isDirty = subject !== defaultSubject || body !== defaultBody;
 
     const handleChange = (setter: (v: string) => void) => (v: string) => {
         setter(v);
@@ -46,9 +47,14 @@ export default function ParametresForm({
         await Promise.all([
             saveSetting('welcome_email_subject', subject),
             saveSetting('welcome_email_body', body),
-            saveSetting('ha_webhook_url', haWebhook),
         ]);
         setSaveState('saved');
+    };
+
+    const handleSaveHa = async () => {
+        setHaSaveState('saving');
+        await saveSetting('ha_webhook_url', haWebhook);
+        setHaSaveState('saved');
     };
 
     const applyTheme = (id: ThemeId) => {
@@ -120,13 +126,27 @@ export default function ParametresForm({
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1rem' }}>
                     URL du webhook appelé lorsqu'un locataire envoie un message.
                 </p>
-                <input
-                    type="url"
-                    value={haWebhook}
-                    onChange={e => handleChange(setHaWebhook)(e.target.value)}
-                    placeholder="https://votre-ha.example.com/api/webhook/rentmaestro-message"
-                    style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--bg)', color: 'var(--text-main)', fontSize: '0.9rem', boxSizing: 'border-box' }}
-                />
+                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                    <input
+                        type="url"
+                        value={haWebhook}
+                        onChange={e => { setHaWebhook(e.target.value); setHaSaveState('dirty'); }}
+                        placeholder="https://votre-ha.example.com/api/webhook/rentmaestro-message"
+                        style={{ flex: 1, padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--bg)', color: 'var(--text-main)', fontSize: '0.9rem' }}
+                    />
+                    <button
+                        onClick={handleSaveHa}
+                        disabled={haSaveState === 'saving' || haSaveState === 'idle' || haSaveState === 'saved'}
+                        className="std-add-button"
+                        style={
+                            haSaveState === 'saved' ? { background: 'rgba(43,140,238,0.15)', color: '#2b8cee', borderColor: 'rgba(43,140,238,0.3)', whiteSpace: 'nowrap' } :
+                            haSaveState === 'dirty' ? { background: 'rgba(34,197,94,0.15)', color: '#22c55e', borderColor: 'rgba(34,197,94,0.3)', whiteSpace: 'nowrap' } :
+                            { whiteSpace: 'nowrap' }
+                        }
+                    >
+                        {haSaveState === 'saving' ? '⏳' : haSaveState === 'saved' ? '✓ Enregistré' : '💾 Enregistrer'}
+                    </button>
+                </div>
             </section>
 
             {/* Email de bienvenue */}

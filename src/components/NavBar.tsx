@@ -69,7 +69,6 @@ const MORE_ITEMS = [
   { href: '/reconciliation',       label: 'Banque' },
   { href: '/global-ged',           label: 'GED' },
   { href: '/companies',            label: 'Sociétés' },
-  { href: '/settings',             label: 'Apparence' },
   { href: '/gestion/parametres',   label: 'Paramètres' },
   { href: '/settings/security',    label: 'Sécurité' },
 ];
