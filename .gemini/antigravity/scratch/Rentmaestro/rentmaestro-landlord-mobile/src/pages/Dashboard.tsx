@@ -23,6 +23,13 @@ interface PartialPayment {
   apartment: { address: string; name: string | null };
 }
 
+interface IncompleteGed {
+  leaseId: string;
+  tenantName: string;
+  apartmentName: string;
+  missing: string[];
+}
+
 interface DashboardData {
   pendingRents: number;
   monthRevenue: number;
@@ -36,6 +43,7 @@ interface DashboardData {
   currentMonth: string;
   rentReviews: RentReview[];
   partialPayments: PartialPayment[];
+  incompleteGed: IncompleteGed[];
   unpaidThisMonth: Array<{
     paymentId: string;
     amount: number;
@@ -229,6 +237,28 @@ export default function Dashboard() {
                     >
                       ✓ Envoyé
                     </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {data.incompleteGed?.length > 0 && (
+              <div className="rounded-xl p-3 mb-3" style={{ background: 'rgba(239,68,68,0.08)', border: '2px solid #ef4444' }}>
+                <p className="text-xs uppercase tracking-wide mb-2 font-semibold" style={{ color: '#ef4444' }}>📂 GED incomplète — {data.incompleteGed.length} bail(s)</p>
+                {data.incompleteGed.map(item => (
+                  <div
+                    key={item.leaseId}
+                    className="flex items-center justify-between py-2 border-b border-border last:border-0 active:opacity-70"
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => navigate(`/leases/${item.leaseId}`)}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-text-main text-sm font-medium">{item.tenantName}</p>
+                      <p className="text-text-muted text-xs">{item.apartmentName}</p>
+                    </div>
+                    <span className="text-xs font-semibold ml-3 shrink-0" style={{ color: '#ef4444' }}>
+                      {item.missing.join(' + ')} manquant
+                    </span>
                   </div>
                 ))}
               </div>
