@@ -1,8 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { createTask, updateTask, updateTaskStatus, deleteTask, convertTaskToExpense } from '@/actions/tasks';
+import { createTask, updateTask, updateTaskStatus, deleteTask, convertTaskToExpense, addTaskNote } from '@/actions/tasks';
 import styles from './TaskBoard.module.css';
+
+interface TaskNote {
+    id: string;
+    content: string;
+    authorType: string;
+    createdAt: Date | string;
+}
 
 interface Task {
     id: string;
@@ -16,6 +23,7 @@ interface Task {
     scheduledAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
+    notes: TaskNote[];
 }
 
 interface TaskBoardProps {
@@ -23,6 +31,12 @@ interface TaskBoardProps {
     apartmentAddress?: string;
     initialTasks: Task[];
 }
+
+const STATUS_COLORS: Record<string, string> = {
+    TODO: '#ef4444',
+    IN_PROGRESS: '#f59e0b',
+    DONE: '#22c55e',
+};
 
 function formatGCalDate(d: Date): string {
     return d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
@@ -53,6 +67,13 @@ export default function TaskBoard({ apartmentId, apartmentAddress = '', initialT
     const [editScheduledAt, setEditScheduledAt] = useState('');
     const [editNotify, setEditNotify] = useState(false);
 
+    // Notes popup state
+    const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+    const [noteText, setNoteText] = useState('');
+    const [addingNote, setAddingNote] = useState(false);
+
+    const selectedTask = selectedTaskId ? tasks.find(t => t.id === selectedTaskId) ?? null : null;
+
     const handleAddTask = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -65,7 +86,7 @@ export default function TaskBoard({ apartmentId, apartmentAddress = '', initialT
             scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
         });
         if (res.success && res.task) {
-            setTasks([res.task as Task, ...tasks]);
+            setTasks([(res.task as any as Task), ...tasks]);
             setTitle('');
             setDescription('');
             setCost('');
@@ -97,7 +118,7 @@ export default function TaskBoard({ apartmentId, apartmentAddress = '', initialT
             notifyTenant: editNotify,
         });
         if (res.success && res.task) {
-            setTasks(tasks.map(t => t.id === taskId ? res.task! as Task : t));
+            setTasks(tasks.map(t => t.id === taskId ? { ...(res.task! as any as Task), notes: t.notes } : t));
             setEditingId(null);
         } else {
             alert(res.error || "Erreur lors de la modification");
@@ -108,7 +129,6 @@ export default function TaskBoard({ apartmentId, apartmentAddress = '', initialT
     const handleUpdateStatus = async (taskId: string, newStatus: string) => {
         const currentTasks = [...tasks];
         setTasks(tasks.map(t => t.id === taskId ? { ...t, status: newStatus } : t));
-
         const res = await updateTaskStatus(taskId, newStatus);
         if (!res.success) {
             setTasks(currentTasks);
@@ -120,7 +140,6 @@ export default function TaskBoard({ apartmentId, apartmentAddress = '', initialT
         if (!confirm("Voulez-vous supprimer cette tâche ?")) return;
         const currentTasks = [...tasks];
         setTasks(tasks.filter(t => t.id !== taskId));
-
         const res = await deleteTask(taskId);
         if (!res.success) {
             setTasks(currentTasks);
@@ -140,14 +159,35 @@ export default function TaskBoard({ apartmentId, apartmentAddress = '', initialT
         setLoading(false);
     };
 
+    const handleAddNote = async () => {
+        if (!selectedTask || !noteText.trim()) return;
+        setAddingNote(true);
+        const res = await addTaskNote(selectedTask.id, noteText.trim(), 'LANDLORD');
+        if (res.success && res.note) {
+            const newNote = res.note as TaskNote;
+            setTasks(prev => prev.map(t =>
+                t.id === selectedTask.id
+                    ? { ...t, notes: [...t.notes, newNote] }
+                    : t
+            ));
+            setNoteText('');
+        }
+        setAddingNote(false);
+    };
+
     const renderTaskCard = (task: Task) => {
         const isEditing = editingId === task.id;
 
         return (
-            <div key={task.id} className={styles.taskCard}>
+            <div
+                key={task.id}
+                className={styles.taskCard}
+                onClick={() => { if (!isEditing) setSelectedTaskId(task.id); }}
+                style={{ cursor: isEditing ? 'default' : 'pointer' }}
+            >
                 {isEditing ? (
                     /* ---- Edit form ---- */
-                    <div>
+                    <div onClick={e => e.stopPropagation()}>
                         <div className={styles.formGroup} style={{ marginBottom: '0.6rem' }}>
                             <label>Titre</label>
                             <input
@@ -223,8 +263,13 @@ export default function TaskBoard({ apartmentId, apartmentAddress = '', initialT
                             <span className={styles.taskTitle}>
                                 {task.title}
                                 {task.tenantId && <span style={{ marginLeft: "0.5rem", fontSize: "0.7rem", backgroundColor: "#fffbeb", color: "#d97706", padding: "0.2rem 0.5rem", borderRadius: "10px", fontWeight: "bold" }}>Locataire</span>}
+                                {task.notes.length > 0 && (
+                                    <span style={{ marginLeft: "0.4rem", fontSize: "0.7rem", background: "rgba(43,140,238,0.15)", color: "#2b8cee", padding: "0.1rem 0.4rem", borderRadius: "4px" }}>
+                                        💬 {task.notes.length}
+                                    </span>
+                                )}
                             </span>
-                            <div style={{ display: 'flex', gap: '0.25rem' }}>
+                            <div style={{ display: 'flex', gap: '0.25rem' }} onClick={e => e.stopPropagation()}>
                                 <button onClick={() => startEdit(task)} className={styles.deleteBtn} title="Modifier" style={{ color: '#2b8cee', fontSize: '0.9rem' }}>✏️</button>
                                 <button onClick={() => handleDelete(task.id)} className={styles.deleteBtn} title="Supprimer">×</button>
                             </div>
@@ -240,6 +285,7 @@ export default function TaskBoard({ apartmentId, apartmentAddress = '', initialT
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     style={{ fontSize: '0.75rem', color: '#22c55e', marginLeft: '0.3rem' }}
+                                    onClick={e => e.stopPropagation()}
                                 >
                                     + Google Agenda
                                 </a>
@@ -251,7 +297,7 @@ export default function TaskBoard({ apartmentId, apartmentAddress = '', initialT
                             {task.cost !== null && <span className={styles.taskCost}>{task.cost.toFixed(2)} €</span>}
                         </div>
 
-                        <div className={styles.actions}>
+                        <div className={styles.actions} onClick={e => e.stopPropagation()}>
                             {task.status === 'TODO' && (
                                 <button onClick={() => handleUpdateStatus(task.id, 'IN_PROGRESS')} className={`${styles.btn} ${styles.btnPrimary}`}>
                                     Passer En Cours
@@ -362,6 +408,103 @@ export default function TaskBoard({ apartmentId, apartmentAddress = '', initialT
                     {doneTasks.map(renderTaskCard)}
                 </div>
             </div>
+
+            {/* ─── NOTES POPUP ──────────────────────────────────────────────── */}
+            {selectedTask && (
+                <div
+                    style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+                    onClick={() => setSelectedTaskId(null)}
+                >
+                    <div
+                        style={{ background: 'var(--surface)', borderRadius: '12px', border: '1px solid var(--border-color)', width: '100%', maxWidth: 540, maxHeight: '85vh', overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}
+                        onClick={e => e.stopPropagation()}
+                    >
+                        {/* Header */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem' }}>
+                            <div style={{ flex: 1 }}>
+                                <h2 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-main)', margin: '0 0 0.35rem' }}>{selectedTask.title}</h2>
+                                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                                    <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '0.1rem 0.45rem', borderRadius: '4px', background: `${STATUS_COLORS[selectedTask.status] ?? '#6b7280'}20`, color: STATUS_COLORS[selectedTask.status] ?? '#6b7280' }}>
+                                        {selectedTask.status === 'TODO' ? 'À traiter' : selectedTask.status === 'IN_PROGRESS' ? 'En cours' : 'Terminé'}
+                                    </span>
+                                    <button
+                                        onClick={() => { setSelectedTaskId(null); startEdit(selectedTask); }}
+                                        style={{ fontSize: '0.75rem', padding: '0.15rem 0.5rem', borderRadius: '4px', border: '1px solid var(--primary-color)', background: 'rgba(43,140,238,0.1)', color: 'var(--primary-color)', cursor: 'pointer' }}
+                                    >
+                                        ✏️ Modifier
+                                    </button>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setSelectedTaskId(null)}
+                                style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '1.2rem', cursor: 'pointer', padding: '0.2rem', flexShrink: 0, lineHeight: 1 }}
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        {selectedTask.description && (
+                            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', margin: 0 }}>{selectedTask.description}</p>
+                        )}
+
+                        {/* Metadata */}
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', padding: '0.65rem 0.75rem', background: 'var(--surface-active, #f8fafc)', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                            <div>📅 Créé le {new Date(selectedTask.createdAt).toLocaleDateString('fr-FR')}</div>
+                            {selectedTask.scheduledAt && <div>🔧 Intervention : {new Date(selectedTask.scheduledAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</div>}
+                            {selectedTask.dueDate && <div>⏰ Échéance : {new Date(selectedTask.dueDate).toLocaleDateString('fr-FR')}</div>}
+                            {selectedTask.cost != null && <div>💰 Coût : {selectedTask.cost.toFixed(2)} €</div>}
+                        </div>
+
+                        {/* Notes history */}
+                        <div>
+                            <h3 style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: '0.6rem' }}>
+                                Historique ({selectedTask.notes.length})
+                            </h3>
+                            {selectedTask.notes.length === 0 ? (
+                                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>Aucune mise à jour.</p>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                    {selectedTask.notes.map(note => (
+                                        <div
+                                            key={note.id}
+                                            style={{ padding: '0.6rem 0.75rem', background: 'var(--surface-active, #f8fafc)', borderRadius: '8px', borderLeft: `3px solid ${note.authorType === 'TENANT' ? '#f59e0b' : '#2b8cee'}` }}
+                                        >
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
+                                                <span style={{ fontSize: '0.72rem', fontWeight: 600, color: note.authorType === 'TENANT' ? '#f59e0b' : '#2b8cee' }}>
+                                                    {note.authorType === 'TENANT' ? '👤 Locataire' : '🏠 Propriétaire'}
+                                                </span>
+                                                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                                                    {new Date(note.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                            </div>
+                                            <p style={{ fontSize: '0.875rem', color: 'var(--text-main)', margin: 0, whiteSpace: 'pre-wrap' }}>{note.content}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Add note */}
+                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end' }}>
+                            <textarea
+                                value={noteText}
+                                onChange={e => setNoteText(e.target.value)}
+                                placeholder="Ajouter une mise à jour..."
+                                rows={2}
+                                style={{ flex: 1, padding: '0.6rem 0.75rem', background: 'var(--surface-active, #f8fafc)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-main)', fontSize: '0.875rem', resize: 'none', fontFamily: 'inherit', outline: 'none' }}
+                                onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleAddNote(); }}
+                            />
+                            <button
+                                onClick={handleAddNote}
+                                disabled={addingNote || !noteText.trim()}
+                                style={{ padding: '0.6rem 1rem', background: '#2b8cee', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 600, flexShrink: 0, opacity: (addingNote || !noteText.trim()) ? 0.5 : 1 }}
+                            >
+                                {addingNote ? '...' : 'Ajouter'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

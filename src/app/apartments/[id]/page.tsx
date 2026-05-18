@@ -34,6 +34,7 @@ export default async function ApartmentDetailsPage({ params }: { params: Promise
                 orderBy: { date: 'desc' }
             },
             tasks: {
+                include: { notes: { orderBy: { createdAt: 'asc' } } },
                 orderBy: { createdAt: 'desc' }
             }
         }

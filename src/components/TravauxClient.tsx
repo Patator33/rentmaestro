@@ -42,7 +42,6 @@ const STATUS_COLORS: Record<string, string> = {
 export default function TravauxClient({ initialTasks, showAll }: { initialTasks: TaskWithNotes[]; showAll: boolean }) {
     const router = useRouter();
     const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
-    const [localNotes, setLocalNotes] = useState<Record<string, TaskNote[]>>({});
     const [noteText, setNoteText] = useState('');
     const [addingNote, setAddingNote] = useState(false);
     const [isPending, startTransition] = useTransition();
@@ -51,9 +50,6 @@ export default function TravauxClient({ initialTasks, showAll }: { initialTasks:
     const travaux = initialTasks.filter(t => t.tenant === null);
 
     const selectedTask = selectedTaskId ? initialTasks.find(t => t.id === selectedTaskId) ?? null : null;
-    const allNotesForSelected = selectedTask
-        ? [...selectedTask.notes, ...(localNotes[selectedTask.id] ?? [])]
-        : [];
 
     const handleCycleStatus = (taskId: string, currentStatus: string) => {
         startTransition(async () => {
@@ -66,19 +62,16 @@ export default function TravauxClient({ initialTasks, showAll }: { initialTasks:
         if (!selectedTask || !noteText.trim()) return;
         setAddingNote(true);
         const res = await addTaskNote(selectedTask.id, noteText.trim(), 'LANDLORD');
-        if (res.success && res.note) {
-            setLocalNotes(prev => ({
-                ...prev,
-                [selectedTask.id]: [...(prev[selectedTask.id] ?? []), res.note as TaskNote],
-            }));
+        if (res.success) {
             setNoteText('');
+            router.refresh();
         }
         setAddingNote(false);
     };
 
     const renderCard = (task: TaskWithNotes) => {
         const nextLabel = task.status === 'TODO' ? 'En cours →' : task.status === 'IN_PROGRESS' ? '✓ Résolu' : 'Réouvrir';
-        const noteCount = task.notes.length + (localNotes[task.id]?.length ?? 0);
+        const noteCount = task.notes.length;
         return (
             <div
                 key={task.id}
@@ -215,7 +208,7 @@ export default function TravauxClient({ initialTasks, showAll }: { initialTasks:
                         )}
 
                         {/* Metadata */}
-                        <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', padding: '0.75rem', background: 'var(--bg, var(--surface-active, #1a1f2e))', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', padding: '0.75rem', background: 'var(--surface-active, #1a1f2e)', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
                             <div>
                                 🏠{' '}
                                 <Link
@@ -247,18 +240,18 @@ export default function TravauxClient({ initialTasks, showAll }: { initialTasks:
                         {/* Notes history */}
                         <div>
                             <h3 style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: '0.6rem' }}>
-                                Historique ({allNotesForSelected.length})
+                                Historique ({selectedTask.notes.length})
                             </h3>
-                            {allNotesForSelected.length === 0 ? (
+                            {selectedTask.notes.length === 0 ? (
                                 <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>Aucune mise à jour.</p>
                             ) : (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                    {allNotesForSelected.map(note => (
+                                    {selectedTask.notes.map(note => (
                                         <div
                                             key={note.id}
                                             style={{
                                                 padding: '0.6rem 0.75rem',
-                                                background: 'var(--bg, var(--surface-active, #1a1f2e))',
+                                                background: 'var(--surface-active, #1a1f2e)',
                                                 borderRadius: '8px',
                                                 borderLeft: `3px solid ${note.authorType === 'TENANT' ? '#f59e0b' : 'var(--primary-color)'}`,
                                             }}
@@ -285,7 +278,7 @@ export default function TravauxClient({ initialTasks, showAll }: { initialTasks:
                                 onChange={e => setNoteText(e.target.value)}
                                 placeholder="Ajouter une mise à jour..."
                                 rows={2}
-                                style={{ flex: 1, padding: '0.6rem 0.75rem', background: 'var(--bg, var(--surface-active, #1a1f2e))', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-main)', fontSize: '0.875rem', resize: 'none', fontFamily: 'inherit', outline: 'none' }}
+                                style={{ flex: 1, padding: '0.6rem 0.75rem', background: 'var(--surface-active, #1a1f2e)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-main)', fontSize: '0.875rem', resize: 'none', fontFamily: 'inherit', outline: 'none' }}
                                 onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleAddNote(); }}
                             />
                             <button
