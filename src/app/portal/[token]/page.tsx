@@ -11,7 +11,10 @@ export default async function TenantPortalPage({ params }: { params: Promise<{ t
         prisma.tenant.findUnique({
             where: { portalToken: token },
             include: {
-                tasks: { orderBy: { createdAt: 'desc' } },
+                tasks: {
+                    orderBy: { createdAt: 'desc' },
+                    include: { notes: { orderBy: { createdAt: 'asc' } } },
+                },
                 documents: { orderBy: { createdAt: 'desc' } },
                 leases: {
                     include: {

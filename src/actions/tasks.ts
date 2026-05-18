@@ -78,11 +78,59 @@ export async function createTask(data: any) {
                 apartmentId: parsed.data.apartmentId,
             });
         }
+        // Auto-message in tenant thread when task linked to tenant
+        if (parsed.data.tenantId) {
+            await prisma.message.create({
+                data: {
+                    tenantId: parsed.data.tenantId,
+                    content: `🔧 Intervention créée : « ${parsed.data.title} »${parsed.data.description ? `\n${parsed.data.description}` : ''}`,
+                    fromTenant: false,
+                },
+            });
+        }
         revalidatePath(`/apartments/${data.apartmentId}`);
         return { success: true, task };
     } catch (error) {
         console.error("Erreur createTask:", error);
         return { success: false, error: "Impossible de créer la tâche" };
+    }
+}
+
+export async function addTaskNote(taskId: string, content: string, authorType: 'LANDLORD' | 'TENANT') {
+    if (!content.trim()) return { success: false, error: 'Contenu requis' };
+    try {
+        const note = await prisma.taskNote.create({
+            data: { taskId, content: content.trim(), authorType },
+        });
+        const task = await prisma.task.findUnique({ where: { id: taskId } });
+        if (task) {
+            revalidatePath(`/apartments/${task.apartmentId}`);
+            revalidatePath('/travaux');
+        }
+        return { success: true, note };
+    } catch (error) {
+        console.error("Erreur addTaskNote:", error);
+        return { success: false, error: "Impossible d'ajouter la note" };
+    }
+}
+
+export async function addPortalTaskNote(taskId: string, content: string, token: string) {
+    if (!content.trim()) return { success: false, error: 'Contenu requis' };
+    try {
+        const task = await prisma.task.findUnique({
+            where: { id: taskId },
+            include: { tenant: { select: { portalToken: true } } },
+        });
+        if (!task || task.tenant?.portalToken !== token) {
+            return { success: false, error: 'Non autorisé' };
+        }
+        const note = await prisma.taskNote.create({
+            data: { taskId, content: content.trim(), authorType: 'TENANT' },
+        });
+        return { success: true, note };
+    } catch (error) {
+        console.error("Erreur addPortalTaskNote:", error);
+        return { success: false, error: "Impossible d'ajouter la note" };
     }
 }
 

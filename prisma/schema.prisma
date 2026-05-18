@@ -165,6 +165,16 @@ model Task {
   tenant      Tenant?    @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
+  notes       TaskNote[]
+}
+
+model TaskNote {
+  id         String   @id @default(cuid())
+  taskId     String
+  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  content    String
+  authorType String   // LANDLORD | TENANT
+  createdAt  DateTime @default(now())
 }
 
 model ApartmentDocument {

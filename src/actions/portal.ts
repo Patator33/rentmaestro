@@ -41,6 +41,15 @@ export async function reportIncident(
             }
         });
 
+        // Auto-message in the conversation thread
+        await prisma.message.create({
+            data: {
+                tenantId,
+                content: `🔧 Incident signalé : « ${title} »${description ? `\n${description}` : ''}`,
+                fromTenant: true,
+            },
+        });
+
         const apt = await prisma.apartment.findUnique({ where: { id: apartmentId } });
 
         // Notify via n8n webhook

@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import TenantMessaging from './TenantMessaging';
 import { reportIncident } from '@/actions/portal';
+import { addPortalTaskNote } from '@/actions/tasks';
 import { sendPortalMessage, markMessagesRead } from '@/actions/messages';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -38,12 +39,20 @@ interface Payment {
     amount: number;
     status: string;
 }
+interface TaskNote {
+    id: string;
+    content: string;
+    authorType: string;
+    createdAt: Date | string;
+}
+
 interface Task {
     id: string;
     title: string;
     description: string | null;
     status: string;
-    createdAt: Date;
+    createdAt: Date | string;
+    notes?: TaskNote[];
 }
 interface Message {
     id: string;
@@ -141,6 +150,11 @@ export default function PortalShell({
     const [submittingInc, setSubmittingInc] = useState(false);
     const [incSuccess, setIncSuccess] = useState('');
 
+    // Task notes state
+    const [noteInputs, setNoteInputs] = useState<Record<string, string>>({});
+    const [noteAdding, setNoteAdding] = useState<Record<string, boolean>>({});
+    const [localTaskNotes, setLocalTaskNotes] = useState<Record<string, TaskNote[]>>({});
+
     // Message input state
     const [msgText, setMsgText] = useState('');
     const [sendingMsg, setSendingMsg] = useState(false);
@@ -178,6 +192,21 @@ export default function PortalShell({
             setIncSuccess('Signalement transmis au propriétaire.');
             setTimeout(() => setIncSuccess(''), 4000);
         }
+    };
+
+    const handleAddPortalNote = async (taskId: string) => {
+        const content = noteInputs[taskId]?.trim();
+        if (!content) return;
+        setNoteAdding(prev => ({ ...prev, [taskId]: true }));
+        const res = await addPortalTaskNote(taskId, content, token);
+        if (res.success && res.note) {
+            setLocalTaskNotes(prev => ({
+                ...prev,
+                [taskId]: [...(prev[taskId] ?? []), res.note as TaskNote],
+            }));
+            setNoteInputs(prev => ({ ...prev, [taskId]: '' }));
+        }
+        setNoteAdding(prev => ({ ...prev, [taskId]: false }));
     };
 
     const handleSendMsg = async (e: React.FormEvent) => {
@@ -415,20 +444,58 @@ export default function PortalShell({
             {tasks.length === 0 ? (
                 <p style={{ fontSize: '0.875rem', color: C.ts }}>Aucun incident signalé.</p>
             ) : (
-                tasks.map(task => (
-                    <div key={task.id} style={card}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem', marginBottom: task.description ? '0.4rem' : 0 }}>
-                            <p style={{ fontSize: '0.875rem', fontWeight: 500, color: C.tm, margin: 0 }}>{task.title}</p>
-                            <TaskBadge status={task.status} />
+                tasks.map(task => {
+                    const allNotes = [...(task.notes ?? []), ...(localTaskNotes[task.id] ?? [])];
+                    const isAdding = noteAdding[task.id] ?? false;
+                    return (
+                        <div key={task.id} style={card}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem', marginBottom: task.description ? '0.4rem' : '0.4rem' }}>
+                                <p style={{ fontSize: '0.875rem', fontWeight: 500, color: C.tm, margin: 0 }}>{task.title}</p>
+                                <TaskBadge status={task.status} />
+                            </div>
+                            {task.description && (
+                                <p style={{ fontSize: '0.8rem', color: C.ts, marginBottom: '0.4rem' }}>{task.description}</p>
+                            )}
+                            <p style={{ fontSize: '0.7rem', color: C.mu, marginBottom: allNotes.length > 0 ? '0.5rem' : '0.4rem' }}>
+                                {new Date(task.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                            </p>
+                            {allNotes.length > 0 && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginBottom: '0.5rem' }}>
+                                    {allNotes.map(note => (
+                                        <div key={note.id} style={{ padding: '0.4rem 0.6rem', background: C.sa, borderRadius: '8px', borderLeft: `2px solid ${note.authorType === 'TENANT' ? C.pend : C.primary}` }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.15rem' }}>
+                                                <span style={{ fontSize: '0.65rem', fontWeight: 600, color: note.authorType === 'TENANT' ? C.pend : C.primary }}>
+                                                    {note.authorType === 'TENANT' ? 'Moi' : 'Propriétaire'}
+                                                </span>
+                                                <span style={{ fontSize: '0.65rem', color: C.mu }}>
+                                                    {new Date(note.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                            </div>
+                                            <p style={{ fontSize: '0.8rem', color: C.tm, margin: 0, whiteSpace: 'pre-wrap' }}>{note.content}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            <div style={{ display: 'flex', gap: '0.4rem' }}>
+                                <input
+                                    type="text"
+                                    value={noteInputs[task.id] ?? ''}
+                                    onChange={e => setNoteInputs(prev => ({ ...prev, [task.id]: e.target.value }))}
+                                    placeholder="Ajouter une mise à jour..."
+                                    onKeyDown={e => { if (e.key === 'Enter') handleAddPortalNote(task.id); }}
+                                    style={{ flex: 1, background: C.sa, border: `1px solid ${C.border}`, borderRadius: '8px', padding: '0.4rem 0.65rem', color: C.tm, fontSize: '0.8rem', outline: 'none', fontFamily: 'inherit' }}
+                                />
+                                <button
+                                    onClick={() => handleAddPortalNote(task.id)}
+                                    disabled={isAdding || !(noteInputs[task.id] ?? '').trim()}
+                                    style={{ background: C.primary, color: 'white', fontWeight: 600, padding: '0.4rem 0.75rem', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '0.8rem', flexShrink: 0, opacity: (isAdding || !(noteInputs[task.id] ?? '').trim()) ? 0.5 : 1 }}
+                                >
+                                    {isAdding ? '...' : '→'}
+                                </button>
+                            </div>
                         </div>
-                        {task.description && (
-                            <p style={{ fontSize: '0.8rem', color: C.ts, marginBottom: '0.4rem' }}>{task.description}</p>
-                        )}
-                        <p style={{ fontSize: '0.7rem', color: C.mu, margin: 0 }}>
-                            {new Date(task.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
-                        </p>
-                    </div>
-                ))
+                    );
+                })
             )}
         </div>
     );
@@ -606,24 +673,62 @@ export default function PortalShell({
                                 {tasks.length === 0 ? (
                                     <p style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>Aucun incident signalé.</p>
                                 ) : (
-                                    tasks.map(task => (
-                                        <div key={task.id} style={{ padding: '1rem', background: 'var(--surface-active)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
-                                                <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-main)', margin: 0 }}>{task.title}</h3>
-                                                <span style={{
-                                                    padding: '0.2rem 0.6rem', borderRadius: '9999px', fontSize: '0.8rem', fontWeight: 500,
-                                                    background: task.status === 'DONE' ? '#ecfdf5' : task.status === 'IN_PROGRESS' ? '#eff6ff' : '#fffbeb',
-                                                    color: task.status === 'DONE' ? '#059669' : task.status === 'IN_PROGRESS' ? '#3b82f6' : '#d97706',
-                                                }}>
-                                                    {task.status === 'TODO' ? 'À traiter' : task.status === 'IN_PROGRESS' ? 'En cours' : 'Résolu'}
-                                                </span>
+                                    tasks.map(task => {
+                                        const allNotes = [...(task.notes ?? []), ...(localTaskNotes[task.id] ?? [])];
+                                        const isAdding = noteAdding[task.id] ?? false;
+                                        return (
+                                            <div key={task.id} style={{ padding: '1rem', background: 'var(--surface-active)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                                                    <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-main)', margin: 0 }}>{task.title}</h3>
+                                                    <span style={{
+                                                        padding: '0.2rem 0.6rem', borderRadius: '9999px', fontSize: '0.8rem', fontWeight: 500,
+                                                        background: task.status === 'DONE' ? '#ecfdf5' : task.status === 'IN_PROGRESS' ? '#eff6ff' : '#fffbeb',
+                                                        color: task.status === 'DONE' ? '#059669' : task.status === 'IN_PROGRESS' ? '#3b82f6' : '#d97706',
+                                                    }}>
+                                                        {task.status === 'TODO' ? 'À traiter' : task.status === 'IN_PROGRESS' ? 'En cours' : 'Résolu'}
+                                                    </span>
+                                                </div>
+                                                {task.description && <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.5rem', whiteSpace: 'pre-wrap' }}>{task.description}</p>}
+                                                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: allNotes.length > 0 ? '0.75rem' : '0.5rem' }}>
+                                                    Signalé le {new Date(task.createdAt).toLocaleDateString('fr-FR')}
+                                                </p>
+                                                {allNotes.length > 0 && (
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginBottom: '0.75rem' }}>
+                                                        {allNotes.map(note => (
+                                                            <div key={note.id} style={{ padding: '0.5rem 0.75rem', background: 'var(--surface)', borderRadius: '6px', borderLeft: `3px solid ${note.authorType === 'TENANT' ? '#f59e0b' : '#2b8cee'}` }}>
+                                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
+                                                                    <span style={{ fontSize: '0.75rem', fontWeight: 600, color: note.authorType === 'TENANT' ? '#f59e0b' : '#2b8cee' }}>
+                                                                        {note.authorType === 'TENANT' ? 'Moi' : 'Propriétaire'}
+                                                                    </span>
+                                                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                                        {new Date(note.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                                    </span>
+                                                                </div>
+                                                                <p style={{ fontSize: '0.875rem', color: 'var(--text-main)', margin: 0, whiteSpace: 'pre-wrap' }}>{note.content}</p>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                    <input
+                                                        type="text"
+                                                        value={noteInputs[task.id] ?? ''}
+                                                        onChange={e => setNoteInputs(prev => ({ ...prev, [task.id]: e.target.value }))}
+                                                        placeholder="Ajouter une mise à jour..."
+                                                        onKeyDown={e => { if (e.key === 'Enter') handleAddPortalNote(task.id); }}
+                                                        style={{ flex: 1, padding: '0.5rem 0.75rem', background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--text-main)', fontSize: '0.875rem', outline: 'none', fontFamily: 'inherit' }}
+                                                    />
+                                                    <button
+                                                        onClick={() => handleAddPortalNote(task.id)}
+                                                        disabled={isAdding || !(noteInputs[task.id] ?? '').trim()}
+                                                        style={{ background: '#2b8cee', color: 'white', fontWeight: 600, padding: '0.5rem 1rem', borderRadius: '6px', border: 'none', cursor: 'pointer', fontSize: '0.875rem', flexShrink: 0, opacity: (isAdding || !(noteInputs[task.id] ?? '').trim()) ? 0.5 : 1 }}
+                                                    >
+                                                        {isAdding ? '...' : 'Ajouter'}
+                                                    </button>
+                                                </div>
                                             </div>
-                                            {task.description && <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.5rem', whiteSpace: 'pre-wrap' }}>{task.description}</p>}
-                                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>
-                                                Signalé le {new Date(task.createdAt).toLocaleDateString('fr-FR')}
-                                            </p>
-                                        </div>
-                                    ))
+                                        );
+                                    })
                                 )}
                             </div>
                         </section>
