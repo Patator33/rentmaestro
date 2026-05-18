@@ -41,6 +41,21 @@ export default async function TenantPortalPage({ params }: { params: Promise<{ t
 
     const currentLease = tenant.leases[0] ?? null;
 
+    // Fetch apartment-level tasks (travaux without tenant) for the active lease
+    const apartmentTravaux = currentLease
+        ? await prisma.task.findMany({
+              where: { apartmentId: currentLease.apartmentId, tenantId: null },
+              include: { notes: { orderBy: { createdAt: 'asc' } } },
+              orderBy: { createdAt: 'desc' },
+          })
+        : [];
+
+    // Merge incidents (tenant tasks) + travaux, sorted by date desc
+    const allTasks = [
+        ...tenant.tasks,
+        ...apartmentTravaux,
+    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
     const allPayments = tenant.leases
         .flatMap(lease => lease.payments.map(p => ({ ...p, leaseId: lease.id })))
         .sort((a, b) => new Date(b.period).getTime() - new Date(a.period).getTime());
@@ -61,7 +76,7 @@ export default async function TenantPortalPage({ params }: { params: Promise<{ t
             token={token}
             currentLease={currentLease}
             allPayments={allPayments}
-            initialTasks={tenant.tasks}
+            initialTasks={allTasks}
             initialMessages={tenant.messages}
             portalDocuments={portalDocuments}
         />

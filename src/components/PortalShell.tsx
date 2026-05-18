@@ -52,6 +52,7 @@ interface Task {
     description: string | null;
     status: string;
     createdAt: Date | string;
+    tenantId?: string | null;
     notes?: TaskNote[];
 }
 interface Message {
@@ -450,7 +451,12 @@ export default function PortalShell({
                     return (
                         <div key={task.id} style={card}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem', marginBottom: task.description ? '0.4rem' : '0.4rem' }}>
-                                <p style={{ fontSize: '0.875rem', fontWeight: 500, color: C.tm, margin: 0 }}>{task.title}</p>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <p style={{ fontSize: '0.875rem', fontWeight: 500, color: C.tm, margin: 0 }}>{task.title}</p>
+                                    {!task.tenantId && (
+                                        <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#2b8cee', background: '#2b8cee18', padding: '0.1rem 0.4rem', borderRadius: 4, marginTop: 2, display: 'inline-block' }}>Travaux</span>
+                                    )}
+                                </div>
                                 <TaskBadge status={task.status} />
                             </div>
                             {task.description && (
@@ -679,7 +685,12 @@ export default function PortalShell({
                                         return (
                                             <div key={task.id} style={{ padding: '1rem', background: 'var(--surface-active)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
                                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
-                                                    <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-main)', margin: 0 }}>{task.title}</h3>
+                                                    <div>
+                                                        <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-main)', margin: '0 0 0.2rem' }}>{task.title}</h3>
+                                                        {!task.tenantId && (
+                                                            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#2b8cee', background: 'rgba(43,140,238,0.12)', padding: '0.1rem 0.5rem', borderRadius: 4 }}>Travaux</span>
+                                                        )}
+                                                    </div>
                                                     <span style={{
                                                         padding: '0.2rem 0.6rem', borderRadius: '9999px', fontSize: '0.8rem', fontWeight: 500,
                                                         background: task.status === 'DONE' ? '#ecfdf5' : task.status === 'IN_PROGRESS' ? '#eff6ff' : '#fffbeb',
