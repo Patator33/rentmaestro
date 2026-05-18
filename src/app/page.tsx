@@ -170,9 +170,12 @@ export default async function Home() {
   const monthYear = `${MONTHS_SHORT[now.getMonth()]} · ${now.getFullYear()}`;
 
   const maxCashflow = Math.max(...cashflow.map(d => d.v), 1);
-  const lastCashflow = cashflow[cashflow.length - 1]?.v ?? 0;
-  const prevCashflow = cashflow[cashflow.length - 2]?.v ?? 1;
-  const delta = ((lastCashflow - prevCashflow) / prevCashflow) * 100;
+  const currentMonthIdx = now.getMonth();
+  const lastCashflow = cashflow[currentMonthIdx]?.v ?? 0;
+  const prevCashflow = currentMonthIdx > 0 ? (cashflow[currentMonthIdx - 1]?.v ?? 0) : 0;
+  const delta = prevCashflow > 0
+    ? ((lastCashflow - prevCashflow) / prevCashflow) * 100
+    : lastCashflow > 0 ? 100 : 0;
 
   const totalExpensesMonth = alerts.partialPayments.reduce((s: number, p: any) => s + (p.amount - (p.paidAmount ?? 0)), 0);
 
@@ -342,7 +345,7 @@ export default async function Home() {
           <div className={styles.chartWrap}>
             {cashflow.map((d, i) => {
               const hPct = Math.max(2, (d.v / maxCashflow) * 100);
-              const isLast = i === cashflow.length - 1;
+              const isLast = i === currentMonthIdx;
               return (
                 <div
                   key={i}
