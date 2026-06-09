@@ -5,6 +5,12 @@ import { saveSetting } from '@/actions/settings';
 import { setTheme } from '@/actions/theme';
 import { THEMES, type ThemeId } from '@/themes/index';
 import { EVENT_LABELS } from '@/lib/n8n';
+import TotpSetup from '@/components/TotpSetup';
+import PasskeySetup from '@/components/PasskeySetup';
+import PushNotificationToggle from '@/components/PushNotificationToggle';
+import UserManagement from '@/components/UserManagement';
+import BackupRestore from '@/components/BackupRestore';
+import Link from 'next/link';
 
 const ALL_EVENTS = Object.keys(EVENT_LABELS);
 
@@ -25,6 +31,7 @@ type SaveState = 'idle' | 'dirty' | 'saving' | 'saved';
 
 export default function ParametresForm({
     defaultSubject, defaultBody, defaultHaWebhook, currentTheme, defaultTelegramEnabled, defaultTelegramEvents,
+    userEmail, userId, totpEnabled, passkeyCount,
 }: {
     defaultSubject: string;
     defaultBody: string;
@@ -32,6 +39,10 @@ export default function ParametresForm({
     currentTheme: ThemeId;
     defaultTelegramEnabled: boolean;
     defaultTelegramEvents: string[] | null;
+    userEmail: string;
+    userId: string;
+    totpEnabled: boolean;
+    passkeyCount: number;
 }) {
     const [subject, setSubject] = useState(defaultSubject);
     const [body, setBody] = useState(defaultBody);
@@ -235,6 +246,40 @@ export default function ParametresForm({
                 >
                     {telegramSaveState === 'saving' ? '⏳' : telegramSaveState === 'saved' ? '✓ Enregistré' : '💾 Enregistrer'}
                 </button>
+            </section>
+
+            {/* Sécurité */}
+            <section style={{ background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-xl)', padding: '1.5rem', marginBottom: '1.5rem' }}>
+                <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.25rem' }}>🔐 Sécurité</h2>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
+                    Authentification et sécurité du compte <strong>{userEmail}</strong>
+                </p>
+                <PasskeySetup passkeyCount={passkeyCount} />
+                <div style={{ marginTop: '1rem' }}>
+                    <TotpSetup totpEnabled={totpEnabled} />
+                </div>
+                <div style={{ marginTop: '1rem' }}>
+                    <PushNotificationToggle />
+                </div>
+                <div style={{ marginTop: '1rem' }}>
+                    <UserManagement currentUserId={userId} />
+                </div>
+                <div style={{ marginTop: '1rem' }}>
+                    <BackupRestore />
+                </div>
+                <div style={{ marginTop: '1rem', padding: '1.25rem', background: 'var(--bg)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)' }}>
+                    <h3 style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '0.4rem' }}>📋 Journal d'activité</h3>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '0.75rem' }}>
+                        Historique horodaté de toutes les connexions et actions. Conservé 1 an.
+                    </p>
+                    <Link href="/settings/logs" style={{
+                        display: 'inline-block', padding: '0.5rem 1rem',
+                        background: 'var(--primary)', color: '#fff', fontWeight: 600,
+                        borderRadius: 'var(--radius-md)', textDecoration: 'none', fontSize: '0.875rem',
+                    }}>
+                        Consulter les logs →
+                    </Link>
+                </div>
             </section>
 
             {/* Email de bienvenue */}

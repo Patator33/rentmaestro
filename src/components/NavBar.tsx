@@ -70,7 +70,6 @@ const MORE_ITEMS = [
   { href: '/global-ged',           label: 'GED' },
   { href: '/companies',            label: 'Sociétés' },
   { href: '/gestion/parametres',   label: 'Paramètres' },
-  { href: '/settings/security',    label: 'Sécurité' },
 ];
 
 export default function NavBar() {
