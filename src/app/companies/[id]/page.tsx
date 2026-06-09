@@ -45,11 +45,9 @@ export default async function CompanyDetailsPage({ params }: { params: Promise<{
                         <p className={styles.subtitle}>Créée le {formatDate(company.createdAt)}</p>
                     </div>
                 </div>
-                {!(company as any).isPersonal && (
-                    <Link href={`/companies/${company.id}/edit`} className={styles.editButton}>
-                        ✏️ Modifier
-                    </Link>
-                )}
+                <Link href={`/companies/${company.id}/edit`} className={styles.editButton}>
+                    ✏️ Modifier
+                </Link>
             </header>
 
             {!(company as any).isPersonal && (
