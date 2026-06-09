@@ -1,4 +1,6 @@
-const EVENT_LABELS: Record<string, string> = {
+import { prisma } from '@/lib/prisma';
+
+export const EVENT_LABELS: Record<string, string> = {
     RENT_PAID: "💰 Loyer payé",
     TENANT_MESSAGE: "💬 Message locataire",
     INCIDENT_REPORTED: "🚨 Incident signalé",
@@ -9,8 +11,17 @@ const EVENT_LABELS: Record<string, string> = {
 async function notifyTelegram(eventName: string, payload: any) {
     const botToken = process.env.TELEGRAM_BOT_TOKEN;
     const chatId = process.env.TELEGRAM_CHAT_ID;
-
     if (!botToken || !chatId) return;
+
+    const [enabledSetting, eventsSetting] = await Promise.all([
+        prisma.setting.findUnique({ where: { key: 'telegram_enabled' } }),
+        prisma.setting.findUnique({ where: { key: 'telegram_events' } }),
+    ]);
+
+    if (enabledSetting?.value !== 'true') return;
+
+    const enabledEvents: string[] = eventsSetting?.value ? JSON.parse(eventsSetting.value) : Object.keys(EVENT_LABELS);
+    if (!enabledEvents.includes(eventName)) return;
 
     const label = EVENT_LABELS[eventName] ?? eventName;
     const lines = Object.entries(payload)
@@ -18,13 +29,11 @@ async function notifyTelegram(eventName: string, payload: any) {
         .map(([k, v]) => `• ${k}: ${v}`)
         .join("\n");
 
-    const text = `*${label}*\n${lines}`;
-
     try {
         await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ chat_id: chatId, text, parse_mode: "Markdown" }),
+            body: JSON.stringify({ chat_id: chatId, text: `*${label}*\n${lines}`, parse_mode: "Markdown" }),
         });
     } catch (error) {
         console.error(`[Telegram] Error sending event ${eventName}:`, error);
@@ -34,19 +43,17 @@ async function notifyTelegram(eventName: string, payload: any) {
 export async function notifyN8n(eventName: string, payload: any) {
     const webhookUrl = process.env.N8N_WEBHOOK_URL;
 
+    notifyTelegram(eventName, payload).catch(() => {});
+
     if (!webhookUrl) {
         console.log(`[n8n Webhook] Webhook URL not configured. Skipping event: ${eventName}`);
         return;
     }
 
-    notifyTelegram(eventName, payload).catch(() => {});
-
     try {
         const response = await fetch(webhookUrl, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 event: eventName,
                 timestamp: new Date().toISOString(),

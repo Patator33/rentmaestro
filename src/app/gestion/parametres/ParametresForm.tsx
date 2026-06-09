@@ -4,6 +4,9 @@ import { useState, useTransition } from 'react';
 import { saveSetting } from '@/actions/settings';
 import { setTheme } from '@/actions/theme';
 import { THEMES, type ThemeId } from '@/themes/index';
+import { EVENT_LABELS } from '@/lib/n8n';
+
+const ALL_EVENTS = Object.keys(EVENT_LABELS);
 
 const VARIABLES = [
     { name: '{{prenom_locataire}}', desc: 'Prénom du locataire' },
@@ -21,12 +24,14 @@ const VARIABLES = [
 type SaveState = 'idle' | 'dirty' | 'saving' | 'saved';
 
 export default function ParametresForm({
-    defaultSubject, defaultBody, defaultHaWebhook, currentTheme,
+    defaultSubject, defaultBody, defaultHaWebhook, currentTheme, defaultTelegramEnabled, defaultTelegramEvents,
 }: {
     defaultSubject: string;
     defaultBody: string;
     defaultHaWebhook: string;
     currentTheme: ThemeId;
+    defaultTelegramEnabled: boolean;
+    defaultTelegramEvents: string[] | null;
 }) {
     const [subject, setSubject] = useState(defaultSubject);
     const [body, setBody] = useState(defaultBody);
@@ -34,6 +39,25 @@ export default function ParametresForm({
     const [saveState, setSaveState] = useState<SaveState>('idle');
     const [haSaveState, setHaSaveState] = useState<SaveState>('idle');
     const [themePending, startThemeTransition] = useTransition();
+    const [telegramEnabled, setTelegramEnabled] = useState(defaultTelegramEnabled);
+    const [telegramEvents, setTelegramEvents] = useState<string[]>(defaultTelegramEvents ?? ALL_EVENTS);
+    const [telegramSaveState, setTelegramSaveState] = useState<SaveState>('idle');
+
+    const handleSaveTelegram = async () => {
+        setTelegramSaveState('saving');
+        await Promise.all([
+            saveSetting('telegram_enabled', telegramEnabled ? 'true' : 'false'),
+            saveSetting('telegram_events', JSON.stringify(telegramEvents)),
+        ]);
+        setTelegramSaveState('saved');
+    };
+
+    const toggleEvent = (event: string) => {
+        setTelegramEvents(prev =>
+            prev.includes(event) ? prev.filter(e => e !== event) : [...prev, event]
+        );
+        setTelegramSaveState('dirty');
+    };
 
     const isDirty = subject !== defaultSubject || body !== defaultBody;
 
@@ -147,6 +171,70 @@ export default function ParametresForm({
                         {haSaveState === 'saving' ? '⏳' : haSaveState === 'saved' ? '✓ Enregistré' : '💾 Enregistrer'}
                     </button>
                 </div>
+            </section>
+
+            {/* Telegram */}
+            <section style={{ background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-xl)', padding: '1.5rem', marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                    <div>
+                        <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.2rem' }}>✈️ Notifications Telegram</h2>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                            Recevez une notification Telegram pour chaque événement sélectionné.
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => { setTelegramEnabled(v => !v); setTelegramSaveState('dirty'); }}
+                        style={{
+                            flexShrink: 0,
+                            width: 48, height: 26,
+                            borderRadius: 13,
+                            border: 'none',
+                            cursor: 'pointer',
+                            background: telegramEnabled ? 'var(--primary-color)' : 'var(--border-color)',
+                            position: 'relative',
+                            transition: 'background 0.2s',
+                        }}
+                        aria-label="Activer/désactiver Telegram"
+                    >
+                        <span style={{
+                            position: 'absolute',
+                            top: 3, left: telegramEnabled ? 25 : 3,
+                            width: 20, height: 20,
+                            borderRadius: '50%',
+                            background: '#fff',
+                            transition: 'left 0.2s',
+                        }} />
+                    </button>
+                </div>
+
+                {telegramEnabled && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
+                        {ALL_EVENTS.map(event => (
+                            <label key={event} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer', fontSize: '0.9rem' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={telegramEvents.includes(event)}
+                                    onChange={() => toggleEvent(event)}
+                                    style={{ width: 16, height: 16, accentColor: 'var(--primary-color)', cursor: 'pointer' }}
+                                />
+                                {EVENT_LABELS[event]}
+                            </label>
+                        ))}
+                    </div>
+                )}
+
+                <button
+                    onClick={handleSaveTelegram}
+                    disabled={telegramSaveState === 'saving' || telegramSaveState === 'idle' || telegramSaveState === 'saved'}
+                    className="std-add-button"
+                    style={
+                        telegramSaveState === 'saved' ? { background: 'rgba(43,140,238,0.15)', color: '#2b8cee', borderColor: 'rgba(43,140,238,0.3)', whiteSpace: 'nowrap' } :
+                        telegramSaveState === 'dirty' ? { background: 'rgba(34,197,94,0.15)', color: '#22c55e', borderColor: 'rgba(34,197,94,0.3)', whiteSpace: 'nowrap' } :
+                        { whiteSpace: 'nowrap' }
+                    }
+                >
+                    {telegramSaveState === 'saving' ? '⏳' : telegramSaveState === 'saved' ? '✓ Enregistré' : '💾 Enregistrer'}
+                </button>
             </section>
 
             {/* Email de bienvenue */}

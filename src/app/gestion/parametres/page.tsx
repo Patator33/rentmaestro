@@ -23,13 +23,24 @@ Cordialement,
 Céline et Nicolas`;
 
 export default async function ParametresPage() {
-    const [subject, body, haWebhook, dbTheme, store] = await Promise.all([
+    const [subject, body, haWebhook, telegramEnabled, telegramEvents, dbTheme, store] = await Promise.all([
         getSetting('welcome_email_subject').then(v => v ?? DEFAULT_SUBJECT),
         getSetting('welcome_email_body').then(v => v ?? DEFAULT_BODY),
         getSetting('ha_webhook_url').then(v => v ?? ''),
+        getSetting('telegram_enabled').then(v => v === 'true'),
+        getSetting('telegram_events').then(v => v ? JSON.parse(v) as string[] : null),
         getSetting('theme'),
         cookies(),
     ]);
     const currentTheme = (dbTheme ?? store.get(THEME_COOKIE)?.value ?? DEFAULT_THEME) as ThemeId;
-    return <ParametresForm defaultSubject={subject} defaultBody={body} defaultHaWebhook={haWebhook} currentTheme={currentTheme} />;
+    return (
+        <ParametresForm
+            defaultSubject={subject}
+            defaultBody={body}
+            defaultHaWebhook={haWebhook}
+            currentTheme={currentTheme}
+            defaultTelegramEnabled={telegramEnabled}
+            defaultTelegramEvents={telegramEvents}
+        />
+    );
 }
