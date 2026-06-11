@@ -4,7 +4,8 @@ import { useState, useTransition } from 'react';
 import { saveSetting } from '@/actions/settings';
 import { setTheme } from '@/actions/theme';
 import { THEMES, type ThemeId } from '@/themes/index';
-import { EVENT_LABELS } from '@/lib/n8n';
+import { EVENT_LABELS, EVENT_VARIABLES } from '@/lib/n8n';
+import type { IrlIndex } from '@/lib/irl';
 import TotpSetup from '@/components/TotpSetup';
 import PasskeySetup from '@/components/PasskeySetup';
 import PushNotificationToggle from '@/components/PushNotificationToggle';
@@ -31,6 +32,7 @@ type SaveState = 'idle' | 'dirty' | 'saving' | 'saved';
 
 export default function ParametresForm({
     defaultSubject, defaultBody, defaultHaWebhook, currentTheme, defaultTelegramEnabled, defaultTelegramEvents,
+    defaultTelegramTemplates, defaultIrlIndices, defaultIrlSubject, defaultIrlBody,
     userEmail, userId, totpEnabled, passkeyCount,
 }: {
     defaultSubject: string;
@@ -39,6 +41,10 @@ export default function ParametresForm({
     currentTheme: ThemeId;
     defaultTelegramEnabled: boolean;
     defaultTelegramEvents: string[] | null;
+    defaultTelegramTemplates: Record<string, string>;
+    defaultIrlIndices: IrlIndex[];
+    defaultIrlSubject: string;
+    defaultIrlBody: string;
     userEmail: string;
     userId: string;
     totpEnabled: boolean;
@@ -52,6 +58,7 @@ export default function ParametresForm({
     const [themePending, startThemeTransition] = useTransition();
     const [telegramEnabled, setTelegramEnabled] = useState(defaultTelegramEnabled);
     const [telegramEvents, setTelegramEvents] = useState<string[]>(defaultTelegramEvents ?? ALL_EVENTS);
+    const [telegramTemplates, setTelegramTemplates] = useState<Record<string, string>>(defaultTelegramTemplates);
     const [telegramSaveState, setTelegramSaveState] = useState<SaveState>('idle');
 
     const handleSaveTelegram = async () => {
@@ -59,9 +66,34 @@ export default function ParametresForm({
         await Promise.all([
             saveSetting('telegram_enabled', telegramEnabled ? 'true' : 'false'),
             saveSetting('telegram_events', JSON.stringify(telegramEvents)),
+            ...ALL_EVENTS.map(ev => saveSetting(`telegram_template_${ev}`, telegramTemplates[ev] ?? '')),
         ]);
         setTelegramSaveState('saved');
     };
+
+    // IRL settings
+    const [irlIndices, setIrlIndices] = useState<IrlIndex[]>(defaultIrlIndices);
+    const [irlSubject, setIrlSubject] = useState(defaultIrlSubject);
+    const [irlBody, setIrlBody] = useState(defaultIrlBody);
+    const [irlSaveState, setIrlSaveState] = useState<SaveState>('idle');
+
+    const handleSaveIrl = async () => {
+        setIrlSaveState('saving');
+        const clean = irlIndices.filter(i => i.quarter.trim() && !isNaN(Number(i.value)));
+        await Promise.all([
+            saveSetting('irl_indices', JSON.stringify(clean)),
+            saveSetting('irl_letter_subject', irlSubject),
+            saveSetting('irl_letter_body', irlBody),
+        ]);
+        setIrlSaveState('saved');
+    };
+
+    const updateIndex = (idx: number, field: 'quarter' | 'value', val: string) => {
+        setIrlIndices(prev => prev.map((it, i) => i === idx ? { ...it, [field]: field === 'value' ? parseFloat(val) || 0 : val } : it));
+        setIrlSaveState('dirty');
+    };
+    const addIndex = () => { setIrlIndices(prev => [...prev, { quarter: '', value: 0 }]); setIrlSaveState('dirty'); };
+    const removeIndex = (idx: number) => { setIrlIndices(prev => prev.filter((_, i) => i !== idx)); setIrlSaveState('dirty'); };
 
     const toggleEvent = (event: string) => {
         setTelegramEvents(prev =>
@@ -219,18 +251,40 @@ export default function ParametresForm({
                 </div>
 
                 {telegramEnabled && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
-                        {ALL_EVENTS.map(event => (
-                            <label key={event} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer', fontSize: '0.9rem' }}>
-                                <input
-                                    type="checkbox"
-                                    checked={telegramEvents.includes(event)}
-                                    onChange={() => toggleEvent(event)}
-                                    style={{ width: 16, height: 16, accentColor: 'var(--primary-color)', cursor: 'pointer' }}
-                                />
-                                {EVENT_LABELS[event]}
-                            </label>
-                        ))}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1rem' }}>
+                        {ALL_EVENTS.map(event => {
+                            const checked = telegramEvents.includes(event);
+                            return (
+                                <div key={event} style={{ border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '0.75rem 1rem' }}>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600 }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={checked}
+                                            onChange={() => toggleEvent(event)}
+                                            style={{ width: 16, height: 16, accentColor: 'var(--primary-color)', cursor: 'pointer' }}
+                                        />
+                                        {EVENT_LABELS[event]}
+                                    </label>
+                                    {checked && (
+                                        <div style={{ marginTop: '0.6rem' }}>
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', marginBottom: '0.4rem' }}>
+                                                {(EVENT_VARIABLES[event] ?? []).map(v => (
+                                                    <span key={v.name} title={v.desc} style={{ fontSize: '0.72rem', fontFamily: 'monospace', background: 'rgba(43,140,238,0.12)', color: '#2b8cee', padding: '0.1rem 0.35rem', borderRadius: 4 }}>
+                                                        {`{{${v.name}}}`}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                            <textarea
+                                                value={telegramTemplates[event] ?? ''}
+                                                onChange={e => { setTelegramTemplates(prev => ({ ...prev, [event]: e.target.value })); setTelegramSaveState('dirty'); }}
+                                                rows={3}
+                                                style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--bg)', color: 'var(--text-main)', fontSize: '0.85rem', fontFamily: 'inherit', resize: 'vertical' }}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
 
@@ -245,6 +299,84 @@ export default function ParametresForm({
                     }
                 >
                     {telegramSaveState === 'saving' ? '⏳' : telegramSaveState === 'saved' ? '✓ Enregistré' : '💾 Enregistrer'}
+                </button>
+            </section>
+
+            {/* Indices IRL */}
+            <section style={{ background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-xl)', padding: '1.5rem', marginBottom: '1.5rem' }}>
+                <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.4rem' }}>📈 Indices IRL & révision de loyer</h2>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
+                    Indices de référence des loyers (INSEE) utilisés pour la révision annuelle.
+                </p>
+                <p style={{ color: '#f59e0b', fontSize: '0.8rem', marginBottom: '1rem' }}>
+                    ⚠️ Vérifiez ces valeurs sur <a href="https://www.insee.fr" target="_blank" rel="noopener" style={{ color: '#f59e0b', textDecoration: 'underline' }}>insee.fr</a> — elles sont fournies à titre indicatif.
+                </p>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
+                    {irlIndices.map((it, idx) => (
+                        <div key={idx} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                            <input
+                                value={it.quarter}
+                                onChange={e => updateIndex(idx, 'quarter', e.target.value)}
+                                placeholder="2025-T2"
+                                style={{ width: 110, padding: '0.4rem 0.6rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--bg)', color: 'var(--text-main)', fontSize: '0.85rem' }}
+                            />
+                            <input
+                                type="number"
+                                step="0.01"
+                                value={Number.isNaN(it.value) ? '' : it.value}
+                                onChange={e => updateIndex(idx, 'value', e.target.value)}
+                                placeholder="148.10"
+                                style={{ width: 110, padding: '0.4rem 0.6rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--bg)', color: 'var(--text-main)', fontSize: '0.85rem' }}
+                            />
+                            <button onClick={() => removeIndex(idx)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '1.1rem' }} aria-label="Supprimer">×</button>
+                        </div>
+                    ))}
+                    <button onClick={addIndex} style={{ alignSelf: 'flex-start', background: 'none', border: '1px dashed var(--border-color)', borderRadius: 'var(--radius-md)', padding: '0.35rem 0.8rem', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.85rem' }}>
+                        + Ajouter un indice
+                    </button>
+                </div>
+
+                <div style={{ marginBottom: '1.25rem', padding: '0.75rem 1rem', background: 'rgba(43,140,238,0.07)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(43,140,238,0.2)' }}>
+                    <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#2b8cee', marginBottom: '0.5rem' }}>Variables du courrier de révision :</p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                        {['{{prenom_locataire}}', '{{nom_locataire}}', '{{adresse_bien}}', '{{ancien_loyer}}', '{{nouveau_loyer}}', '{{loyer_cc}}', '{{augmentation}}', '{{irl_ancien}}', '{{irl_nouveau}}', '{{trimestre_ancien}}', '{{trimestre_nouveau}}', '{{date_effet}}'].map(v => (
+                            <span key={v} style={{ fontSize: '0.75rem', fontFamily: 'monospace', background: 'rgba(43,140,238,0.12)', color: '#2b8cee', padding: '0.15rem 0.4rem', borderRadius: 4 }}>{v}</span>
+                        ))}
+                    </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div>
+                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem', color: 'var(--text-secondary)' }}>Objet du courrier</label>
+                        <input
+                            value={irlSubject}
+                            onChange={e => { setIrlSubject(e.target.value); setIrlSaveState('dirty'); }}
+                            style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--bg)', color: 'var(--text-main)', fontSize: '0.9rem' }}
+                        />
+                    </div>
+                    <div>
+                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem', color: 'var(--text-secondary)' }}>Corps du courrier</label>
+                        <textarea
+                            value={irlBody}
+                            onChange={e => { setIrlBody(e.target.value); setIrlSaveState('dirty'); }}
+                            rows={12}
+                            style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--bg)', color: 'var(--text-main)', fontSize: '0.9rem', fontFamily: 'inherit', resize: 'vertical' }}
+                        />
+                    </div>
+                </div>
+
+                <button
+                    onClick={handleSaveIrl}
+                    disabled={irlSaveState === 'saving' || irlSaveState === 'idle' || irlSaveState === 'saved'}
+                    className="std-add-button"
+                    style={{
+                        marginTop: '1rem',
+                        ...(irlSaveState === 'saved' ? { background: 'rgba(43,140,238,0.15)', color: '#2b8cee', borderColor: 'rgba(43,140,238,0.3)' } :
+                        irlSaveState === 'dirty' ? { background: 'rgba(34,197,94,0.15)', color: '#22c55e', borderColor: 'rgba(34,197,94,0.3)' } : {}),
+                    }}
+                >
+                    {irlSaveState === 'saving' ? '⏳' : irlSaveState === 'saved' ? '✓ Enregistré' : '💾 Enregistrer'}
                 </button>
             </section>
 

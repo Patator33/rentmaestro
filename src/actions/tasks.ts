@@ -9,6 +9,30 @@ function formatGCalDate(d: Date): string {
     return d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
 }
 
+const INCIDENT_STATUS_LABELS: Record<string, string> = {
+    TODO: 'Reçu',
+    IN_PROGRESS: 'En cours',
+    DONE: 'Résolu',
+};
+
+// When a tenant-linked incident changes status, keep the tenant informed by
+// posting a message in their portal conversation thread.
+async function notifyTenantStatusChange(taskId: string, oldStatus: string | undefined, newStatus: string) {
+    if (!oldStatus || oldStatus === newStatus) return;
+    const task = await prisma.task.findUnique({ where: { id: taskId } });
+    if (!task?.tenantId) return;
+    const label = INCIDENT_STATUS_LABELS[newStatus] ?? newStatus;
+    await prisma.message.create({
+        data: {
+            tenantId: task.tenantId,
+            content: `🔧 Votre signalement « ${task.title} » est maintenant : ${label}.`,
+            fromTenant: false,
+        },
+    });
+    const tenant = await prisma.tenant.findUnique({ where: { id: task.tenantId } });
+    if (tenant?.portalToken) revalidatePath(`/portal/${tenant.portalToken}`);
+}
+
 async function sendScheduledAtEmail(task: { title: string; description?: string | null; scheduledAt: Date; tenantId: string; apartmentId: string }) {
     try {
         const [tenant, apartment] = await Promise.all([
@@ -168,6 +192,7 @@ export async function updateTask(taskId: string, data: {
                 apartmentId: task.apartmentId,
             });
         }
+        await notifyTenantStatusChange(taskId, existing?.status, data.status);
         revalidatePath(`/apartments/${task.apartmentId}`);
         return { success: true, task };
     } catch (error) {
@@ -178,10 +203,12 @@ export async function updateTask(taskId: string, data: {
 
 export async function updateTaskStatus(taskId: string, status: string) {
     try {
+        const existing = await prisma.task.findUnique({ where: { id: taskId } });
         const task = await prisma.task.update({
             where: { id: taskId },
             data: { status }
         });
+        await notifyTenantStatusChange(taskId, existing?.status, status);
         revalidatePath(`/apartments/${task.apartmentId}`);
         return { success: true, task };
     } catch (error) {

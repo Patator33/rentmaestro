@@ -122,7 +122,7 @@ function PaymentBadge({ status }: { status: string }) {
 
 function TaskBadge({ status }: { status: string }) {
     const map: Record<string, { label: string; color: string }> = {
-        TODO: { label: 'Ouvert', color: C.pend },
+        TODO: { label: 'Reçu', color: C.pend },
         IN_PROGRESS: { label: 'En cours', color: C.primary },
         DONE: { label: 'Résolu', color: C.paid },
     };

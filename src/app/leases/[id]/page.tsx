@@ -5,8 +5,28 @@ import { formatDate } from "@/lib/utils";
 import LeaseDocumentUpload from "@/components/LeaseDocumentUpload";
 import SendDocumentsModal from "@/components/SendDocumentsModal";
 import { markDepositReceived, markDepositReturned, setDepositAmount, setGuarantorVisaleOk } from "@/actions/leases";
+import RentRevision from "@/components/RentRevision";
+import { DEFAULT_IRL_INDICES, type IrlIndex } from "@/lib/irl";
+import { getSetting } from "@/actions/settings";
 
 export const dynamic = "force-dynamic";
+
+const DEFAULT_IRL_LETTER_SUBJECT = "Révision annuelle de votre loyer — {{adresse_bien}}";
+const DEFAULT_IRL_LETTER_BODY = `Bonjour {{prenom_locataire}},
+
+Conformément à votre bail et à l'indice de référence des loyers (IRL) publié par l'INSEE, nous procédons à la révision annuelle de votre loyer.
+
+- IRL de référence ({{trimestre_ancien}}) : {{irl_ancien}}
+- Nouvel IRL ({{trimestre_nouveau}}) : {{irl_nouveau}}
+- Ancien loyer hors charges : {{ancien_loyer}} €
+- Nouveau loyer hors charges : {{nouveau_loyer}} € (variation de {{augmentation}} €)
+
+À compter de {{date_effet}}, votre loyer charges comprises sera de {{loyer_cc}} €.
+
+Nous restons à votre disposition pour toute question.
+
+Cordialement,
+Céline et Nicolas`;
 
 const DEPOSIT_LABELS: Record<string, string> = {
     PENDING:          'En attente',
@@ -37,6 +57,24 @@ export default async function LeaseDetailPage({ params }: { params: Promise<{ id
     ]);
 
     if (!lease) notFound();
+
+    const [irlIndicesRaw, irlSubjectTpl, irlBodyTpl] = await Promise.all([
+        getSetting('irl_indices'),
+        getSetting('irl_letter_subject').then(v => v ?? DEFAULT_IRL_LETTER_SUBJECT),
+        getSetting('irl_letter_body').then(v => v ?? DEFAULT_IRL_LETTER_BODY),
+    ]);
+    let irlIndices: IrlIndex[];
+    try { irlIndices = irlIndicesRaw ? JSON.parse(irlIndicesRaw) : DEFAULT_IRL_INDICES; }
+    catch { irlIndices = DEFAULT_IRL_INDICES; }
+
+    const coName = lease.tenant.coTenantFirstName
+        ? `${lease.tenant.coTenantFirstName} ${lease.tenant.coTenantLastName ?? ''}`.trim() : '';
+    const irlLetterVars: Record<string, string> = {
+        prenom_locataire: lease.tenant.firstName,
+        nom_locataire: `${lease.tenant.firstName} ${lease.tenant.lastName}`,
+        nom_colocataire: coName,
+        adresse_bien: `${lease.apartment.address}, ${lease.apartment.zipCode ?? ''} ${lease.apartment.city}`.trim(),
+    };
 
     const depositStatus = lease.depositStatus || (lease.depositAmount ? 'PENDING' : null);
     const guarantorType = (lease as any).guarantorType as string | null;
@@ -245,6 +283,21 @@ export default async function LeaseDetailPage({ params }: { params: Promise<{ id
                         </button>
                     </form>
                 </section>
+            )}
+
+            {lease.isActive && (
+                <RentRevision
+                    leaseId={lease.id}
+                    rentAmount={lease.rentAmount}
+                    chargesAmount={lease.chargesAmount}
+                    lastRentReviewDate={lease.lastRentReviewDate ? lease.lastRentReviewDate.toISOString() : null}
+                    irlBaseQuarter={(lease as any).irlBaseQuarter ?? null}
+                    irlBaseIndex={(lease as any).irlBaseIndex ?? null}
+                    indices={irlIndices}
+                    letterSubjectTpl={irlSubjectTpl}
+                    letterBodyTpl={irlBodyTpl}
+                    letterVars={irlLetterVars}
+                />
             )}
 
             <section style={{ background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '1.25rem', marginBottom: '1.5rem' }}>

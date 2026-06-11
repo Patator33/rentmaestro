@@ -8,14 +8,95 @@ export const EVENT_LABELS: Record<string, string> = {
     TENANT_CREATED: "👤 Nouveau locataire",
 };
 
+// Variables exposed to each event's Telegram template, with a human description.
+// Keys are usable as {{variable}} in the template.
+export const EVENT_VARIABLES: Record<string, { name: string; desc: string }[]> = {
+    RENT_PAID: [
+        { name: 'locataire', desc: 'Nom du locataire' },
+        { name: 'bien', desc: 'Adresse du bien' },
+        { name: 'montant', desc: 'Montant payé (€)' },
+        { name: 'periode', desc: 'Période (mois/année)' },
+        { name: 'statut', desc: 'PAID ou PARTIAL' },
+    ],
+    TENANT_MESSAGE: [
+        { name: 'locataire', desc: 'Nom du locataire' },
+        { name: 'message', desc: 'Contenu du message' },
+    ],
+    INCIDENT_REPORTED: [
+        { name: 'locataire', desc: 'Nom du locataire' },
+        { name: 'bien', desc: 'Adresse du bien' },
+        { name: 'titre', desc: "Objet de l'incident" },
+        { name: 'description', desc: 'Détail de l\'incident' },
+    ],
+    RECEIPT_DOWNLOADED_BY_TENANT: [
+        { name: 'locataire', desc: 'Nom du locataire' },
+        { name: 'bien', desc: 'Adresse du bien' },
+        { name: 'periode', desc: 'Période de la quittance' },
+        { name: 'montant', desc: 'Montant (€)' },
+    ],
+    TENANT_CREATED: [
+        { name: 'prenom', desc: 'Prénom du locataire' },
+        { name: 'nom', desc: 'Nom du locataire' },
+        { name: 'email', desc: 'Email du locataire' },
+    ],
+};
+
+// Default template per event (used when no custom template is configured).
+export const DEFAULT_TELEGRAM_TEMPLATES: Record<string, string> = {
+    RENT_PAID: "💰 *Loyer payé*\n{{locataire}} — {{bien}}\nMontant : {{montant}} € ({{periode}})",
+    TENANT_MESSAGE: "💬 *Message de {{locataire}}*\n{{message}}",
+    INCIDENT_REPORTED: "🚨 *Incident signalé*\n{{locataire}} — {{bien}}\n{{titre}}\n{{description}}",
+    RECEIPT_DOWNLOADED_BY_TENANT: "📄 *Quittance téléchargée*\n{{locataire}} — {{periode}} ({{montant}} €)",
+    TENANT_CREATED: "👤 *Nouveau locataire*\n{{prenom}} {{nom}} — {{email}}",
+};
+
+function applyVars(template: string, vars: Record<string, string>): string {
+    return Object.entries(vars).reduce((t, [k, v]) => t.replaceAll(`{{${k}}}`, v ?? ''), template);
+}
+
+// Flattens an event payload into the template variable set for that event.
+function extractVars(eventName: string, p: any): Record<string, string> {
+    switch (eventName) {
+        case 'RENT_PAID': {
+            const tenant = p?.lease?.tenant;
+            const apt = p?.lease?.apartment;
+            const period = p?.period ? new Date(p.period).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }) : '';
+            const amount = (p?.paidAmount ?? p?.amount);
+            return {
+                locataire: tenant ? `${tenant.firstName} ${tenant.lastName}` : '',
+                bien: apt ? apt.address : '',
+                montant: amount != null ? Number(amount).toFixed(2) : '',
+                periode: period,
+                statut: p?.status ?? '',
+            };
+        }
+        case 'TENANT_MESSAGE':
+            return { locataire: p?.tenantName ?? '', message: p?.message ?? '' };
+        case 'INCIDENT_REPORTED':
+            return { locataire: p?.tenantName ?? '', bien: p?.apartment ?? '', titre: p?.title ?? '', description: p?.description ?? '' };
+        case 'RECEIPT_DOWNLOADED_BY_TENANT':
+            return {
+                locataire: p?.tenantName ?? '',
+                bien: p?.apartment ?? '',
+                periode: p?.period ?? '',
+                montant: p?.amount != null ? Number(p.amount).toFixed(2) : '',
+            };
+        case 'TENANT_CREATED':
+            return { prenom: p?.firstName ?? '', nom: p?.lastName ?? '', email: p?.email ?? '' };
+        default:
+            return {};
+    }
+}
+
 async function notifyTelegram(eventName: string, payload: any) {
     const botToken = process.env.TELEGRAM_BOT_TOKEN;
     const chatId = process.env.TELEGRAM_CHAT_ID;
     if (!botToken || !chatId) return;
 
-    const [enabledSetting, eventsSetting] = await Promise.all([
+    const [enabledSetting, eventsSetting, templateSetting] = await Promise.all([
         prisma.setting.findUnique({ where: { key: 'telegram_enabled' } }),
         prisma.setting.findUnique({ where: { key: 'telegram_events' } }),
+        prisma.setting.findUnique({ where: { key: `telegram_template_${eventName}` } }),
     ]);
 
     if (enabledSetting?.value !== 'true') return;
@@ -23,17 +104,25 @@ async function notifyTelegram(eventName: string, payload: any) {
     const enabledEvents: string[] = eventsSetting?.value ? JSON.parse(eventsSetting.value) : Object.keys(EVENT_LABELS);
     if (!enabledEvents.includes(eventName)) return;
 
-    const label = EVENT_LABELS[eventName] ?? eventName;
-    const lines = Object.entries(payload)
-        .filter(([, v]) => v !== null && v !== undefined && typeof v !== "object")
-        .map(([k, v]) => `• ${k}: ${v}`)
-        .join("\n");
+    const template = templateSetting?.value || DEFAULT_TELEGRAM_TEMPLATES[eventName];
+    let text: string;
+    if (template) {
+        text = applyVars(template, extractVars(eventName, payload));
+    } else {
+        // Fallback: generic dump of scalar fields
+        const label = EVENT_LABELS[eventName] ?? eventName;
+        const lines = Object.entries(payload)
+            .filter(([, v]) => v !== null && v !== undefined && typeof v !== "object")
+            .map(([k, v]) => `• ${k}: ${v}`)
+            .join("\n");
+        text = `*${label}*\n${lines}`;
+    }
 
     try {
         await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ chat_id: chatId, text: `*${label}*\n${lines}`, parse_mode: "Markdown" }),
+            body: JSON.stringify({ chat_id: chatId, text, parse_mode: "Markdown" }),
         });
     } catch (error) {
         console.error(`[Telegram] Error sending event ${eventName}:`, error);
