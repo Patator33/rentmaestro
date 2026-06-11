@@ -110,6 +110,8 @@ model Lease {
   depositReturnedAt  DateTime?
   isActive           Boolean       @default(true)
   lastRentReviewDate DateTime?
+  irlBaseIndex       Float?        // INSEE IRL index used as the revision baseline
+  irlBaseQuarter     String?       // e.g. "2025-T1" — quarter of the baseline index
   guarantorType      String?       // NONE, PRIVATE, VISALE
   guarantorFirstName String?
   guarantorLastName  String?
