@@ -14,15 +14,16 @@ interface SearchResult {
 
 const itemStyle: React.CSSProperties = {
     display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
-    width: '100%', padding: '0.55rem 0.75rem', background: 'transparent',
+    width: '100%', padding: '0.55rem 0.75rem', background: 'var(--background)',
     border: 'none', borderBottom: '1px solid var(--border-color)',
     cursor: 'pointer', textAlign: 'left', gap: '0.1rem',
+    transition: 'background 0.1s',
 };
 
 const sectionHeaderStyle: React.CSSProperties = {
     padding: '0.35rem 0.75rem', fontSize: '0.68rem', fontWeight: 700,
     textTransform: 'uppercase', letterSpacing: '0.08em',
-    color: 'var(--text-muted)', background: 'var(--surface-hover)',
+    color: 'var(--text-muted)', background: 'var(--background)',
 };
 
 export default function GlobalSearch() {
@@ -97,7 +98,8 @@ export default function GlobalSearch() {
             {open && (hasResults || (query.length >= 2 && !loading)) && (
                 <div style={{
                     position: 'absolute', top: 'calc(100% + 8px)', left: 0, width: '280px',
-                    background: 'var(--surface)', border: '1px solid var(--border-color)',
+                    background: 'var(--background)',
+                    border: '1px solid var(--border-color)',
                     borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-lg)',
                     zIndex: 1000, overflow: 'hidden',
                 }}>
