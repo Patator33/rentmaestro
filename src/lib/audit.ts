@@ -57,4 +57,5 @@ export const ACTION_LABELS: Record<string, string> = {
     SEND_RENT_REMINDER: '📧 Relance envoyée',
     GENERATE_PORTAL_TOKEN: '🔑 Token portail généré',
     SEND_PORTAL_INVITE: '📨 Invitation portail envoyée',
+    RESET_TOTP: '🔓 TOTP réinitialisé',
 };

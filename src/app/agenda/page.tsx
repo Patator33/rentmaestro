@@ -73,7 +73,7 @@ export default async function AgendaPage() {
                 type: 'RENT_REVIEW',
                 label: `Révision de loyer — ${lease.tenant.firstName} ${lease.tenant.lastName}`,
                 sublabel: `${lease.apartment.name || lease.apartment.address} · ${(lease.rentAmount + lease.chargesAmount).toFixed(0)} €/mois`,
-                href: `/apartments/${lease.apartmentId}`,
+                href: `/leases/${lease.id}`,
                 urgency: daysLeft <= 30 ? 'high' : daysLeft <= 60 ? 'medium' : 'low',
             });
         }

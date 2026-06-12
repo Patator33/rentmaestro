@@ -60,12 +60,17 @@ export default async function TenantPortalPage({ params }: { params: Promise<{ t
         .flatMap(lease => lease.payments.map(p => ({ ...p, leaseId: lease.id })))
         .sort((a, b) => new Date(b.period).getTime() - new Date(a.period).getTime());
 
+    // /uploads est protégé par le middleware : les fichiers passent par la
+    // route portail qui vérifie le token et les droits d'accès du locataire.
+    const fileUrl = (url: string) =>
+        url.startsWith('/uploads/') ? `/api/portal/${token}/file?u=${encodeURIComponent(url)}` : url;
+
     const portalDocuments = {
-        leaseDocs: currentLease ? (currentLease as any).documents.map((d: any) => ({ name: d.name, url: d.url, docType: d.docType })) : [],
-        tenantDocs: tenant.documents.map(d => ({ name: d.name, url: d.url, docType: '' })),
-        apartmentDocs: currentLease ? (currentLease.apartment as any).documents.map((d: any) => ({ name: d.name, url: d.url, docType: d.docType ?? 'AUTRE' })) : [],
-        companyDocs: currentLease ? ((currentLease.apartment as any).company?.documents ?? []).map((d: any) => ({ name: d.name, url: d.url, docType: d.docType })) : [],
-        globalDocs: globalDocuments.map(d => ({ name: d.name, url: d.url, docType: d.docType })),
+        leaseDocs: currentLease ? (currentLease as any).documents.map((d: any) => ({ name: d.name, url: fileUrl(d.url), docType: d.docType })) : [],
+        tenantDocs: tenant.documents.map(d => ({ name: d.name, url: fileUrl(d.url), docType: '' })),
+        apartmentDocs: currentLease ? (currentLease.apartment as any).documents.map((d: any) => ({ name: d.name, url: fileUrl(d.url), docType: d.docType ?? 'AUTRE' })) : [],
+        companyDocs: currentLease ? ((currentLease.apartment as any).company?.documents ?? []).map((d: any) => ({ name: d.name, url: fileUrl(d.url), docType: d.docType })) : [],
+        globalDocs: globalDocuments.map(d => ({ name: d.name, url: fileUrl(d.url), docType: d.docType })),
     };
 
     return (

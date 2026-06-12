@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import webpush from 'web-push';
 import { prisma } from '@/lib/prisma';
+import { notifyN8n } from '@/lib/n8n';
+import { computeRevision, quarterPlusOneYear, DEFAULT_IRL_INDICES, type IrlIndex } from '@/lib/irl';
 
 async function sendToAll(payload: { title: string; body: string; url: string }) {
     // Set VAPID details at call time so build-time missing env vars don't crash
@@ -78,6 +80,60 @@ export async function POST(request: NextRequest) {
             title: `🔧 ${overdueTasks.length} tâche${overdueTasks.length > 1 ? 's' : ''} en retard`,
             body: overdueTasks.map((t) => t.title).slice(0, 3).join('\n'),
             url: '/apartments',
+        });
+    }
+
+    // 4. Révisions de loyer (IRL) dues — notifiée une seule fois par bail et par an
+    const activeLeases = await prisma.lease.findMany({
+        where: { isActive: true },
+        include: { apartment: true, tenant: true },
+    });
+    const irlSetting = await prisma.setting.findUnique({ where: { key: 'irl_indices' } });
+    const indices: IrlIndex[] = irlSetting?.value ? JSON.parse(irlSetting.value) : DEFAULT_IRL_INDICES;
+
+    for (const lease of activeLeases) {
+        const refDate = lease.lastRentReviewDate ? new Date(lease.lastRentReviewDate) : new Date(lease.startDate);
+        const nextReview = new Date(refDate);
+        nextReview.setFullYear(nextReview.getFullYear() + 1);
+        if (nextReview > today) continue;
+        if (lease.endDate && new Date(lease.endDate) < nextReview) continue;
+
+        // Déjà notifié pour cette échéance ?
+        const dedupKey = `irl_reminder_${lease.id}`;
+        const already = await prisma.setting.findUnique({ where: { key: dedupKey } });
+        const reviewIso = nextReview.toISOString().slice(0, 10);
+        if (already?.value === reviewIso) continue;
+
+        // Estimation du nouveau loyer si on a les indices
+        let estimatedRent: number | null = null;
+        if (lease.irlBaseQuarter && lease.irlBaseIndex) {
+            const newQuarter = quarterPlusOneYear(lease.irlBaseQuarter);
+            const newIdx = indices.find(i => i.quarter === newQuarter)?.value;
+            if (newIdx) {
+                estimatedRent = computeRevision(lease.rentAmount, lease.irlBaseQuarter, lease.irlBaseIndex, newQuarter, newIdx).newRent;
+            }
+        }
+
+        const tenantName = `${lease.tenant.firstName} ${lease.tenant.lastName}`;
+        notifications.push({
+            title: `📈 Révision de loyer due — ${tenantName}`,
+            body: `${lease.apartment.address}\nLoyer actuel : ${lease.rentAmount.toFixed(2)} €`
+                + (estimatedRent ? ` → estimé : ${estimatedRent.toFixed(2)} €` : ''),
+            url: `/leases/${lease.id}`,
+        });
+        notifyN8n('RENT_REVIEW_DUE', {
+            tenantName,
+            apartment: lease.apartment.address,
+            currentRent: lease.rentAmount,
+            estimatedRent,
+            reviewDate: nextReview.toLocaleDateString('fr-FR'),
+            leaseId: lease.id,
+        }).catch(() => {});
+
+        await prisma.setting.upsert({
+            where: { key: dedupKey },
+            update: { value: reviewIso },
+            create: { key: dedupKey, value: reviewIso },
         });
     }
 

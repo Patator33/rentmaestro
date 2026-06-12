@@ -6,6 +6,7 @@ export const EVENT_LABELS: Record<string, string> = {
     INCIDENT_REPORTED: "🚨 Incident signalé",
     RECEIPT_DOWNLOADED_BY_TENANT: "📄 Quittance téléchargée",
     TENANT_CREATED: "👤 Nouveau locataire",
+    RENT_REVIEW_DUE: "📈 Révision de loyer due",
 };
 
 // Variables exposed to each event's Telegram template, with a human description.
@@ -39,6 +40,13 @@ export const EVENT_VARIABLES: Record<string, { name: string; desc: string }[]> =
         { name: 'nom', desc: 'Nom du locataire' },
         { name: 'email', desc: 'Email du locataire' },
     ],
+    RENT_REVIEW_DUE: [
+        { name: 'locataire', desc: 'Nom du locataire' },
+        { name: 'bien', desc: 'Adresse du bien' },
+        { name: 'loyer_actuel', desc: 'Loyer HC actuel (€)' },
+        { name: 'nouveau_loyer', desc: 'Nouveau loyer estimé (€)' },
+        { name: 'date_revision', desc: 'Date anniversaire de révision' },
+    ],
 };
 
 // Default template per event (used when no custom template is configured).
@@ -48,6 +56,7 @@ export const DEFAULT_TELEGRAM_TEMPLATES: Record<string, string> = {
     INCIDENT_REPORTED: "🚨 *Incident signalé*\n{{locataire}} — {{bien}}\n{{titre}}\n{{description}}",
     RECEIPT_DOWNLOADED_BY_TENANT: "📄 *Quittance téléchargée*\n{{locataire}} — {{periode}} ({{montant}} €)",
     TENANT_CREATED: "👤 *Nouveau locataire*\n{{prenom}} {{nom}} — {{email}}",
+    RENT_REVIEW_DUE: "📈 *Révision de loyer due*\n{{locataire}} — {{bien}}\nLoyer actuel : {{loyer_actuel}} € → estimé : {{nouveau_loyer}} €\nRévisable depuis le {{date_revision}}",
 };
 
 function applyVars(template: string, vars: Record<string, string>): string {
@@ -83,6 +92,14 @@ function extractVars(eventName: string, p: any): Record<string, string> {
             };
         case 'TENANT_CREATED':
             return { prenom: p?.firstName ?? '', nom: p?.lastName ?? '', email: p?.email ?? '' };
+        case 'RENT_REVIEW_DUE':
+            return {
+                locataire: p?.tenantName ?? '',
+                bien: p?.apartment ?? '',
+                loyer_actuel: p?.currentRent != null ? Number(p.currentRent).toFixed(2) : '',
+                nouveau_loyer: p?.estimatedRent != null ? Number(p.estimatedRent).toFixed(2) : '',
+                date_revision: p?.reviewDate ?? '',
+            };
         default:
             return {};
     }
