@@ -89,14 +89,14 @@ export default function GlobalSearch() {
                         paddingTop: '0.35rem', paddingBottom: '0.35rem',
                         background: 'var(--surface)', border: '1px solid var(--border-color)',
                         borderRadius: 'var(--radius-full)', color: 'var(--text-main)',
-                        fontSize: '0.85rem', width: '180px', fontFamily: 'inherit', outline: 'none',
+                        fontSize: '0.85rem', width: '100%', fontFamily: 'inherit', outline: 'none',
                     }}
                 />
             </div>
 
             {open && (hasResults || (query.length >= 2 && !loading)) && (
                 <div style={{
-                    position: 'absolute', top: 'calc(100% + 8px)', right: 0, width: '300px',
+                    position: 'absolute', top: 'calc(100% + 8px)', left: 0, width: '280px',
                     background: 'var(--surface)', border: '1px solid var(--border-color)',
                     borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-lg)',
                     zIndex: 1000, overflow: 'hidden',

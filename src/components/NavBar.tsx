@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import BottomNav from "@/components/BottomNav";
+import GlobalSearch from "@/components/GlobalSearch";
 
 const NAV_ITEMS = [
   {
@@ -94,6 +95,10 @@ export default function NavBar() {
           <span className="sidebar-brand-dot" />
         </div>
 
+        <div style={{ padding: '0 8px 8px' }}>
+          <GlobalSearch />
+        </div>
+
         <nav className="sidebar-nav">
           {NAV_ITEMS.map((item) => (
             <Link
@@ -143,6 +148,10 @@ export default function NavBar() {
       />
       <div className={`mobile-nav-menu${mobileOpen ? ' open' : ''}`}>
         <div className="mobile-menu-header">Menu</div>
+
+        <div style={{ padding: '0 8px 8px' }}>
+          <GlobalSearch />
+        </div>
 
         {NAV_ITEMS.map((item) => (
           <Link
