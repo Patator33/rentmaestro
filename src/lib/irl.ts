@@ -13,15 +13,21 @@ export interface IrlIndex {
     value: number;   // 145.47
 }
 
-// Valeurs par défaut (à vérifier sur insee.fr — éditables dans Paramètres).
+// Valeurs par défaut sources INSEE (éditables dans Paramètres → Indices IRL).
 export const DEFAULT_IRL_INDICES: IrlIndex[] = [
+    { quarter: '2023-T1', value: 138.61 },
+    { quarter: '2023-T2', value: 140.59 },
+    { quarter: '2023-T3', value: 141.03 },
     { quarter: '2023-T4', value: 142.06 },
     { quarter: '2024-T1', value: 143.46 },
     { quarter: '2024-T2', value: 145.17 },
-    { quarter: '2024-T3', value: 145.47 },
-    { quarter: '2024-T4', value: 146.66 },
-    { quarter: '2025-T1', value: 147.46 },
-    { quarter: '2025-T2', value: 148.10 },
+    { quarter: '2024-T3', value: 144.51 },
+    { quarter: '2024-T4', value: 144.64 },
+    { quarter: '2025-T1', value: 145.47 },
+    { quarter: '2025-T2', value: 146.68 },
+    { quarter: '2025-T3', value: 145.77 },
+    { quarter: '2025-T4', value: 145.78 },
+    { quarter: '2026-T1', value: 146.60 },
 ];
 
 export function quarterLabel(quarter: string): string {
