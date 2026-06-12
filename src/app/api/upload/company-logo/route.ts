@@ -1,10 +1,15 @@
 import { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+import { readSession } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
 
 const MAX_SIZE = 512 * 1024; // 512 KB
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+    const session = await readSession(request);
+    if (!session.userId) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+
     try {
         const formData = await request.formData();
         const file = formData.get('file') as File | null;

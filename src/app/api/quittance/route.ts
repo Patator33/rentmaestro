@@ -1,12 +1,17 @@
 import { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { generateQuittanceHtml } from '@/lib/quittance';
+import { readSession } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
 
 // Imported HTML logic
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
+    const session = await readSession(request);
+    if (!session.userId) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+
     const { searchParams } = new URL(request.url);
     const leaseId = searchParams.get('leaseId');
     const periodStr = searchParams.get('period');

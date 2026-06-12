@@ -1,14 +1,19 @@
 import { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { generateQuittanceHtml } from '@/lib/quittance';
+import { readSession } from '@/lib/session';
 import puppeteer from 'puppeteer';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 export async function GET(
-    request: Request,
+    request: NextRequest,
     { params }: { params: Promise<{ paymentId: string }> }
 ) {
+    const session = await readSession(request);
+    if (!session.userId) return new NextResponse('Non autorisé', { status: 401 });
+
     try {
         const { paymentId } = await params;
         const payment = await prisma.rentPayment.findUnique({

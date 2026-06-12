@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { calculateFutureProrata } from '@/lib/utils';
+import { readSession } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,7 +11,10 @@ export const dynamic = 'force-dynamic';
  * This endpoint can be called manually from the dashboard or via a cron job.
  * It only creates payments that don't already exist for the current period.
  */
-export async function POST() {
+export async function POST(request: NextRequest) {
+    const session = await readSession(request);
+    if (!session.userId) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+
     try {
         const now = new Date();
         const period = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));

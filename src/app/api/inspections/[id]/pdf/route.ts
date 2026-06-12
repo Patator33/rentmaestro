@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { readSession } from '@/lib/session';
 import puppeteer from 'puppeteer';
 
 interface Room {
@@ -15,9 +17,12 @@ const CONDITION_STYLE: Record<string, { label: string; color: string; bg: string
 };
 
 export async function GET(
-    _request: Request,
+    request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
+    const session = await readSession(request);
+    if (!session.userId) return new NextResponse('Non autorisé', { status: 401 });
+
     const { id } = await params;
 
     const inspection = await prisma.inspection.findUnique({
