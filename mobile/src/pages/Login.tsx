@@ -40,7 +40,10 @@ export default function Login() {
         || err?.name === BiometryErrorType.appCancel
         || err?.message === 'Authentication cancelled.';
       if (!isCancelled) {
-        setError('Authentification biométrique indisponible — utilisez votre mot de passe.');
+        setError(err instanceof Error ? err.message : 'Authentification biométrique indisponible — utilisez votre mot de passe.');
+        // getBiometricCredentials() désactive la biométrie si les identifiants
+        // stockés sont introuvables — on reflète ça dans l'UI immédiatement.
+        setBiometricEnabled(await isBiometricEnabled());
       }
     }
   };

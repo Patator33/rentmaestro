@@ -76,7 +76,13 @@ export async function getBiometricCredentials(): Promise<{ username: string; pas
     Preferences.get({ key: BIOMETRIC_USER_KEY }),
     Preferences.get({ key: BIOMETRIC_PASS_KEY }),
   ]);
-  if (!username || !password) throw new Error('Identifiants biométriques introuvables.');
+  if (!username || !password) {
+    // Le scan a réussi mais aucun identifiant n'est stocké (ex: résidu d'une
+    // ancienne version du plugin biométrique) — on désactive pour éviter une
+    // boucle où le bouton biométrique échoue silencieusement à chaque essai.
+    await clearBiometricCredentials();
+    throw new Error('Identifiants biométriques introuvables — reconnectez-vous puis réactivez la biométrie dans Paramètres.');
+  }
   return { username, password };
 }
 
