@@ -130,6 +130,19 @@ export const api = {
     return res.json();
   },
 
+  getTaskNotes: async (taskId: string) => {
+    const res = await apiFetch(`/api/landlord/tasks/${taskId}/notes`);
+    return res.json();
+  },
+
+  addTaskNote: async (taskId: string, content: string) => {
+    const res = await apiFetch(`/api/landlord/tasks/${taskId}/notes`, {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    });
+    return res.json();
+  },
+
   getTenants: async () => {
     const res = await apiFetch('/api/landlord/tenants');
     return res.json();

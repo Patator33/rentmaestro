@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api/landlord';
 import PullToRefresh from '../components/PullToRefresh';
+import TaskDetailPopup, { type TaskForPopup } from '../components/TaskDetailPopup';
 import { useAutoRefresh } from '../hooks/useAutoRefresh';
 
 interface Task {
@@ -208,14 +209,14 @@ function TaskModal({
   );
 }
 
-function TaskCard({ item, onCycle, onEdit, actionLoading }: {
+function TaskCard({ item, onCycle, onDetail, actionLoading }: {
   item: Task;
   onCycle: (t: Task) => void;
-  onEdit: (t: Task) => void;
+  onDetail: (t: Task) => void;
   actionLoading: string | null;
 }) {
   return (
-    <div className="bg-surface rounded-xl border border-border p-3" onClick={() => onEdit(item)}>
+    <div className="bg-surface rounded-xl border border-border p-3" onClick={() => onDetail(item)}>
       <div className="flex items-start justify-between mb-1">
         <p className="text-text-main font-medium text-sm flex-1">{item.title}</p>
         <span className={`text-xs ml-2 shrink-0 ${STATUS_COLORS[item.status]}`}>{STATUS_LABELS[item.status]}</span>
@@ -250,6 +251,7 @@ export default function Incidents() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [editingTask, setEditingTask] = useState<EditingTask>(null);
+  const [detailTask, setDetailTask] = useState<TaskForPopup | null>(null);
   const [apartments, setApartments] = useState<Apartment[]>([]);
 
   const load = useCallback((all: boolean) => {
@@ -292,8 +294,23 @@ export default function Incidents() {
     load(showAll);
   };
 
+  const openEdit = async (task: TaskForPopup) => {
+    if (apartments.length === 0) {
+      const apts = await api.getApartments();
+      setApartments(apts);
+    }
+    setEditingTask(task as Task);
+  };
+
   return (
     <>
+      {detailTask && (
+        <TaskDetailPopup
+          task={detailTask}
+          onClose={() => setDetailTask(null)}
+          onEdit={openEdit}
+        />
+      )}
       {editingTask !== null && (
         <TaskModal
           task={editingTask}
@@ -327,7 +344,13 @@ export default function Incidents() {
               ) : (
                 <div className="space-y-2 mb-4">
                   {incidents.map(inc => (
-                    <TaskCard key={inc.id} item={inc} onCycle={t => cycleStatus(t, true)} onEdit={() => {}} actionLoading={actionLoading} />
+                    <TaskCard
+                      key={inc.id}
+                      item={inc}
+                      onCycle={t => cycleStatus(t, true)}
+                      onDetail={setDetailTask}
+                      actionLoading={actionLoading}
+                    />
                   ))}
                 </div>
               )}
@@ -347,7 +370,13 @@ export default function Incidents() {
               ) : (
                 <div className="space-y-2">
                   {tasks.map(t => (
-                    <TaskCard key={t.id} item={t} onCycle={t => cycleStatus(t, false)} onEdit={setEditingTask} actionLoading={actionLoading} />
+                    <TaskCard
+                      key={t.id}
+                      item={t}
+                      onCycle={t => cycleStatus(t, false)}
+                      onDetail={setDetailTask}
+                      actionLoading={actionLoading}
+                    />
                   ))}
                 </div>
               )}

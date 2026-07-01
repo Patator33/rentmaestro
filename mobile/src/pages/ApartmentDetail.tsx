@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api/landlord';
 import PullToRefresh from '../components/PullToRefresh';
+import TaskDetailPopup, { type TaskForPopup } from '../components/TaskDetailPopup';
 
 type Tab = 'infos' | 'payments' | 'tasks';
 
@@ -23,6 +24,7 @@ export default function ApartmentDetail() {
   const [apt, setApt] = useState<any>(null);
   const [tab, setTab] = useState<Tab>('infos');
   const [deleting, setDeleting] = useState(false);
+  const [detailTask, setDetailTask] = useState<TaskForPopup | null>(null);
   const navigate = useNavigate();
 
   const load = useCallback(() => api.getApartment(id!).then(setApt), [id]);
@@ -41,6 +43,18 @@ export default function ApartmentDetail() {
   };
 
   if (!apt) return <div className="safe-top px-4 py-4 text-text-muted text-sm">Chargement...</div>;
+
+  // Build TaskForPopup from apartment task (inject apartment info)
+  const toTaskForPopup = (t: any): TaskForPopup => ({
+    id: t.id,
+    title: t.title,
+    description: t.description ?? null,
+    status: t.status,
+    cost: t.cost ?? null,
+    dueDate: t.dueDate ?? null,
+    createdAt: t.createdAt,
+    apartment: { id: apt.id, address: apt.address, name: apt.name ?? null },
+  });
 
   const cc = apt.rent + apt.charges;
   const costs = (apt.mortgageAmount || 0) + (apt.insuranceAmount || 0) + (apt.taxAmount || 0);
@@ -62,6 +76,10 @@ export default function ApartmentDetail() {
   const tasks = apt.tasks ?? [];
 
   return (
+    <>
+    {detailTask && (
+      <TaskDetailPopup task={detailTask} onClose={() => setDetailTask(null)} />
+    )}
     <PullToRefresh onRefresh={load}>
       <div className="pb-nav safe-top" style={{ minHeight: '100%' }}>
         <div className="px-4 py-4">
@@ -102,17 +120,16 @@ export default function ApartmentDetail() {
                     <span className="text-primary text-xs font-medium">{apt.building.name}</span>
                   </button>
                 )}
-                <div className="flex items-center gap-3 mt-2 pt-2 border-t border-border">
-                  <span className="text-text-secondary text-xs">
+                <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid #2a3045', display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span style={{ color: '#94a3b8', fontSize: 12 }}>
                     {apt.surface != null ? `${apt.surface} m²` : '— m²'}
                   </span>
                   {apt.dpe ? (
-                    <span className="text-xs font-bold px-2 py-0.5 rounded"
-                      style={{ color: '#fff', background: ({ A:'#22c55e', B:'#84cc16', C:'#a3e635', D:'#facc15', E:'#fb923c', F:'#f87171', G:'#ef4444' } as Record<string,string>)[apt.dpe] ?? '#6b7280' }}>
+                    <span style={{ color: '#fff', fontWeight: 700, fontSize: 12, padding: '2px 8px', borderRadius: 4, background: ({ A:'#22c55e', B:'#84cc16', C:'#a3e635', D:'#facc15', E:'#fb923c', F:'#f87171', G:'#ef4444' } as Record<string,string>)[apt.dpe] ?? '#6b7280' }}>
                       DPE {apt.dpe}
                     </span>
                   ) : (
-                    <span className="text-text-muted text-xs">DPE —</span>
+                    <span style={{ color: '#64748b', fontSize: 12 }}>DPE —</span>
                   )}
                 </div>
               </div>
@@ -217,7 +234,12 @@ export default function ApartmentDetail() {
                 tasks.map((t: any) => {
                   const s = TASK_STATUS[t.status] ?? { label: t.status, color: '#6b7280' };
                   return (
-                    <div key={t.id} className="bg-surface rounded-xl border border-border p-3">
+                    <div
+                      key={t.id}
+                      className="bg-surface rounded-xl border border-border p-3 active:opacity-70"
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => setDetailTask(toTaskForPopup(t))}
+                    >
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
                           <p className="text-text-main text-sm font-medium">{t.title}</p>
@@ -239,6 +261,7 @@ export default function ApartmentDetail() {
         </div>
       </div>
     </PullToRefresh>
+    </>
   );
 }
 
