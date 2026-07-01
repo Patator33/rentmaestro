@@ -25,6 +25,20 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json(note);
 }
 
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+    if (!verifyMobileToken(request)) return unauthorized();
+    const { id } = await params;
+    const { noteId, content } = await request.json();
+    if (!content?.trim()) return NextResponse.json({ error: 'Contenu requis' }, { status: 400 });
+    const existing = await prisma.taskNote.findUnique({ where: { id: noteId } });
+    if (!existing || existing.taskId !== id) return NextResponse.json({ error: 'Note introuvable' }, { status: 404 });
+    const note = await prisma.taskNote.update({
+        where: { id: noteId },
+        data: { content: content.trim() },
+    });
+    return NextResponse.json(note);
+}
+
 export async function OPTIONS() {
     return new NextResponse(null, { status: 204 });
 }

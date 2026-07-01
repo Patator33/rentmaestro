@@ -1,5 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { api } from '../api/landlord';
+
+const LONG_PRESS_MS = 500;
+const LONG_PRESS_MOVE_TOLERANCE = 10;
 
 interface TaskNote {
   id: string;
@@ -44,6 +47,11 @@ export default function TaskDetailPopup({
   const [loadingNotes, setLoadingNotes] = useState(true);
   const [noteText, setNoteText] = useState('');
   const [addingNote, setAddingNote] = useState(false);
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [editingNoteText, setEditingNoteText] = useState('');
+  const [savingNote, setSavingNote] = useState(false);
+  const longPressTimer = useRef<number | null>(null);
+  const longPressStart = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     api.getTaskNotes(task.id)
@@ -65,6 +73,54 @@ export default function TaskDetailPopup({
     } finally {
       setAddingNote(false);
     }
+  };
+
+  const startEditNote = (note: TaskNote) => {
+    setEditingNoteId(note.id);
+    setEditingNoteText(note.content);
+  };
+
+  const cancelEditNote = () => {
+    setEditingNoteId(null);
+    setEditingNoteText('');
+  };
+
+  const handleSaveNote = async () => {
+    if (!editingNoteId || !editingNoteText.trim()) return;
+    setSavingNote(true);
+    try {
+      const updated = await api.updateTaskNote(task.id, editingNoteId, editingNoteText.trim());
+      setNotes(prev => prev.map(n => n.id === updated.id ? updated : n));
+      setEditingNoteId(null);
+      setEditingNoteText('');
+    } catch {
+      // silent failure
+    } finally {
+      setSavingNote(false);
+    }
+  };
+
+  const clearLongPressTimer = () => {
+    if (longPressTimer.current != null) {
+      window.clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    longPressStart.current = null;
+  };
+
+  const handlePressStart = (note: TaskNote, e: React.PointerEvent) => {
+    longPressStart.current = { x: e.clientX, y: e.clientY };
+    longPressTimer.current = window.setTimeout(() => {
+      startEditNote(note);
+      longPressTimer.current = null;
+    }, LONG_PRESS_MS);
+  };
+
+  const handlePressMove = (e: React.PointerEvent) => {
+    if (!longPressStart.current) return;
+    const dx = e.clientX - longPressStart.current.x;
+    const dy = e.clientY - longPressStart.current.y;
+    if (Math.hypot(dx, dy) > LONG_PRESS_MOVE_TOLERANCE) clearLongPressTimer();
   };
 
   const s = STATUS_STYLE[task.status] ?? { bg: '#6b728020', color: '#6b7280' };
@@ -136,7 +192,13 @@ export default function TaskDetailPopup({
                   <div
                     key={note.id}
                     className="bg-bg rounded-xl p-3"
-                    style={{ borderLeft: `3px solid ${note.authorType === 'TENANT' ? '#f59e0b' : '#2b8cee'}` }}
+                    style={{ borderLeft: `3px solid ${note.authorType === 'TENANT' ? '#f59e0b' : '#2b8cee'}`, userSelect: 'none', WebkitUserSelect: 'none', touchAction: 'manipulation' }}
+                    onPointerDown={editingNoteId === note.id ? undefined : e => handlePressStart(note, e)}
+                    onPointerMove={handlePressMove}
+                    onPointerUp={clearLongPressTimer}
+                    onPointerLeave={clearLongPressTimer}
+                    onPointerCancel={clearLongPressTimer}
+                    onContextMenu={e => e.preventDefault()}
                   >
                     <div className="flex justify-between items-center mb-1">
                       <span className="text-xs font-semibold" style={{ color: note.authorType === 'TENANT' ? '#f59e0b' : '#2b8cee' }}>
@@ -146,7 +208,35 @@ export default function TaskDetailPopup({
                         {new Date(note.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
-                    <p className="text-sm text-text-main whitespace-pre-wrap">{note.content}</p>
+                    {editingNoteId === note.id ? (
+                      <div className="space-y-2" style={{ userSelect: 'auto' }}>
+                        <textarea
+                          className="w-full bg-surface border border-border rounded-lg px-2.5 py-2 text-text-main text-sm focus:outline-none focus:border-primary"
+                          value={editingNoteText}
+                          onChange={e => setEditingNoteText(e.target.value)}
+                          rows={2}
+                          autoFocus
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            onClick={handleSaveNote}
+                            disabled={savingNote || !editingNoteText.trim()}
+                            className="px-2.5 py-1 bg-primary text-white text-xs font-semibold rounded-lg disabled:opacity-50"
+                          >
+                            {savingNote ? '...' : 'Enregistrer'}
+                          </button>
+                          <button
+                            onClick={cancelEditNote}
+                            disabled={savingNote}
+                            className="px-2.5 py-1 border border-border text-text-secondary text-xs font-semibold rounded-lg"
+                          >
+                            Annuler
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-text-main whitespace-pre-wrap">{note.content}</p>
+                    )}
                   </div>
                 ))}
               </div>

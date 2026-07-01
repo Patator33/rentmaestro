@@ -135,6 +135,14 @@ export const api = {
     return res.json();
   },
 
+  updateTaskNote: async (taskId: string, noteId: string, content: string) => {
+    const res = await apiFetch(`/api/landlord/tasks/${taskId}/notes`, {
+      method: 'PATCH',
+      body: JSON.stringify({ noteId, content }),
+    });
+    return res.json();
+  },
+
   addTaskNote: async (taskId: string, content: string) => {
     const res = await apiFetch(`/api/landlord/tasks/${taskId}/notes`, {
       method: 'POST',
