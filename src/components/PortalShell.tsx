@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import TenantMessaging from './TenantMessaging';
 import { reportIncident } from '@/actions/portal';
-import { addPortalTaskNote } from '@/actions/tasks';
+import { addPortalTaskNote, updatePortalTaskNote } from '@/actions/tasks';
 import { sendPortalMessage, markMessagesRead } from '@/actions/messages';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -155,6 +155,9 @@ export default function PortalShell({
     const [noteInputs, setNoteInputs] = useState<Record<string, string>>({});
     const [noteAdding, setNoteAdding] = useState<Record<string, boolean>>({});
     const [localTaskNotes, setLocalTaskNotes] = useState<Record<string, TaskNote[]>>({});
+    const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+    const [editingNoteText, setEditingNoteText] = useState('');
+    const [savingNote, setSavingNote] = useState(false);
 
     // Message input state
     const [msgText, setMsgText] = useState('');
@@ -208,6 +211,35 @@ export default function PortalShell({
             setNoteInputs(prev => ({ ...prev, [taskId]: '' }));
         }
         setNoteAdding(prev => ({ ...prev, [taskId]: false }));
+    };
+
+    const startEditNote = (note: TaskNote) => {
+        setEditingNoteId(note.id);
+        setEditingNoteText(note.content);
+    };
+
+    const cancelEditNote = () => {
+        setEditingNoteId(null);
+        setEditingNoteText('');
+    };
+
+    const handleSaveNote = async (taskId: string) => {
+        if (!editingNoteId || !editingNoteText.trim()) return;
+        setSavingNote(true);
+        const res = await updatePortalTaskNote(editingNoteId, editingNoteText.trim(), token);
+        if (res.success && res.note) {
+            const updated = res.note as TaskNote;
+            setTasks(prev => prev.map(t =>
+                t.id === taskId ? { ...t, notes: (t.notes ?? []).map(n => n.id === updated.id ? updated : n) } : t
+            ));
+            setLocalTaskNotes(prev => ({
+                ...prev,
+                [taskId]: (prev[taskId] ?? []).map(n => n.id === updated.id ? updated : n),
+            }));
+            setEditingNoteId(null);
+            setEditingNoteText('');
+        }
+        setSavingNote(false);
     };
 
     const handleSendMsg = async (e: React.FormEvent) => {
@@ -473,11 +505,50 @@ export default function PortalShell({
                                                 <span style={{ fontSize: '0.65rem', fontWeight: 600, color: note.authorType === 'TENANT' ? C.pend : C.primary }}>
                                                     {note.authorType === 'TENANT' ? 'Moi' : 'Propriétaire'}
                                                 </span>
-                                                <span style={{ fontSize: '0.65rem', color: C.mu }}>
-                                                    {new Date(note.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                                                </span>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                                    <span style={{ fontSize: '0.65rem', color: C.mu }}>
+                                                        {new Date(note.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                                    </span>
+                                                    {note.authorType === 'TENANT' && editingNoteId !== note.id && (
+                                                        <button
+                                                            onClick={() => startEditNote(note)}
+                                                            style={{ background: 'transparent', border: 'none', color: C.mu, cursor: 'pointer', fontSize: '0.7rem', padding: 0 }}
+                                                            title="Modifier"
+                                                        >
+                                                            ✏️
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </div>
-                                            <p style={{ fontSize: '0.8rem', color: C.tm, margin: 0, whiteSpace: 'pre-wrap' }}>{note.content}</p>
+                                            {editingNoteId === note.id ? (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                                                    <textarea
+                                                        value={editingNoteText}
+                                                        onChange={e => setEditingNoteText(e.target.value)}
+                                                        rows={2}
+                                                        autoFocus
+                                                        style={{ padding: '0.4rem 0.5rem', background: C.bg, border: `1px solid ${C.border}`, borderRadius: '6px', color: C.tm, fontSize: '0.8rem', resize: 'none', fontFamily: 'inherit', outline: 'none' }}
+                                                    />
+                                                    <div style={{ display: 'flex', gap: '0.35rem' }}>
+                                                        <button
+                                                            onClick={() => handleSaveNote(task.id)}
+                                                            disabled={savingNote || !editingNoteText.trim()}
+                                                            style={{ fontSize: '0.7rem', padding: '0.2rem 0.55rem', borderRadius: '6px', border: 'none', background: C.primary, color: 'white', cursor: 'pointer', opacity: (savingNote || !editingNoteText.trim()) ? 0.5 : 1 }}
+                                                        >
+                                                            {savingNote ? '...' : 'Enregistrer'}
+                                                        </button>
+                                                        <button
+                                                            onClick={cancelEditNote}
+                                                            disabled={savingNote}
+                                                            style={{ fontSize: '0.7rem', padding: '0.2rem 0.55rem', borderRadius: '6px', border: `1px solid ${C.border}`, background: 'transparent', color: C.ts, cursor: 'pointer' }}
+                                                        >
+                                                            Annuler
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <p style={{ fontSize: '0.8rem', color: C.tm, margin: 0, whiteSpace: 'pre-wrap' }}>{note.content}</p>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
@@ -711,11 +782,50 @@ export default function PortalShell({
                                                                     <span style={{ fontSize: '0.75rem', fontWeight: 600, color: note.authorType === 'TENANT' ? '#f59e0b' : '#2b8cee' }}>
                                                                         {note.authorType === 'TENANT' ? 'Moi' : 'Propriétaire'}
                                                                     </span>
-                                                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                                                        {new Date(note.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                                                                    </span>
+                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                                            {new Date(note.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                                        </span>
+                                                                        {note.authorType === 'TENANT' && editingNoteId !== note.id && (
+                                                                            <button
+                                                                                onClick={() => startEditNote(note)}
+                                                                                style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.75rem', padding: 0 }}
+                                                                                title="Modifier"
+                                                                            >
+                                                                                ✏️
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
                                                                 </div>
-                                                                <p style={{ fontSize: '0.875rem', color: 'var(--text-main)', margin: 0, whiteSpace: 'pre-wrap' }}>{note.content}</p>
+                                                                {editingNoteId === note.id ? (
+                                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                                                        <textarea
+                                                                            value={editingNoteText}
+                                                                            onChange={e => setEditingNoteText(e.target.value)}
+                                                                            rows={2}
+                                                                            autoFocus
+                                                                            style={{ padding: '0.5rem 0.6rem', background: 'var(--background)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--text-main)', fontSize: '0.875rem', resize: 'none', fontFamily: 'inherit', outline: 'none' }}
+                                                                        />
+                                                                        <div style={{ display: 'flex', gap: '0.4rem' }}>
+                                                                            <button
+                                                                                onClick={() => handleSaveNote(task.id)}
+                                                                                disabled={savingNote || !editingNoteText.trim()}
+                                                                                style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem', borderRadius: '6px', border: 'none', background: '#2b8cee', color: 'white', cursor: 'pointer', opacity: (savingNote || !editingNoteText.trim()) ? 0.5 : 1 }}
+                                                                            >
+                                                                                {savingNote ? '...' : 'Enregistrer'}
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={cancelEditNote}
+                                                                                disabled={savingNote}
+                                                                                style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer' }}
+                                                                            >
+                                                                                Annuler
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                ) : (
+                                                                    <p style={{ fontSize: '0.875rem', color: 'var(--text-main)', margin: 0, whiteSpace: 'pre-wrap' }}>{note.content}</p>
+                                                                )}
                                                             </div>
                                                         ))}
                                                     </div>

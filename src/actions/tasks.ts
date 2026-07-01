@@ -138,6 +138,46 @@ export async function addTaskNote(taskId: string, content: string, authorType: '
     }
 }
 
+export async function updateTaskNote(noteId: string, content: string) {
+    if (!content.trim()) return { success: false, error: 'Contenu requis' };
+    try {
+        const note = await prisma.taskNote.update({
+            where: { id: noteId },
+            data: { content: content.trim() },
+        });
+        const task = await prisma.task.findUnique({ where: { id: note.taskId } });
+        if (task) {
+            revalidatePath(`/apartments/${task.apartmentId}`);
+            revalidatePath('/travaux');
+        }
+        return { success: true, note };
+    } catch (error) {
+        console.error("Erreur updateTaskNote:", error);
+        return { success: false, error: "Impossible de modifier la note" };
+    }
+}
+
+export async function updatePortalTaskNote(noteId: string, content: string, token: string) {
+    if (!content.trim()) return { success: false, error: 'Contenu requis' };
+    try {
+        const existing = await prisma.taskNote.findUnique({
+            where: { id: noteId },
+            include: { task: { include: { tenant: { select: { portalToken: true } } } } },
+        });
+        if (!existing || existing.authorType !== 'TENANT' || existing.task.tenant?.portalToken !== token) {
+            return { success: false, error: 'Non autorisé' };
+        }
+        const note = await prisma.taskNote.update({
+            where: { id: noteId },
+            data: { content: content.trim() },
+        });
+        return { success: true, note };
+    } catch (error) {
+        console.error("Erreur updatePortalTaskNote:", error);
+        return { success: false, error: "Impossible de modifier la note" };
+    }
+}
+
 export async function addPortalTaskNote(taskId: string, content: string, token: string) {
     if (!content.trim()) return { success: false, error: 'Contenu requis' };
     try {

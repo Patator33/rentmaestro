@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { cycleTaskStatusForTravaux, addTaskNote } from '@/actions/tasks';
+import { cycleTaskStatusForTravaux, addTaskNote, updateTaskNote } from '@/actions/tasks';
 import { formatDate } from '@/lib/utils';
 
 interface TaskNote {
@@ -44,6 +44,9 @@ export default function TravauxClient({ initialTasks, showAll }: { initialTasks:
     const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
     const [noteText, setNoteText] = useState('');
     const [addingNote, setAddingNote] = useState(false);
+    const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+    const [editingNoteText, setEditingNoteText] = useState('');
+    const [savingNote, setSavingNote] = useState(false);
     const [isPending, startTransition] = useTransition();
 
     const incidents = initialTasks.filter(t => t.tenant !== null);
@@ -67,6 +70,28 @@ export default function TravauxClient({ initialTasks, showAll }: { initialTasks:
             router.refresh();
         }
         setAddingNote(false);
+    };
+
+    const startEditNote = (note: TaskNote) => {
+        setEditingNoteId(note.id);
+        setEditingNoteText(note.content);
+    };
+
+    const cancelEditNote = () => {
+        setEditingNoteId(null);
+        setEditingNoteText('');
+    };
+
+    const handleSaveNote = async () => {
+        if (!editingNoteId || !editingNoteText.trim()) return;
+        setSavingNote(true);
+        const res = await updateTaskNote(editingNoteId, editingNoteText.trim());
+        if (res.success) {
+            setEditingNoteId(null);
+            setEditingNoteText('');
+            router.refresh();
+        }
+        setSavingNote(false);
     };
 
     const renderCard = (task: TaskWithNotes) => {
@@ -183,7 +208,7 @@ export default function TravauxClient({ initialTasks, showAll }: { initialTasks:
                     onClick={() => setSelectedTaskId(null)}
                 >
                     <div
-                        style={{ background: 'var(--surface)', borderRadius: '12px', border: '1px solid var(--border-color)', width: '100%', maxWidth: 560, maxHeight: '85vh', overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}
+                        style={{ background: 'var(--background)', borderRadius: '12px', border: '1px solid var(--border-color)', width: '100%', maxWidth: 560, maxHeight: '85vh', overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}
                         onClick={e => e.stopPropagation()}
                     >
                         {/* Header */}
@@ -260,11 +285,50 @@ export default function TravauxClient({ initialTasks, showAll }: { initialTasks:
                                                 <span style={{ fontSize: '0.72rem', fontWeight: 600, color: note.authorType === 'TENANT' ? '#f59e0b' : 'var(--primary-color)' }}>
                                                     {note.authorType === 'TENANT' ? '👤 Locataire' : '🏠 Propriétaire'}
                                                 </span>
-                                                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                                                    {new Date(note.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                                                </span>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                                                        {new Date(note.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                    </span>
+                                                    {editingNoteId !== note.id && (
+                                                        <button
+                                                            onClick={() => startEditNote(note)}
+                                                            style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.75rem', padding: 0 }}
+                                                            title="Modifier"
+                                                        >
+                                                            ✏️
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </div>
-                                            <p style={{ fontSize: '0.875rem', color: 'var(--text-main)', margin: 0, whiteSpace: 'pre-wrap' }}>{note.content}</p>
+                                            {editingNoteId === note.id ? (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                                    <textarea
+                                                        value={editingNoteText}
+                                                        onChange={e => setEditingNoteText(e.target.value)}
+                                                        rows={2}
+                                                        autoFocus
+                                                        style={{ padding: '0.5rem 0.6rem', background: 'var(--background)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--text-main)', fontSize: '0.875rem', resize: 'none', fontFamily: 'inherit', outline: 'none' }}
+                                                    />
+                                                    <div style={{ display: 'flex', gap: '0.4rem' }}>
+                                                        <button
+                                                            onClick={handleSaveNote}
+                                                            disabled={savingNote || !editingNoteText.trim()}
+                                                            style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem', borderRadius: '6px', border: 'none', background: 'var(--primary-color)', color: 'white', cursor: 'pointer', opacity: (savingNote || !editingNoteText.trim()) ? 0.5 : 1 }}
+                                                        >
+                                                            {savingNote ? '...' : 'Enregistrer'}
+                                                        </button>
+                                                        <button
+                                                            onClick={cancelEditNote}
+                                                            disabled={savingNote}
+                                                            style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer' }}
+                                                        >
+                                                            Annuler
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <p style={{ fontSize: '0.875rem', color: 'var(--text-main)', margin: 0, whiteSpace: 'pre-wrap' }}>{note.content}</p>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
