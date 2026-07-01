@@ -10,6 +10,7 @@ import Messages from './pages/Messages';
 import Chat from './pages/Chat';
 import Incidents from './pages/Incidents';
 import Manage from './pages/Manage';
+import Settings from './pages/Settings';
 import Buildings from './pages/Buildings';
 import BuildingDetail from './pages/BuildingDetail';
 import Tenants from './pages/Tenants';
@@ -93,6 +94,7 @@ export default function App() {
           <Route path="/messages/:tenantId" element={<AppShell><Chat /></AppShell>} />
           <Route path="/incidents" element={<AppShell><Incidents /></AppShell>} />
           <Route path="/manage" element={<AppShell><Manage /></AppShell>} />
+          <Route path="/settings" element={<AppShell><Settings /></AppShell>} />
           <Route path="/buildings" element={<AppShell><Buildings /></AppShell>} />
           <Route path="/buildings/:id" element={<AppShell><BuildingDetail /></AppShell>} />
           <Route path="/tenants" element={<AppShell><Tenants /></AppShell>} />

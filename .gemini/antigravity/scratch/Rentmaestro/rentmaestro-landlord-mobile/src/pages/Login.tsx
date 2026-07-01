@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/landlord';
-import { saveAuth, saveServerUrl, getServerUrl, isBiometricAvailable, isBiometricEnabled, saveBiometricCredentials, getBiometricCredentials } from '../lib/storage';
+import { saveAuth, saveServerUrl, getServerUrl, isBiometricAvailable, isBiometricEnabled, saveBiometricCredentials, getBiometricCredentials, BiometryErrorType } from '../lib/storage';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -33,8 +33,14 @@ export default function Login() {
       await saveAuth(token, userEmail);
       navigate('/', { replace: true });
     } catch (err: any) {
-      if (err?.message !== 'Authentication cancelled.' && err?.code !== 11) {
-        setError('Authentification biométrique échouée');
+      // Ne pas afficher d'erreur si l'utilisateur a annulé ou si la biométrie
+      // n'est pas disponible (ex: OneUI 8.5, appareil non configuré)
+      const isCancelled = err?.name === BiometryErrorType.userCancel
+        || err?.name === BiometryErrorType.systemCancel
+        || err?.name === BiometryErrorType.appCancel
+        || err?.message === 'Authentication cancelled.';
+      if (!isCancelled) {
+        setError('Authentification biométrique indisponible — utilisez votre mot de passe.');
       }
     }
   };

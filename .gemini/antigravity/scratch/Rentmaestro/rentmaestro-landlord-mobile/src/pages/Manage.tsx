@@ -6,6 +6,7 @@ const sections = [
   { label: 'Immeubles', icon: '🏢', path: '/buildings' },
   { label: 'Baux', icon: '📜', path: '/leases' },
   { label: 'Sociétés', icon: '🏛️', path: '/companies' },
+  { label: 'Paramètres', icon: '⚙️', path: '/settings' },
 ];
 
 export default function Manage() {
