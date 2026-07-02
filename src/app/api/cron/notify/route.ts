@@ -18,8 +18,11 @@ async function sendToAll(payload: { title: string; body: string; url: string }) 
                 { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
                 JSON.stringify(payload)
             ).catch(async (err) => {
-                // Remove stale subscriptions (410 Gone)
-                if (err.statusCode === 410 || err.statusCode === 404) {
+                // Remove stale subscriptions: 410/404 (expired/gone), or 403
+                // (VAPID signature invalid — e.g. after a key rotation, this
+                // subscription was created against the old key pair and can
+                // never succeed again until the browser re-subscribes).
+                if (err.statusCode === 410 || err.statusCode === 404 || err.statusCode === 403) {
                     await prisma.pushSubscription.delete({ where: { endpoint: sub.endpoint } });
                 }
                 throw err;

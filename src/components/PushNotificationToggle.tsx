@@ -9,6 +9,12 @@ function urlBase64ToUint8Array(base64String: string) {
     return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
 }
 
+function arrayBufferToBase64Url(buf: ArrayBuffer) {
+    const bytes = new Uint8Array(buf);
+    const raw = String.fromCharCode(...bytes);
+    return btoa(raw).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
 type State = 'loading' | 'unsupported' | 'denied' | 'subscribed' | 'unsubscribed';
 
 export default function PushNotificationToggle() {
@@ -25,14 +31,34 @@ export default function PushNotificationToggle() {
             setState('denied');
             return;
         }
-        fetch('/api/push/vapid-key')
-            .then((r) => r.json())
-            .then((data) => { if (data.publicKey) setVapidKey(data.publicKey); })
-            .catch(() => setState('unsupported'));
 
-        navigator.serviceWorker.ready
-            .then((reg) => reg.pushManager.getSubscription())
-            .then((sub) => setState(sub ? 'subscribed' : 'unsubscribed'));
+        (async () => {
+            let currentKey: string | null = null;
+            try {
+                const res = await fetch('/api/push/vapid-key');
+                const data = await res.json();
+                if (data.publicKey) { currentKey = data.publicKey; setVapidKey(data.publicKey); }
+            } catch { setState('unsupported'); return; }
+
+            const reg = await navigator.serviceWorker.ready;
+            const sub = await reg.pushManager.getSubscription();
+            if (!sub) { setState('unsubscribed'); return; }
+
+            // A subscription created against a rotated-out VAPID key still
+            // "exists" from the browser's point of view — it never gets
+            // invalidated locally, it just fails silently server-side. Compare
+            // its key against the current one so we don't show a false
+            // "activées" state after a key rotation.
+            const subKey = sub.options?.applicationServerKey
+                ? arrayBufferToBase64Url(sub.options.applicationServerKey)
+                : null;
+            if (currentKey && subKey && subKey !== currentKey) {
+                await sub.unsubscribe().catch(() => {});
+                setState('unsubscribed');
+                return;
+            }
+            setState('subscribed');
+        })();
     }, []);
 
     const subscribe = async () => {

@@ -126,6 +126,40 @@ self.addEventListener('push', (event) => {
     );
 });
 
+// Fired when the browser itself invalidates a subscription (expiry, or the
+// push service revoking it) — NOT fired when the server rotates its VAPID
+// keys, since the browser has no way to know that happened. Kept as a
+// best-effort auto-resubscribe for the case it does fire.
+self.addEventListener('pushsubscriptionchange', (event) => {
+    event.waitUntil(
+        fetch('/api/push/vapid-key')
+            .then((r) => r.json())
+            .then(({ publicKey }) => {
+                if (!publicKey) return;
+                return self.registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(publicKey),
+                });
+            })
+            .then((sub) => {
+                if (!sub) return;
+                return fetch('/api/push/subscribe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(sub.toJSON()),
+                });
+            })
+            .catch((err) => console.warn('[SW] pushsubscriptionchange resubscribe failed:', err))
+    );
+});
+
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const raw = atob(base64);
+    return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
+}
+
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
     const url = event.notification.data?.url || '/';
