@@ -4,8 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { logAction } from "@/lib/audit";
+import { requireAuth } from "@/lib/session";
 
 export async function createLease(formData: FormData) {
+    await requireAuth();
     const apartmentId = formData.get("apartmentId") as string;
     const tenantId = formData.get("tenantId") as string;
     const startDateStr = formData.get("startDate") as string;
@@ -66,6 +68,7 @@ export async function createLease(formData: FormData) {
 }
 
 export async function terminateLease(id: string, endDateStr?: string | null) {
+    await requireAuth();
     let endDate: Date | null = new Date();
 
     if (endDateStr === null) {
@@ -92,6 +95,7 @@ export async function terminateLease(id: string, endDateStr?: string | null) {
 }
 
 export async function deleteLease(id: string) {
+    await requireAuth();
     try {
         await prisma.lease.delete({
             where: { id },
@@ -106,6 +110,7 @@ export async function deleteLease(id: string) {
 }
 
 export async function updateLease(id: string, formData: FormData) {
+    await requireAuth();
     const startDateStr = formData.get("startDate") as string;
     const endDateStr = formData.get("endDate") as string;
     const rentAmountStr = formData.get("rentAmount") as string;
@@ -178,6 +183,7 @@ export async function updateLease(id: string, formData: FormData) {
 }
 
 export async function setDepositAmount(leaseId: string, amount: number) {
+    await requireAuth();
     await prisma.lease.update({
         where: { id: leaseId },
         data: { depositAmount: amount, depositStatus: 'PENDING' },
@@ -187,6 +193,7 @@ export async function setDepositAmount(leaseId: string, amount: number) {
 }
 
 export async function markDepositReceived(leaseId: string, amount: number) {
+    await requireAuth();
     const lease = await prisma.lease.findUnique({ where: { id: leaseId } });
     const total = lease?.depositAmount ?? amount;
     const alreadyPaid = lease?.depositPaidAmount ?? 0;
@@ -204,6 +211,7 @@ export async function markDepositReceived(leaseId: string, amount: number) {
 }
 
 export async function payDepositPartial(leaseId: string, paidAmount: number) {
+    await requireAuth();
     const lease = await prisma.lease.findUnique({ where: { id: leaseId } });
     if (!lease) throw new Error('Bail introuvable');
     const total = lease.depositAmount ?? 0;
@@ -222,6 +230,7 @@ export async function payDepositPartial(leaseId: string, paidAmount: number) {
 }
 
 export async function markDepositReturned(leaseId: string, amount: number) {
+    await requireAuth();
     await prisma.lease.update({
         where: { id: leaseId },
         data: { depositStatus: 'RETURNED', depositReturnedAt: new Date() },
@@ -231,6 +240,7 @@ export async function markDepositReturned(leaseId: string, amount: number) {
 }
 
 export async function setGuarantorVisaleOk(leaseId: string, ok: boolean) {
+    await requireAuth();
     await prisma.lease.update({
         where: { id: leaseId },
         data: { guarantorVisaleOk: ok },
@@ -252,6 +262,7 @@ export async function applyRentRevision(
         effectiveDate?: string | null;
     }
 ) {
+    await requireAuth();
     const { newRent, baseQuarter, baseIndex, newQuarter, newIndex, effectiveDate } = params;
     if (isNaN(newRent) || newRent <= 0) {
         return { success: false, error: 'Nouveau loyer invalide.' };
@@ -302,6 +313,7 @@ export async function applyRentRevision(
 }
 
 export async function markRentReviewAsSent(leaseId: string) {
+    await requireAuth();
     try {
         await prisma.lease.update({
             where: { id: leaseId },

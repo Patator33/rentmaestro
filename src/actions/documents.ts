@@ -2,10 +2,11 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { writeFile } from "fs/promises";
-import path from "path";
+import { requireAuth } from "@/lib/session";
+import { saveUploadedFile } from "@/lib/uploads";
 
 export async function uploadDocument(formData: FormData) {
+    await requireAuth();
     const file = formData.get("file") as File;
     const tenantId = formData.get("tenantId") as string;
 
@@ -13,21 +14,12 @@ export async function uploadDocument(formData: FormData) {
         throw new Error("File and tenant ID are required");
     }
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    const { url, originalName } = await saveUploadedFile(file);
 
-    // Save to public/uploads
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
-    const filename = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
-    const filepath = path.join(uploadDir, filename);
-
-    await writeFile(filepath, buffer);
-
-    // Save to database
     await prisma.tenantDocument.create({
         data: {
-            name: file.name,
-            url: `/uploads/${filename}`,
+            name: originalName,
+            url,
             type: file.type,
             size: file.size,
             tenantId,
@@ -38,6 +30,7 @@ export async function uploadDocument(formData: FormData) {
 }
 
 export async function deleteDocument(id: string, tenantId: string) {
+    await requireAuth();
     await prisma.tenantDocument.delete({
         where: { id },
     });
@@ -45,6 +38,7 @@ export async function deleteDocument(id: string, tenantId: string) {
 }
 
 export async function uploadApartmentDocument(formData: FormData) {
+    await requireAuth();
     const file = formData.get("file") as File;
     const apartmentId = formData.get("apartmentId") as string;
     const docType = (formData.get("docType") as string) || "AUTRE";
@@ -53,21 +47,12 @@ export async function uploadApartmentDocument(formData: FormData) {
         throw new Error("File and apartment ID are required");
     }
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    const { url, originalName } = await saveUploadedFile(file);
 
-    // Save to public/uploads
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
-    const filename = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
-    const filepath = path.join(uploadDir, filename);
-
-    await writeFile(filepath, buffer);
-
-    // Save to database
     await prisma.apartmentDocument.create({
         data: {
-            name: file.name,
-            url: `/uploads/${filename}`,
+            name: originalName,
+            url,
             type: file.type,
             docType,
             size: file.size,
@@ -79,6 +64,7 @@ export async function uploadApartmentDocument(formData: FormData) {
 }
 
 export async function deleteApartmentDocument(id: string, apartmentId: string) {
+    await requireAuth();
     await prisma.apartmentDocument.delete({
         where: { id },
     });
@@ -86,25 +72,19 @@ export async function deleteApartmentDocument(id: string, apartmentId: string) {
 }
 
 export async function uploadLeaseDocument(formData: FormData) {
+    await requireAuth();
     const file = formData.get("file") as File;
     const leaseId = formData.get("leaseId") as string;
     const docType = (formData.get("docType") as string) || "AUTRE";
 
     if (!file || !leaseId) throw new Error("File and lease ID are required");
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
-    const filename = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
-    const filepath = path.join(uploadDir, filename);
-
-    await writeFile(filepath, buffer);
+    const { url, originalName } = await saveUploadedFile(file);
 
     await prisma.leaseDocument.create({
         data: {
-            name: file.name,
-            url: `/uploads/${filename}`,
+            name: originalName,
+            url,
             type: file.type,
             docType,
             size: file.size,
@@ -116,30 +96,25 @@ export async function uploadLeaseDocument(formData: FormData) {
 }
 
 export async function deleteLeaseDocument(id: string, leaseId: string) {
+    await requireAuth();
     await prisma.leaseDocument.delete({ where: { id } });
     revalidatePath(`/leases/${leaseId}`);
 }
 
 export async function uploadCompanyDocument(formData: FormData) {
+    await requireAuth();
     const file = formData.get("file") as File;
     const companyId = formData.get("companyId") as string;
     const docType = (formData.get("docType") as string) || "AUTRE";
 
     if (!file || !companyId) throw new Error("File and company ID are required");
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
-    const filename = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
-    const filepath = path.join(uploadDir, filename);
-
-    await writeFile(filepath, buffer);
+    const { url, originalName } = await saveUploadedFile(file);
 
     await prisma.companyDocument.create({
         data: {
-            name: file.name,
-            url: `/uploads/${filename}`,
+            name: originalName,
+            url,
             type: file.type,
             docType,
             size: file.size,
@@ -151,29 +126,24 @@ export async function uploadCompanyDocument(formData: FormData) {
 }
 
 export async function deleteCompanyDocument(id: string, companyId: string) {
+    await requireAuth();
     await prisma.companyDocument.delete({ where: { id } });
     revalidatePath(`/companies/${companyId}`);
 }
 
 export async function uploadGlobalDocument(formData: FormData) {
+    await requireAuth();
     const file = formData.get("file") as File;
     const docType = (formData.get("docType") as string) || "AUTRE";
 
     if (!file) throw new Error("File is required");
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
-    const filename = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
-    const filepath = path.join(uploadDir, filename);
-
-    await writeFile(filepath, buffer);
+    const { url, originalName } = await saveUploadedFile(file);
 
     await prisma.globalDocument.create({
         data: {
-            name: file.name,
-            url: `/uploads/${filename}`,
+            name: originalName,
+            url,
             type: file.type,
             docType,
             size: file.size,
@@ -184,11 +154,13 @@ export async function uploadGlobalDocument(formData: FormData) {
 }
 
 export async function deleteGlobalDocument(id: string) {
+    await requireAuth();
     await prisma.globalDocument.delete({ where: { id } });
     revalidatePath("/global-ged");
 }
 
 export async function ensurePersonalCompany() {
+    await requireAuth();
     const existing = await prisma.company.findFirst({ where: { isPersonal: true } });
     if (!existing) {
         await prisma.company.create({

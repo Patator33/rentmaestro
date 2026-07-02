@@ -5,8 +5,10 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { logAction } from "@/lib/audit";
+import { requireAuth } from "@/lib/session";
 
 export async function createApartment(formData: FormData) {
+    await requireAuth();
     const rawData = {
         name: formData.get("name") as string,
         address: formData.get("address") as string,
@@ -43,6 +45,7 @@ export async function createApartment(formData: FormData) {
 }
 
 export async function deleteApartment(id: string) {
+    await requireAuth();
     const leaseCount = await prisma.lease.count({ where: { apartmentId: id } });
     if (leaseCount > 0) {
         throw new Error("le bail associé doit d'abord être supprimé pour pouvoir supprimer l'appartement ou le locataire !");
@@ -60,6 +63,7 @@ export async function deleteApartment(id: string) {
 }
 
 export async function updateApartment(id: string, formData: FormData) {
+    await requireAuth();
     const rawData = {
         name: formData.get("name") as string,
         address: formData.get("address") as string,

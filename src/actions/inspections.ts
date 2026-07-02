@@ -2,10 +2,11 @@
 
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
-import { writeFile } from 'fs/promises';
-import path from 'path';
+import { requireAuth } from '@/lib/session';
+import { saveUploadedFile } from '@/lib/uploads';
 
 export async function uploadInspection(formData: FormData) {
+    await requireAuth();
     const leaseId = formData.get('leaseId') as string;
     const apartmentId = formData.get('apartmentId') as string;
     const type = formData.get('type') as string;
@@ -17,13 +18,9 @@ export async function uploadInspection(formData: FormData) {
     let fileName: string | null = null;
 
     if (file && file.size > 0) {
-        const bytes = await file.arrayBuffer();
-        const buffer = Buffer.from(bytes);
-        const uploadDir = path.join(process.cwd(), 'public', 'uploads');
-        const filename = `edl-${Date.now()}-${file.name}`;
-        await writeFile(path.join(uploadDir, filename), buffer);
-        fileUrl = `/uploads/${filename}`;
-        fileName = file.name;
+        const saved = await saveUploadedFile(file);
+        fileUrl = saved.url;
+        fileName = saved.originalName;
     }
 
     const inspection = await prisma.inspection.create({
@@ -43,6 +40,7 @@ export async function uploadInspection(formData: FormData) {
 }
 
 export async function getInspectionsByLease(leaseId: string) {
+    await requireAuth();
     return prisma.inspection.findMany({
         where: { leaseId },
         orderBy: { date: 'desc' },
@@ -50,6 +48,7 @@ export async function getInspectionsByLease(leaseId: string) {
 }
 
 export async function deleteInspection(id: string, apartmentId: string) {
+    await requireAuth();
     await prisma.inspection.delete({ where: { id } });
     revalidatePath(`/apartments/${apartmentId}`);
     return { success: true };

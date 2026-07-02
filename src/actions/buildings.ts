@@ -4,8 +4,10 @@ import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { logAction } from '@/lib/audit';
+import { requireAuth } from '@/lib/session';
 
 export async function createBuilding(formData: FormData) {
+    await requireAuth();
     const name = (formData.get('name') as string).trim();
     const address = (formData.get('address') as string).trim();
     const complement = (formData.get('complement') as string)?.trim() || null;
@@ -20,6 +22,7 @@ export async function createBuilding(formData: FormData) {
 }
 
 export async function createBuildingQuick(formData: FormData): Promise<{ id: string; name: string; address: string; complement: string | null; zipCode: string | null; city: string | null }> {
+    await requireAuth();
     const name = (formData.get('name') as string).trim();
     const address = (formData.get('address') as string).trim();
     const complement = (formData.get('complement') as string)?.trim() || null;
@@ -33,6 +36,7 @@ export async function createBuildingQuick(formData: FormData): Promise<{ id: str
 }
 
 export async function updateBuilding(id: string, formData: FormData) {
+    await requireAuth();
     const name = (formData.get('name') as string).trim();
     const address = (formData.get('address') as string).trim();
     const complement = (formData.get('complement') as string)?.trim() || null;
@@ -47,6 +51,7 @@ export async function updateBuilding(id: string, formData: FormData) {
 }
 
 export async function deleteBuilding(id: string) {
+    await requireAuth();
     await prisma.building.delete({ where: { id } });
     await logAction({ action: 'DELETE_BUILDING', entity: 'Building', entityId: id });
     revalidatePath('/buildings');

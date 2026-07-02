@@ -8,6 +8,7 @@ import { notifyN8n } from "@/lib/n8n";
 import { sendEmail } from "@/lib/email";
 import { logAction } from "@/lib/audit";
 import { headers } from "next/headers";
+import { requireAuth } from "@/lib/session";
 
 async function getBaseUrl() {
     const h = await headers();
@@ -17,6 +18,7 @@ async function getBaseUrl() {
 }
 
 export async function createTenant(formData: FormData) {
+    await requireAuth();
     const rawData = {
         firstName: formData.get("firstName") as string,
         lastName: formData.get("lastName") as string,
@@ -48,6 +50,7 @@ export async function createTenant(formData: FormData) {
 }
 
 export async function deleteTenant(id: string) {
+    await requireAuth();
     const leaseCount = await prisma.lease.count({ where: { tenantId: id } });
     if (leaseCount > 0) {
         throw new Error("le bail associé doit d'abord être supprimé pour pouvoir supprimer l'appartement ou le locataire !");
@@ -65,6 +68,7 @@ export async function deleteTenant(id: string) {
 }
 
 export async function updateTenant(id: string, formData: FormData) {
+    await requireAuth();
     const rawData = {
         firstName: formData.get("firstName") as string,
         lastName: formData.get("lastName") as string,
@@ -93,6 +97,7 @@ export async function updateTenant(id: string, formData: FormData) {
 }
 
 export async function archiveTenant(id: string) {
+    await requireAuth();
     await prisma.tenant.update({
         where: { id },
         data: { isArchived: true, portalToken: null },
@@ -103,6 +108,7 @@ export async function archiveTenant(id: string) {
 }
 
 export async function reactivateTenant(id: string) {
+    await requireAuth();
     await prisma.tenant.update({
         where: { id },
         data: { isArchived: false },
@@ -113,6 +119,7 @@ export async function reactivateTenant(id: string) {
 }
 
 export async function generatePortalToken(tenantId: string) {
+    await requireAuth();
     try {
         const token = crypto.randomUUID();
         await prisma.tenant.update({
@@ -128,6 +135,7 @@ export async function generatePortalToken(tenantId: string) {
 }
 
 export async function sendPortalInvite(tenantId: string) {
+    await requireAuth();
     try {
         const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
         if (!tenant || !tenant.portalToken) {

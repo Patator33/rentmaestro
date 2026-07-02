@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { sendQuittanceEmail, sendReminderEmail } from "@/actions/email";
+import { sendQuittanceEmailCore, sendReminderEmailCore } from "@/lib/rent-emails";
 
 export const dynamic = 'force-dynamic';
 
@@ -46,7 +46,7 @@ export async function GET(request: Request) {
 
         for (const payment of paidRentsEligibleForQuittance) {
             if (payment.lease.tenant.email) {
-                const result = await sendQuittanceEmail(payment.id);
+                const result = await sendQuittanceEmailCore(payment.id);
                 if (result.success) {
                     sentQuittances++;
                 } else {
@@ -88,7 +88,7 @@ export async function GET(request: Request) {
                 const needsReminder = !currentPayment || !currentPayment.sentAt || currentPayment.sentAt < sevenDaysAgo;
 
                 if (needsReminder) {
-                    const result = await sendReminderEmail(lease.id, startOfMonth.toISOString());
+                    const result = await sendReminderEmailCore(lease.id, startOfMonth.toISOString());
                     if (result.success) {
                         sentReminders++;
                     } else {

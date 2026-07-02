@@ -2,8 +2,10 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { requireAuth } from "@/lib/session";
 
 export async function updateDepositStatus(leaseId: string, status: string) {
+    await requireAuth();
     const validStatuses = ['PENDING', 'PARTIAL_RECEIVED', 'RECEIVED', 'TO_RETURN', 'RETURNED', 'DEDUCTED'];
     if (!validStatuses.includes(status)) {
         throw new Error('Statut de dépôt invalide.');
@@ -27,6 +29,7 @@ export async function updateDepositStatus(leaseId: string, status: string) {
 }
 
 export async function addExpense(formData: FormData) {
+    await requireAuth();
     const apartmentId = formData.get('apartmentId') as string;
     const category = formData.get('category') as string;
     const description = formData.get('description') as string;
@@ -59,6 +62,7 @@ export async function addExpense(formData: FormData) {
 }
 
 export async function deleteExpense(id: string) {
+    await requireAuth();
     try {
         const expense = await prisma.expense.findUnique({ where: { id } });
         if (!expense) throw new Error('Dépense introuvable.');
@@ -73,6 +77,7 @@ export async function deleteExpense(id: string) {
 }
 
 export async function addTenantNote(formData: FormData) {
+    await requireAuth();
     const tenantId = formData.get('tenantId') as string;
     const content = formData.get('content') as string;
     const type = formData.get('type') as string || 'NOTE';
@@ -94,6 +99,7 @@ export async function addTenantNote(formData: FormData) {
 }
 
 export async function deleteTenantNote(id: string) {
+    await requireAuth();
     try {
         const note = await prisma.tenantNote.findUnique({ where: { id } });
         if (!note) throw new Error('Note introuvable.');

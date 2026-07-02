@@ -5,8 +5,10 @@ import { revalidatePath } from "next/cache";
 import { notifyN8n } from "@/lib/n8n";
 import { logAction } from "@/lib/audit";
 import { calculateFutureProrata } from "@/lib/utils";
+import { requireAuth } from "@/lib/session";
 
 export async function markRentAsPaid(leaseId: string, periodStr: string, paidAmount: number) {
+    await requireAuth();
     if (!leaseId || !periodStr || isNaN(paidAmount) || paidAmount <= 0) {
         throw new Error("Données de paiement invalides.");
     }
@@ -83,6 +85,7 @@ export async function markRentAsPaid(leaseId: string, periodStr: string, paidAmo
 }
 
 export async function cancelRentPayment(paymentId: string) {
+    await requireAuth();
     if (!paymentId) throw new Error("ID de paiement manquant.");
     await prisma.rentPayment.update({
         where: { id: paymentId },
@@ -94,6 +97,7 @@ export async function cancelRentPayment(paymentId: string) {
 }
 
 export async function sendRentReminder(leaseId: string, periodStr: string) {
+    await requireAuth();
     if (!leaseId || !periodStr) {
         throw new Error("Données de relance invalides.");
     }

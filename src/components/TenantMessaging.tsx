@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { sendAdminMessage, sendPortalMessage, markMessagesRead } from '@/actions/messages';
+import { sendAdminMessage, sendPortalMessage, markMessagesRead, markPortalMessagesRead } from '@/actions/messages';
 
 interface Message {
     id: string;
@@ -37,9 +37,9 @@ export default function TenantMessaging({ tenantId, initialMessages, portalToken
     // Portal only: mark admin messages as read when tenant opens the conversation
     useEffect(() => {
         if (isPortal) {
-            markMessagesRead(tenantId, false).catch(() => {});
+            markPortalMessagesRead(tenantId, false, portalToken!).catch(() => {});
         }
-    }, [tenantId, isPortal]);
+    }, [tenantId, isPortal, portalToken]);
 
     const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();

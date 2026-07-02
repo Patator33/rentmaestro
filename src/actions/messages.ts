@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { notifyN8n } from '@/lib/n8n';
 import { sendEmail } from '@/lib/email';
 import { headers } from 'next/headers';
-import { getSetting } from '@/actions/settings';
+import { requireAuth } from '@/lib/session';
 
 async function getBaseUrl() {
     const h = await headers();
@@ -15,6 +15,7 @@ async function getBaseUrl() {
 }
 
 export async function getMessages(tenantId: string) {
+    await requireAuth();
     return prisma.message.findMany({
         where: { tenantId },
         orderBy: { createdAt: 'asc' },
@@ -22,6 +23,7 @@ export async function getMessages(tenantId: string) {
 }
 
 export async function sendAdminMessage(tenantId: string, content: string) {
+    await requireAuth();
     if (!content.trim()) return { success: false, error: 'Message vide' };
 
     const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
@@ -76,8 +78,11 @@ export async function sendPortalMessage(tenantId: string, content: string, token
         message: content.trim(),
     }).catch(() => {});
 
-    // Home Assistant webhook
-    const haWebhook = await getSetting('ha_webhook_url').catch(() => null);
+    // Home Assistant webhook (lecture directe : contexte locataire, pas de session)
+    const haWebhook = await prisma.setting
+        .findUnique({ where: { key: 'ha_webhook_url' } })
+        .then(s => s?.value ?? null)
+        .catch(() => null);
     if (haWebhook) {
         fetch(haWebhook, {
             method: 'POST',
@@ -112,9 +117,20 @@ export async function sendPortalMessage(tenantId: string, content: string, token
 }
 
 export async function markMessagesRead(tenantId: string, fromTenant: boolean) {
+    await requireAuth();
     await prisma.message.updateMany({
         where: { tenantId, fromTenant, readAt: null },
         data: { readAt: new Date() },
     });
     revalidatePath(`/tenants/${tenantId}`);
+}
+
+export async function markPortalMessagesRead(tenantId: string, fromTenant: boolean, token: string) {
+    // Verify token ownership (contexte locataire, pas de session propriétaire)
+    const tenant = await prisma.tenant.findUnique({ where: { portalToken: token } });
+    if (!tenant || tenant.id !== tenantId) return;
+    await prisma.message.updateMany({
+        where: { tenantId, fromTenant, readAt: null },
+        data: { readAt: new Date() },
+    });
 }

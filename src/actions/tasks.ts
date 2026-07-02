@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { taskSchema } from "@/lib/validations";
 import { revalidatePath } from "next/cache";
 import { sendEmail } from "@/lib/email";
+import { requireAuth } from "@/lib/session";
 
 function formatGCalDate(d: Date): string {
     return d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
@@ -70,6 +71,7 @@ async function sendScheduledAtEmail(task: { title: string; description?: string 
 }
 
 export async function getTasksByApartmentId(apartmentId: string) {
+    await requireAuth();
     try {
         const tasks = await prisma.task.findMany({
             where: { apartmentId },
@@ -83,6 +85,7 @@ export async function getTasksByApartmentId(apartmentId: string) {
 }
 
 export async function createTask(data: any) {
+    await requireAuth();
     const { notifyTenant, ...taskData } = data;
     const parsed = taskSchema.safeParse(taskData);
     if (!parsed.success) {
@@ -121,6 +124,7 @@ export async function createTask(data: any) {
 }
 
 export async function addTaskNote(taskId: string, content: string, authorType: 'LANDLORD' | 'TENANT') {
+    await requireAuth();
     if (!content.trim()) return { success: false, error: 'Contenu requis' };
     try {
         const note = await prisma.taskNote.create({
@@ -139,6 +143,7 @@ export async function addTaskNote(taskId: string, content: string, authorType: '
 }
 
 export async function updateTaskNote(noteId: string, content: string) {
+    await requireAuth();
     if (!content.trim()) return { success: false, error: 'Contenu requis' };
     try {
         const note = await prisma.taskNote.update({
@@ -206,6 +211,7 @@ export async function updateTask(taskId: string, data: {
     scheduledAt?: Date | null;
     notifyTenant?: boolean;
 }) {
+    await requireAuth();
     if (!data.title?.trim()) {
         return { success: false, error: "Le titre est requis" };
     }
@@ -242,6 +248,7 @@ export async function updateTask(taskId: string, data: {
 }
 
 export async function updateTaskStatus(taskId: string, status: string) {
+    await requireAuth();
     try {
         const existing = await prisma.task.findUnique({ where: { id: taskId } });
         const task = await prisma.task.update({
@@ -258,6 +265,7 @@ export async function updateTaskStatus(taskId: string, status: string) {
 }
 
 export async function deleteTask(taskId: string) {
+    await requireAuth();
     try {
         const task = await prisma.task.delete({
             where: { id: taskId }
@@ -271,6 +279,7 @@ export async function deleteTask(taskId: string) {
 }
 
 export async function cycleTaskStatusForTravaux(taskId: string, currentStatus: string) {
+    await requireAuth();
     const next = currentStatus === 'TODO' ? 'IN_PROGRESS' : currentStatus === 'IN_PROGRESS' ? 'DONE' : 'TODO';
     const task = await prisma.task.update({ where: { id: taskId }, data: { status: next } });
     revalidatePath(`/apartments/${task.apartmentId}`);
@@ -278,6 +287,7 @@ export async function cycleTaskStatusForTravaux(taskId: string, currentStatus: s
 }
 
 export async function convertTaskToExpense(taskId: string) {
+    await requireAuth();
     try {
         const task = await prisma.task.findUnique({ where: { id: taskId } });
         if (!task) return { success: false, error: "Tâche introuvable" };

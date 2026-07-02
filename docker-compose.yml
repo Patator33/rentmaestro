@@ -15,16 +15,21 @@ services:
       # URL externe de l'application (pour les liens dans les emails)
       - APP_BASE_URL=${APP_BASE_URL:-https://rentmaestro.nico33.net}
       # Automations & Webhooks
-      - CRON_SECRET=${CRON_SECRET:-remplacez_moi_par_un_vrai_mot_de_passe}
+      # `:?message` fait échouer `docker compose up` si la variable est absente
+      # ou vide : aucun secret par défaut n'est embarqué dans l'image.
+      - CRON_SECRET=${CRON_SECRET:?CRON_SECRET doit être défini (secret aléatoire)}
       - N8N_WEBHOOK_URL=${N8N_WEBHOOK_URL:-http://n8n.votredomaine.com/webhook/rentmaestro}
-      # Session secret for iron-session (generate with: node -e "require('crypto').randomBytes(32).toString('hex')" | xargs)
-      - SESSION_SECRET=${SESSION_SECRET:-CHANGEZ_MOI_PAR_UNE_CLE_DE_64_CARACTERES_ALEATOIRES}
+      # Session secret for iron-session — générer avec :
+      #   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+      - SESSION_SECRET=${SESSION_SECRET:?SESSION_SECRET doit être défini (>= 32 caractères aléatoires)}
       # Set to 'true' if served over HTTPS (reverse proxy with TLS) — required for PWA install on Android
       - COOKIE_SECURE=${COOKIE_SECURE:-true}
-      # Push notifications (VAPID keys — generate with: node -e "require('web-push').generateVAPIDKeys()|console.log")
-      - VAPID_PUBLIC_KEY=BPaD50kf2C4lSJlWpvRhLJHdr7nhfz5ArCmcSr45wo7r3Tk3hzqMYlOw3fqjtg64xWyYczdFjOaLgI8_SF8JAzw
-      - VAPID_PRIVATE_KEY=d5G4Ifmnqfsov_NUq33oIo-izo9oJOINCbIAJODQEno
-      - VAPID_SUBJECT=https://rentmaestro.nico33.net
+      # Push notifications (VAPID keys — générer avec :
+      #   node -e "console.log(require('web-push').generateVAPIDKeys())" )
+      # La clé privée est un SECRET : ne jamais la committer, la fournir via .env
+      - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY:?VAPID_PUBLIC_KEY doit être défini}
+      - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY:?VAPID_PRIVATE_KEY doit être défini (secret)}
+      - VAPID_SUBJECT=${VAPID_SUBJECT:-https://rentmaestro.nico33.net}
     volumes:
       - rentmaestro_data:/app/data
       - rentmaestro_uploads:/app/public/uploads

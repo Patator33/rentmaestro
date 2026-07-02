@@ -2,8 +2,10 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { requireAuth } from "@/lib/session";
 
 export async function createContact(formData: FormData) {
+    await requireAuth();
     const name = formData.get("name") as string;
     const role = formData.get("role") as string;
     const email = formData.get("email") as string;
@@ -29,6 +31,7 @@ export async function createContact(formData: FormData) {
 }
 
 export async function deleteContact(id: string) {
+    await requireAuth();
     await prisma.contact.delete({
         where: { id },
     });

@@ -3,8 +3,10 @@
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 import { THEME_COOKIE, DEFAULT_THEME, THEMES, type ThemeId } from '@/themes/index'
+import { requireAuth } from '@/lib/session'
 
 export async function setTheme(themeId: string) {
+    await requireAuth()
     const valid = THEMES.some(t => t.id === themeId)
     const id: ThemeId = valid ? (themeId as ThemeId) : DEFAULT_THEME
 

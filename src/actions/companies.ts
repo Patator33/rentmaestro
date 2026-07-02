@@ -5,8 +5,10 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { logAction } from "@/lib/audit";
+import { requireAuth } from "@/lib/session";
 
 export async function createCompany(formData: FormData) {
+    await requireAuth();
     const rawData = {
         name: formData.get("name") as string,
         type: formData.get("type") as string,
@@ -31,6 +33,7 @@ export async function createCompany(formData: FormData) {
 }
 
 export async function deleteCompany(id: string) {
+    await requireAuth();
     try {
         await prisma.company.delete({
             where: { id },
@@ -44,6 +47,7 @@ export async function deleteCompany(id: string) {
 }
 
 export async function updateCompany(id: string, formData: FormData) {
+    await requireAuth();
     const rawData = {
         name: formData.get("name") as string,
         type: formData.get("type") as string,

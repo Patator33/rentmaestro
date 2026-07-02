@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import TenantMessaging from './TenantMessaging';
 import { reportIncident } from '@/actions/portal';
 import { addPortalTaskNote, updatePortalTaskNote } from '@/actions/tasks';
-import { sendPortalMessage, markMessagesRead } from '@/actions/messages';
+import { sendPortalMessage, markPortalMessagesRead } from '@/actions/messages';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -172,7 +172,7 @@ export default function PortalShell({
 
     useEffect(() => {
         if (activeTab === 'messages') {
-            markMessagesRead(tenantId, false).catch(() => { });
+            markPortalMessagesRead(tenantId, false, token).catch(() => { });
         }
     }, [activeTab, tenantId]);
 

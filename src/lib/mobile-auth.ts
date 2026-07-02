@@ -1,4 +1,5 @@
 import { createHmac } from 'crypto';
+import { getSessionSecret } from '@/lib/session';
 
 interface MobileTokenPayload {
     userId: string;
@@ -6,8 +7,10 @@ interface MobileTokenPayload {
     exp: number;
 }
 
+// Réutilise la même validation que la session web : pas de secret de repli
+// (un secret de repli connu rendrait les jetons mobiles falsifiables).
 function secret(): string {
-    return process.env.SESSION_SECRET || 'fallback-secret-please-set-SESSION_SECRET';
+    return getSessionSecret();
 }
 
 export function signMobileToken(userId: string, email: string): string {

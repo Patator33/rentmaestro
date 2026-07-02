@@ -2,9 +2,11 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { requireAuth } from "@/lib/session";
 
 // Fetches pending/late rents to match against incoming bank credits
 export async function getExpectedRents() {
+    await requireAuth();
     try {
         const rents = await prisma.rentPayment.findMany({
             where: {
@@ -28,6 +30,7 @@ export async function getExpectedRents() {
 }
 
 export async function matchRentPayment(rentPaymentId: string, paidDateStr: string, amountPaid: number) {
+    await requireAuth();
     try {
         const payment = await prisma.rentPayment.findUnique({
             where: { id: rentPaymentId },
@@ -57,6 +60,7 @@ export async function matchRentPayment(rentPaymentId: string, paidDateStr: strin
 }
 
 export async function createDirectExpense(apartmentId: string, category: string, description: string, amount: number, dateStr: string) {
+    await requireAuth();
     try {
         await prisma.expense.create({
             data: {
