@@ -10,7 +10,7 @@ interface Message {
 }
 
 interface ChatData {
-  tenant: { id: string; firstName: string; lastName: string };
+  tenant: { id: string; firstName: string; lastName: string } | null;
   messages: Message[];
 }
 
@@ -40,6 +40,20 @@ export default function Chat() {
     }
   };
 
+  if (data && !data.tenant) {
+    return (
+      <div className="flex flex-col safe-top" style={{ height: '100%' }}>
+        <div className="flex items-center gap-3 px-4 py-3 bg-surface border-b border-border shrink-0">
+          <button onClick={() => navigate('/messages')} className="text-text-muted text-lg">←</button>
+          <p className="text-text-main font-semibold text-sm">Conversation</p>
+        </div>
+        <div className="flex-1 flex items-center justify-center px-6">
+          <p className="text-text-muted text-sm text-center">Locataire introuvable — il a peut-être été supprimé.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col safe-top" style={{ height: '100%' }}>
       {/* Header */}
@@ -47,7 +61,7 @@ export default function Chat() {
         <button onClick={() => navigate('/messages')} className="text-text-muted text-lg">←</button>
         <div>
           <p className="text-text-main font-semibold text-sm">
-            {data?.tenant.firstName} {data?.tenant.lastName}
+            {data?.tenant?.firstName} {data?.tenant?.lastName}
           </p>
         </div>
       </div>
