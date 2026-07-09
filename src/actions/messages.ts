@@ -87,7 +87,14 @@ export async function sendPortalMessage(tenantId: string, content: string, token
         fetch(haWebhook, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ tenant: `${tenant.firstName} ${tenant.lastName}`, message: content.trim() }),
+            body: JSON.stringify({
+                tenant: `${tenant.firstName} ${tenant.lastName}`,
+                tenantId: tenant.id,
+                message: content.trim(),
+                // Opened by the RentMaestro Android app's deep-link handler
+                // (mobile/src/App.tsx) straight to this tenant's conversation.
+                deepLink: `rentmaestro://messages/${tenant.id}`,
+            }),
         }).catch(() => {});
     }
 

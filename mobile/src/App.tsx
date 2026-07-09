@@ -48,6 +48,23 @@ function AppShell({ children }: { children: React.ReactNode }) {
     return () => { handler.then(h => h.remove()); };
   }, [location.pathname, navigate]);
 
+  // Deep links: rentmaestro://messages/{tenantId} -> /messages/{tenantId}.
+  // Non-special URL schemes still parse an authority component when written
+  // with "//", so the segment right after "rentmaestro://" lands in `host`
+  // and the rest in `pathname` — recombining them gives back the app route.
+  useEffect(() => {
+    const handler = CapApp.addListener('appUrlOpen', ({ url }) => {
+      try {
+        const parsed = new URL(url);
+        const path = `/${parsed.host}${parsed.pathname}`;
+        navigate(path);
+      } catch {
+        // malformed deep link — ignore
+      }
+    });
+    return () => { handler.then(h => h.remove()); };
+  }, [navigate]);
+
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
