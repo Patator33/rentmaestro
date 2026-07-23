@@ -5,6 +5,7 @@ import { sendEmail } from "@/lib/email";
 import { buildSigningPdf } from "@/lib/pdf-signing";
 import { requireAuth } from "@/lib/session";
 import { sendQuittanceEmailCore, sendReminderEmailCore } from "@/lib/rent-emails";
+import { ensurePortalToken, buildPortalFileLink } from "@/lib/document-links";
 
 export async function sendQuittanceEmail(paymentId: string) {
     await requireAuth();
@@ -114,14 +115,13 @@ export async function sendDocumentsEmail(leaseId: string, selectedDocs: DocToSen
         if (!lease.tenant.email) throw new Error("Le locataire n'a pas d'adresse email.");
 
         const baseUrl = process.env.APP_BASE_URL || 'https://rentmaestro.nico33.net';
+        const portalToken = await ensurePortalToken(lease.tenant.id, lease.tenant.portalToken);
 
         const docLines = selectedDocs.map(d =>
-            `<li style="margin:0.4rem 0"><a href="${baseUrl}${encodeURI(d.url)}" style="color:#2B8CEE">${d.name}</a></li>`
+            `<li style="margin:0.4rem 0"><a href="${buildPortalFileLink(baseUrl, portalToken, d.url)}" style="color:#2B8CEE">${d.name}</a></li>`
         ).join('');
 
-        const portalLink = lease.tenant.portalToken
-            ? `<p>Retrouvez tous vos documents sur votre <a href="${baseUrl}/portal/${lease.tenant.portalToken}" style="color:#2b8cee;">espace locataire →</a></p>`
-            : '';
+        const portalLink = `<p>Retrouvez tous vos documents sur votre <a href="${baseUrl}/portal/${portalToken}" style="color:#2b8cee;">espace locataire →</a></p>`;
 
         const html = `
             <div style="font-family:sans-serif;color:#333;line-height:1.6;max-width:560px">

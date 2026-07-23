@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { verifyMobileToken, unauthorized } from '@/lib/mobile-auth';
 import { sendEmail } from '@/lib/email';
 import { buildSigningPdf } from '@/lib/pdf-signing';
+import { ensurePortalToken, buildPortalFileLink } from '@/lib/document-links';
 
 export const dynamic = 'force-dynamic';
 
@@ -130,13 +131,12 @@ export async function POST(
         if (!lease.tenant.email) return NextResponse.json({ error: 'Email locataire manquant' }, { status: 400 });
 
         const baseUrl = process.env.APP_BASE_URL || 'https://rentmaestro.nico33.net';
+        const portalToken = await ensurePortalToken(lease.tenant.id, lease.tenant.portalToken);
         const docLines = docs.map(d =>
-            `<li style="margin:0.4rem 0"><a href="${baseUrl}${encodeURI(d.url)}" style="color:#2B8CEE">${d.name}</a></li>`
+            `<li style="margin:0.4rem 0"><a href="${buildPortalFileLink(baseUrl, portalToken, d.url)}" style="color:#2B8CEE">${d.name}</a></li>`
         ).join('');
 
-        const portalLink = lease.tenant.portalToken
-            ? `<p>Retrouvez tous vos documents sur votre <a href="${baseUrl}/portal/${lease.tenant.portalToken}" style="color:#2b8cee;">espace locataire →</a></p>`
-            : '';
+        const portalLink = `<p>Retrouvez tous vos documents sur votre <a href="${baseUrl}/portal/${portalToken}" style="color:#2b8cee;">espace locataire →</a></p>`;
 
         const html = `
             <div style="font-family:sans-serif;color:#333;line-height:1.6;max-width:560px">
