@@ -166,9 +166,27 @@ export default function TenantDetail() {
             <span className="text-text-main text-xs">{tenant.paymentDay || 5}</span>
           </div>
           {tenant.coTenantFirstName && (
-            <div className="flex justify-between items-center">
-              <span className="text-text-muted text-xs">Co-locataire</span>
-              <span className="text-text-main text-xs">{tenant.coTenantFirstName} {tenant.coTenantLastName}</span>
+            <div className="pt-2 mt-2 border-t border-border space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-text-muted text-xs">Co-locataire</span>
+                <span className="text-text-main text-xs font-medium">{tenant.coTenantFirstName} {tenant.coTenantLastName}</span>
+              </div>
+              {tenant.coTenantEmail && (
+                <div className="flex justify-between items-center">
+                  <span className="text-text-muted text-xs">Email</span>
+                  <button onClick={() => handleEmail(tenant.coTenantEmail)} className="text-primary text-xs underline">
+                    {tenant.coTenantEmail}
+                  </button>
+                </div>
+              )}
+              {tenant.coTenantPhone && (
+                <div className="flex justify-between items-center">
+                  <span className="text-text-muted text-xs">Téléphone</span>
+                  <button onClick={() => handleCall(tenant.coTenantPhone)} className="text-primary text-xs underline">
+                    {tenant.coTenantPhone}
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

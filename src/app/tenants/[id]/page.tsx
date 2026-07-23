@@ -85,11 +85,23 @@ export default async function TenantDetailsPage({ params }: { params: Promise<{ 
                     <div className={styles.infoGrid}>
                         <div className={styles.infoItem}>
                             <span className={styles.label}>Email</span>
-                            <span className={styles.value}>{tenant.email}</span>
+                            {tenant.email ? (
+                                <a href={`mailto:${tenant.email}`} className={styles.value} style={{ color: 'var(--primary-color)', textDecoration: 'underline' }}>
+                                    {tenant.email}
+                                </a>
+                            ) : (
+                                <span className={styles.value}>-</span>
+                            )}
                         </div>
                         <div className={styles.infoItem}>
                             <span className={styles.label}>Téléphone</span>
-                            <span className={styles.value}>{tenant.phone || '-'}</span>
+                            {tenant.phone ? (
+                                <a href={`tel:${tenant.phone}`} className={styles.value} style={{ color: 'var(--primary-color)', textDecoration: 'underline' }}>
+                                    {tenant.phone}
+                                </a>
+                            ) : (
+                                <span className={styles.value}>-</span>
+                            )}
                         </div>
                         <div className={styles.infoItem}>
                             <span className={styles.label}>Paiement habituel</span>
@@ -109,13 +121,17 @@ export default async function TenantDetailsPage({ params }: { params: Promise<{ 
                             {tenant.coTenantEmail && (
                                 <div className={styles.infoItem}>
                                     <span className={styles.label}>Email</span>
-                                    <span className={styles.value}>{tenant.coTenantEmail}</span>
+                                    <a href={`mailto:${tenant.coTenantEmail}`} className={styles.value} style={{ color: 'var(--primary-color)', textDecoration: 'underline' }}>
+                                        {tenant.coTenantEmail}
+                                    </a>
                                 </div>
                             )}
                             {tenant.coTenantPhone && (
                                 <div className={styles.infoItem}>
                                     <span className={styles.label}>Téléphone</span>
-                                    <span className={styles.value}>{tenant.coTenantPhone}</span>
+                                    <a href={`tel:${tenant.coTenantPhone}`} className={styles.value} style={{ color: 'var(--primary-color)', textDecoration: 'underline' }}>
+                                        {tenant.coTenantPhone}
+                                    </a>
                                 </div>
                             )}
                         </div>
