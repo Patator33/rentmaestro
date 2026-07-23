@@ -9,6 +9,7 @@ interface Props {
     leaseId: string;
     rentAmount: number;
     chargesAmount: number;
+    startDate: string;
     lastRentReviewDate: string | null;
     irlBaseQuarter: string | null;
     irlBaseIndex: number | null;
@@ -28,7 +29,7 @@ function applyVars(tpl: string, vars: Record<string, string>): string {
 }
 
 export default function RentRevision({
-    leaseId, rentAmount, chargesAmount, lastRentReviewDate,
+    leaseId, rentAmount, chargesAmount, startDate, lastRentReviewDate,
     irlBaseQuarter, irlBaseIndex, indices, letterSubjectTpl, letterBodyTpl, letterVars,
 }: Props) {
     const router = useRouter();
@@ -37,8 +38,12 @@ export default function RentRevision({
     const [baseQuarter, setBaseQuarter] = useState(irlBaseQuarter ?? sorted[0]?.quarter ?? '');
     const [newQuarter, setNewQuarter] = useState(sorted[sorted.length - 1]?.quarter ?? '');
     const [effectiveDate, setEffectiveDate] = useState(() => {
-        const d = new Date();
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        // Par défaut, le mois de la prochaine échéance de révision (référence + 1 an),
+        // pas le mois en cours — sinon le courrier annonce la mauvaise date d'effet.
+        const ref = lastRentReviewDate ? new Date(lastRentReviewDate) : new Date(startDate);
+        const next = new Date(ref);
+        next.setFullYear(next.getFullYear() + 1);
+        return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`;
     });
     const [applying, setApplying] = useState(false);
     const [done, setDone] = useState(false);

@@ -290,6 +290,7 @@ export default async function LeaseDetailPage({ params }: { params: Promise<{ id
                     leaseId={lease.id}
                     rentAmount={lease.rentAmount}
                     chargesAmount={lease.chargesAmount}
+                    startDate={lease.startDate.toISOString()}
                     lastRentReviewDate={lease.lastRentReviewDate ? lease.lastRentReviewDate.toISOString() : null}
                     irlBaseQuarter={(lease as any).irlBaseQuarter ?? null}
                     irlBaseIndex={(lease as any).irlBaseIndex ?? null}
