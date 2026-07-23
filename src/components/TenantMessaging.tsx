@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { sendAdminMessage, sendPortalMessage, markMessagesRead, markPortalMessagesRead } from '@/actions/messages';
+import { sendAdminMessage, sendPortalMessage, markMessagesRead, markPortalMessagesRead, deleteMessage } from '@/actions/messages';
 
 interface Message {
     id: string;
@@ -61,6 +61,14 @@ export default function TenantMessaging({ tenantId, initialMessages, portalToken
         setSending(false);
     };
 
+    const handleDelete = async (id: string) => {
+        if (!confirm('Supprimer ce message ?')) return;
+        const res = await deleteMessage(id);
+        if (res.success) {
+            setMessages(prev => prev.filter(m => m.id !== id));
+        }
+    };
+
     const unreadCount = messages.filter(m => m.fromTenant !== isPortal && !m.readAt).length;
 
     return (
@@ -94,18 +102,37 @@ export default function TenantMessaging({ tenantId, initialMessages, portalToken
                         const isMine = isPortal ? msg.fromTenant : !msg.fromTenant;
                         return (
                             <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', alignItems: isMine ? 'flex-end' : 'flex-start' }}>
-                                <div style={{
-                                    maxWidth: '75%',
-                                    padding: '0.6rem 0.9rem',
-                                    borderRadius: isMine ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
-                                    background: isMine ? '#2b8cee' : 'var(--surface-active)',
-                                    color: isMine ? 'white' : 'var(--text-main)',
-                                    fontSize: '0.9rem',
-                                    lineHeight: 1.5,
-                                    whiteSpace: 'pre-wrap',
-                                    wordBreak: 'break-word',
-                                }}>
-                                    {msg.content}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', maxWidth: '75%' }}>
+                                    {!isPortal && isMine && (
+                                        <button
+                                            onClick={() => handleDelete(msg.id)}
+                                            title="Supprimer"
+                                            style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.75rem', padding: '0.2rem', flexShrink: 0 }}
+                                        >
+                                            🗑️
+                                        </button>
+                                    )}
+                                    <div style={{
+                                        padding: '0.6rem 0.9rem',
+                                        borderRadius: isMine ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
+                                        background: isMine ? '#2b8cee' : 'var(--surface-active)',
+                                        color: isMine ? 'white' : 'var(--text-main)',
+                                        fontSize: '0.9rem',
+                                        lineHeight: 1.5,
+                                        whiteSpace: 'pre-wrap',
+                                        wordBreak: 'break-word',
+                                    }}>
+                                        {msg.content}
+                                    </div>
+                                    {!isPortal && !isMine && (
+                                        <button
+                                            onClick={() => handleDelete(msg.id)}
+                                            title="Supprimer"
+                                            style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.75rem', padding: '0.2rem', flexShrink: 0 }}
+                                        >
+                                            🗑️
+                                        </button>
+                                    )}
                                 </div>
                                 <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
                                     {new Date(msg.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}

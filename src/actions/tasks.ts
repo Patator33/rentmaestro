@@ -164,6 +164,22 @@ export async function updateTaskNote(noteId: string, content: string) {
     }
 }
 
+export async function deleteTaskNote(noteId: string) {
+    await requireAuth();
+    try {
+        const note = await prisma.taskNote.delete({ where: { id: noteId } });
+        const task = await prisma.task.findUnique({ where: { id: note.taskId } });
+        if (task) {
+            revalidatePath(`/apartments/${task.apartmentId}`);
+            revalidatePath('/travaux');
+        }
+        return { success: true };
+    } catch (error) {
+        console.error("Erreur deleteTaskNote:", error);
+        return { success: false, error: "Impossible de supprimer la note" };
+    }
+}
+
 export async function updatePortalTaskNote(noteId: string, content: string, token: string) {
     if (!content.trim()) return { success: false, error: 'Contenu requis' };
     try {

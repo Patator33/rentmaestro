@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { createTask, updateTask, updateTaskStatus, deleteTask, convertTaskToExpense, addTaskNote, updateTaskNote, uploadTaskDocument, deleteTaskDocument } from '@/actions/tasks';
+import { createTask, updateTask, updateTaskStatus, deleteTask, convertTaskToExpense, addTaskNote, updateTaskNote, deleteTaskNote, uploadTaskDocument, deleteTaskDocument } from '@/actions/tasks';
 import styles from './TaskBoard.module.css';
 
 interface TaskNote {
@@ -84,6 +84,7 @@ export default function TaskBoard({ apartmentId, apartmentAddress = '', initialT
     const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
     const [editingNoteText, setEditingNoteText] = useState('');
     const [savingNote, setSavingNote] = useState(false);
+    const [deletingNoteId, setDeletingNoteId] = useState<string | null>(null);
     const [uploadingDoc, setUploadingDoc] = useState(false);
     const [deletingDocId, setDeletingDocId] = useState<string | null>(null);
 
@@ -215,6 +216,20 @@ export default function TaskBoard({ apartmentId, apartmentAddress = '', initialT
             setEditingNoteText('');
         }
         setSavingNote(false);
+    };
+
+    const handleDeleteNote = async (noteId: string) => {
+        if (!selectedTask || !confirm('Supprimer cette note ?')) return;
+        setDeletingNoteId(noteId);
+        const res = await deleteTaskNote(noteId);
+        if (res.success) {
+            setTasks(prev => prev.map(t =>
+                t.id === selectedTask.id ? { ...t, notes: t.notes.filter(n => n.id !== noteId) } : t
+            ));
+        } else {
+            alert(res.error || "Impossible de supprimer la note");
+        }
+        setDeletingNoteId(null);
     };
 
     const handleUploadDocument = async (file: File) => {
@@ -596,13 +611,23 @@ export default function TaskBoard({ apartmentId, apartmentAddress = '', initialT
                                                         {new Date(note.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                                     </span>
                                                     {editingNoteId !== note.id && (
-                                                        <button
-                                                            onClick={() => startEditNote(note)}
-                                                            style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.75rem', padding: 0 }}
-                                                            title="Modifier"
-                                                        >
-                                                            ✏️
-                                                        </button>
+                                                        <>
+                                                            <button
+                                                                onClick={() => startEditNote(note)}
+                                                                style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.75rem', padding: 0 }}
+                                                                title="Modifier"
+                                                            >
+                                                                ✏️
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDeleteNote(note.id)}
+                                                                disabled={deletingNoteId === note.id}
+                                                                style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.75rem', padding: 0, opacity: deletingNoteId === note.id ? 0.5 : 1 }}
+                                                                title="Supprimer"
+                                                            >
+                                                                🗑️
+                                                            </button>
+                                                        </>
                                                     )}
                                                 </div>
                                             </div>

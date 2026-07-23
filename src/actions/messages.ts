@@ -123,6 +123,13 @@ export async function sendPortalMessage(tenantId: string, content: string, token
     return { success: true, message };
 }
 
+export async function deleteMessage(id: string) {
+    await requireAuth();
+    const message = await prisma.message.delete({ where: { id } });
+    revalidatePath(`/tenants/${message.tenantId}`);
+    return { success: true };
+}
+
 export async function markMessagesRead(tenantId: string, fromTenant: boolean) {
     await requireAuth();
     await prisma.message.updateMany({
