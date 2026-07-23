@@ -31,19 +31,22 @@ export async function createTenant(formData: FormData) {
         paymentDay: formData.get("paymentDay") ? parseInt(formData.get("paymentDay") as string) : 5,
     };
 
-    try {
-        const validatedData = tenantSchema.parse(rawData);
-        const newTenant = await prisma.tenant.create({
-            data: validatedData,
-        });
+    const parsed = tenantSchema.safeParse(rawData);
+    if (!parsed.success) {
+        return { success: false, error: parsed.error.issues[0]?.message || "Données invalides" };
+    }
 
-        // Trigger n8n webhook
-        await notifyN8n('TENANT_CREATED', newTenant);
-        await logAction({ action: 'CREATE_TENANT', entity: 'Tenant', entityId: newTenant.id, details: `${newTenant.firstName} ${newTenant.lastName}` });
+    let newTenant;
+    try {
+        newTenant = await prisma.tenant.create({ data: parsed.data });
     } catch (error) {
         console.error("Erreur lors de la création du locataire:", error);
-        throw new Error("Impossible de créer le locataire. Vérifiez les données saisies.");
+        return { success: false, error: "Impossible de créer le locataire (email peut-être déjà utilisé)." };
     }
+
+    // Side effects (webhook, audit log) must not turn a successful creation into a reported failure.
+    notifyN8n('TENANT_CREATED', newTenant).catch(() => {});
+    logAction({ action: 'CREATE_TENANT', entity: 'Tenant', entityId: newTenant.id, details: `${newTenant.firstName} ${newTenant.lastName}` }).catch(() => {});
 
     revalidatePath("/", "layout");
     redirect("/tenants");

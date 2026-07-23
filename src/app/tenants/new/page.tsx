@@ -1,8 +1,26 @@
+'use client';
+
+import { useState } from "react";
 import Link from "next/link";
 import styles from "./page.module.css";
 import { createTenant } from "@/actions/tenants";
 
 export default function NewTenantPage() {
+    const [error, setError] = useState('');
+    const [submitting, setSubmitting] = useState(false);
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setError('');
+        setSubmitting(true);
+        const res = await createTenant(new FormData(e.currentTarget));
+        // On success createTenant redirects and never returns here.
+        if (res && !res.success) {
+            setError(res.error || "Erreur lors de la création du locataire");
+            setSubmitting(false);
+        }
+    };
+
     return (
         <div className={styles.container}>
             <Link href="/tenants" className={styles.backLink}>
@@ -10,7 +28,12 @@ export default function NewTenantPage() {
             </Link>
             <h1 className={styles.title}>Ajouter un locataire</h1>
 
-            <form action={createTenant} className={styles.form}>
+            <form onSubmit={handleSubmit} className={styles.form}>
+                {error && (
+                    <p style={{ color: '#ef4444', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', padding: '0.75rem 1rem', margin: 0, fontSize: '0.9rem' }}>
+                        {error}
+                    </p>
+                )}
                 <div className={styles.row}>
                     <div className={styles.formGroup}>
                         <label htmlFor="firstName" className={styles.label}>Prénom *</label>
@@ -91,7 +114,9 @@ export default function NewTenantPage() {
                     />
                 </div>
 
-                <button type="submit" className={styles.submitButton}>Enregistrer</button>
+                <button type="submit" disabled={submitting} className={styles.submitButton}>
+                    {submitting ? 'Enregistrement...' : 'Enregistrer'}
+                </button>
             </form>
         </div>
     );
