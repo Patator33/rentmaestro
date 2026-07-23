@@ -314,7 +314,7 @@ export default function TravauxClient({ initialTasks, showAll }: { initialTasks:
                                             style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', padding: '0.5rem 0.75rem', background: 'var(--surface-active, #1a1f2e)', borderRadius: '8px' }}
                                         >
                                             <a
-                                                href={encodeURI(doc.url)}
+                                                href={encodeURI(doc.url.replace('/uploads/', '/api/documents/'))}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 style={{ fontSize: '0.85rem', color: 'var(--primary-color)', textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}

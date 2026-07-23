@@ -218,7 +218,7 @@ export default async function TenantDetailsPage({ params }: { params: Promise<{ 
                             {tenant.documents.map((doc) => (
                                 <li key={doc.id} className={styles.documentItem}>
                                     <div className={styles.docInfo}>
-                                        <a href={encodeURI(doc.url)} target="_blank" rel="noopener noreferrer" className={styles.docName}>
+                                        <a href={encodeURI(doc.url.replace('/uploads/', '/api/documents/'))} target="_blank" rel="noopener noreferrer" className={styles.docName}>
                                             📄 {doc.name}
                                         </a>
                                         <span className={styles.docSize}>{(doc.size / 1024).toFixed(1)} Ko</span>

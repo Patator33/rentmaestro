@@ -132,7 +132,7 @@ export default function ApartmentDocumentUpload({ apartmentId, initialDocuments 
                 <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     {docs.map(doc => (
                         <li key={doc.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.6rem 1rem', background: 'var(--surface)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', gap: '0.75rem' }}>
-                            <a href={encodeURI(doc.url)} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary-color)', fontWeight: 500, fontSize: '0.9rem', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            <a href={encodeURI(doc.url.replace('/uploads/', '/api/documents/'))} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary-color)', fontWeight: 500, fontSize: '0.9rem', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                 📄 {doc.name}
                             </a>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexShrink: 0 }}>
