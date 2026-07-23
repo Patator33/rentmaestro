@@ -5,6 +5,7 @@ import { taskSchema } from "@/lib/validations";
 import { revalidatePath } from "next/cache";
 import { sendEmail } from "@/lib/email";
 import { requireAuth } from "@/lib/session";
+import { saveUploadedFile } from "@/lib/uploads";
 
 function formatGCalDate(d: Date): string {
     return d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
@@ -94,7 +95,8 @@ export async function createTask(data: any) {
 
     try {
         const task = await prisma.task.create({
-            data: parsed.data as any
+            data: parsed.data as any,
+            include: { notes: true, documents: true },
         });
         if (notifyTenant && parsed.data.scheduledAt && parsed.data.tenantId) {
             await sendScheduledAtEmail({
@@ -275,6 +277,45 @@ export async function deleteTask(taskId: string) {
     } catch (error) {
         console.error("Erreur deleteTask:", error);
         return { success: false, error: "Impossible de supprimer la tâche" };
+    }
+}
+
+export async function uploadTaskDocument(formData: FormData) {
+    await requireAuth();
+    const file = formData.get("file") as File;
+    const taskId = formData.get("taskId") as string;
+    if (!file || !taskId) return { success: false, error: "Fichier et tâche requis" };
+
+    try {
+        const { url, originalName } = await saveUploadedFile(file);
+        const document = await prisma.taskDocument.create({
+            data: { taskId, name: originalName, url, type: file.type, size: file.size },
+        });
+        const task = await prisma.task.findUnique({ where: { id: taskId } });
+        if (task) {
+            revalidatePath(`/apartments/${task.apartmentId}`);
+            revalidatePath('/travaux');
+        }
+        return { success: true, document };
+    } catch (error) {
+        console.error("Erreur uploadTaskDocument:", error);
+        return { success: false, error: error instanceof Error ? error.message : "Impossible d'ajouter le document" };
+    }
+}
+
+export async function deleteTaskDocument(documentId: string) {
+    await requireAuth();
+    try {
+        const document = await prisma.taskDocument.delete({ where: { id: documentId } });
+        const task = await prisma.task.findUnique({ where: { id: document.taskId } });
+        if (task) {
+            revalidatePath(`/apartments/${task.apartmentId}`);
+            revalidatePath('/travaux');
+        }
+        return { success: true };
+    } catch (error) {
+        console.error("Erreur deleteTaskDocument:", error);
+        return { success: false, error: "Impossible de supprimer le document" };
     }
 }
 

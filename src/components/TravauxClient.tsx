@@ -3,13 +3,22 @@
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { cycleTaskStatusForTravaux, addTaskNote, updateTaskNote } from '@/actions/tasks';
+import { cycleTaskStatusForTravaux, addTaskNote, updateTaskNote, uploadTaskDocument, deleteTaskDocument } from '@/actions/tasks';
 import { formatDate } from '@/lib/utils';
 
 interface TaskNote {
     id: string;
     content: string;
     authorType: string;
+    createdAt: Date | string;
+}
+
+interface TaskDoc {
+    id: string;
+    name: string;
+    url: string;
+    type: string;
+    size: number;
     createdAt: Date | string;
 }
 
@@ -25,6 +34,7 @@ interface TaskWithNotes {
     tenant: { id: string; firstName: string; lastName: string } | null;
     apartment: { id: string; address: string; name: string | null };
     notes: TaskNote[];
+    documents: TaskDoc[];
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -47,6 +57,8 @@ export default function TravauxClient({ initialTasks, showAll }: { initialTasks:
     const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
     const [editingNoteText, setEditingNoteText] = useState('');
     const [savingNote, setSavingNote] = useState(false);
+    const [uploadingDoc, setUploadingDoc] = useState(false);
+    const [deletingDocId, setDeletingDocId] = useState<string | null>(null);
     const [isPending, startTransition] = useTransition();
 
     const incidents = initialTasks.filter(t => t.tenant !== null);
@@ -92,6 +104,33 @@ export default function TravauxClient({ initialTasks, showAll }: { initialTasks:
             router.refresh();
         }
         setSavingNote(false);
+    };
+
+    const handleUploadDocument = async (file: File) => {
+        if (!selectedTask) return;
+        setUploadingDoc(true);
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('taskId', selectedTask.id);
+        const res = await uploadTaskDocument(formData);
+        if (res.success) {
+            router.refresh();
+        } else {
+            alert(res.error || "Impossible d'ajouter le document");
+        }
+        setUploadingDoc(false);
+    };
+
+    const handleDeleteDocument = async (docId: string) => {
+        if (!confirm('Supprimer ce document ?')) return;
+        setDeletingDocId(docId);
+        const res = await deleteTaskDocument(docId);
+        if (res.success) {
+            router.refresh();
+        } else {
+            alert(res.error || "Impossible de supprimer le document");
+        }
+        setDeletingDocId(null);
     };
 
     const renderCard = (task: TaskWithNotes) => {
@@ -260,6 +299,49 @@ export default function TravauxClient({ initialTasks, showAll }: { initialTasks:
                             {selectedTask.dueDate && <div>⏰ Échéance : {formatDate(selectedTask.dueDate as any)}</div>}
                             {selectedTask.scheduledAt && <div>🔧 Intervention : {formatDate(selectedTask.scheduledAt as any)}</div>}
                             {selectedTask.cost != null && <div>💰 Coût : {selectedTask.cost.toFixed(2)} €</div>}
+                        </div>
+
+                        {/* Documents */}
+                        <div>
+                            <h3 style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: '0.6rem' }}>
+                                Documents ({selectedTask.documents.length})
+                            </h3>
+                            {selectedTask.documents.length > 0 && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginBottom: '0.6rem' }}>
+                                    {selectedTask.documents.map(doc => (
+                                        <div
+                                            key={doc.id}
+                                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', padding: '0.5rem 0.75rem', background: 'var(--surface-active, #1a1f2e)', borderRadius: '8px' }}
+                                        >
+                                            <a
+                                                href={encodeURI(doc.url)}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                style={{ fontSize: '0.85rem', color: 'var(--primary-color)', textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                                            >
+                                                📄 {doc.name}
+                                            </a>
+                                            <button
+                                                onClick={() => handleDeleteDocument(doc.id)}
+                                                disabled={deletingDocId === doc.id}
+                                                style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.9rem', flexShrink: 0, opacity: deletingDocId === doc.id ? 0.5 : 1 }}
+                                                title="Supprimer"
+                                            >
+                                                🗑️
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            <label style={{ display: 'inline-block', fontSize: '0.8rem', padding: '0.4rem 0.75rem', border: '1px dashed var(--border-color)', borderRadius: '8px', color: 'var(--text-secondary)', cursor: uploadingDoc ? 'default' : 'pointer', opacity: uploadingDoc ? 0.6 : 1 }}>
+                                {uploadingDoc ? 'Envoi...' : '📎 Ajouter un document'}
+                                <input
+                                    type="file"
+                                    disabled={uploadingDoc}
+                                    onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadDocument(f); e.target.value = ''; }}
+                                    style={{ display: 'none' }}
+                                />
+                            </label>
                         </div>
 
                         {/* Notes history */}

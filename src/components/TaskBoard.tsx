@@ -1,13 +1,22 @@
 'use client';
 
 import { useState } from 'react';
-import { createTask, updateTask, updateTaskStatus, deleteTask, convertTaskToExpense, addTaskNote, updateTaskNote } from '@/actions/tasks';
+import { createTask, updateTask, updateTaskStatus, deleteTask, convertTaskToExpense, addTaskNote, updateTaskNote, uploadTaskDocument, deleteTaskDocument } from '@/actions/tasks';
 import styles from './TaskBoard.module.css';
 
 interface TaskNote {
     id: string;
     content: string;
     authorType: string;
+    createdAt: Date | string;
+}
+
+interface TaskDoc {
+    id: string;
+    name: string;
+    url: string;
+    type: string;
+    size: number;
     createdAt: Date | string;
 }
 
@@ -24,6 +33,7 @@ interface Task {
     createdAt: Date;
     updatedAt: Date;
     notes: TaskNote[];
+    documents: TaskDoc[];
 }
 
 interface TaskBoardProps {
@@ -74,6 +84,8 @@ export default function TaskBoard({ apartmentId, apartmentAddress = '', initialT
     const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
     const [editingNoteText, setEditingNoteText] = useState('');
     const [savingNote, setSavingNote] = useState(false);
+    const [uploadingDoc, setUploadingDoc] = useState(false);
+    const [deletingDocId, setDeletingDocId] = useState<string | null>(null);
 
     const selectedTask = selectedTaskId ? tasks.find(t => t.id === selectedTaskId) ?? null : null;
 
@@ -203,6 +215,39 @@ export default function TaskBoard({ apartmentId, apartmentAddress = '', initialT
             setEditingNoteText('');
         }
         setSavingNote(false);
+    };
+
+    const handleUploadDocument = async (file: File) => {
+        if (!selectedTask) return;
+        setUploadingDoc(true);
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('taskId', selectedTask.id);
+        const res = await uploadTaskDocument(formData);
+        if (res.success && res.document) {
+            const doc = res.document as TaskDoc;
+            setTasks(prev => prev.map(t =>
+                t.id === selectedTask.id ? { ...t, documents: [doc, ...t.documents] } : t
+            ));
+        } else {
+            alert(res.error || "Impossible d'ajouter le document");
+        }
+        setUploadingDoc(false);
+    };
+
+    const handleDeleteDocument = async (docId: string) => {
+        if (!selectedTask) return;
+        if (!confirm('Supprimer ce document ?')) return;
+        setDeletingDocId(docId);
+        const res = await deleteTaskDocument(docId);
+        if (res.success) {
+            setTasks(prev => prev.map(t =>
+                t.id === selectedTask.id ? { ...t, documents: t.documents.filter(d => d.id !== docId) } : t
+            ));
+        } else {
+            alert(res.error || "Impossible de supprimer le document");
+        }
+        setDeletingDocId(null);
     };
 
     const renderTaskCard = (task: Task) => {
@@ -483,6 +528,49 @@ export default function TaskBoard({ apartmentId, apartmentAddress = '', initialT
                             {selectedTask.scheduledAt && <div>🔧 Intervention : {new Date(selectedTask.scheduledAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</div>}
                             {selectedTask.dueDate && <div>⏰ Échéance : {new Date(selectedTask.dueDate).toLocaleDateString('fr-FR')}</div>}
                             {selectedTask.cost != null && <div>💰 Coût : {selectedTask.cost.toFixed(2)} €</div>}
+                        </div>
+
+                        {/* Documents */}
+                        <div>
+                            <h3 style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: '0.6rem' }}>
+                                Documents ({selectedTask.documents.length})
+                            </h3>
+                            {selectedTask.documents.length > 0 && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginBottom: '0.6rem' }}>
+                                    {selectedTask.documents.map(doc => (
+                                        <div
+                                            key={doc.id}
+                                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', padding: '0.5rem 0.75rem', background: 'var(--surface-active, #f8fafc)', borderRadius: '8px' }}
+                                        >
+                                            <a
+                                                href={encodeURI(doc.url)}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                style={{ fontSize: '0.85rem', color: '#2b8cee', textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                                            >
+                                                📄 {doc.name}
+                                            </a>
+                                            <button
+                                                onClick={() => handleDeleteDocument(doc.id)}
+                                                disabled={deletingDocId === doc.id}
+                                                style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.9rem', flexShrink: 0, opacity: deletingDocId === doc.id ? 0.5 : 1 }}
+                                                title="Supprimer"
+                                            >
+                                                🗑️
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            <label style={{ display: 'inline-block', fontSize: '0.8rem', padding: '0.4rem 0.75rem', border: '1px dashed var(--border-color)', borderRadius: '8px', color: 'var(--text-secondary)', cursor: uploadingDoc ? 'default' : 'pointer', opacity: uploadingDoc ? 0.6 : 1 }}>
+                                {uploadingDoc ? 'Envoi...' : '📎 Ajouter un document'}
+                                <input
+                                    type="file"
+                                    disabled={uploadingDoc}
+                                    onChange={e => { const f = e.target.files?.[0]; if (f) handleUploadDocument(f); e.target.value = ''; }}
+                                    style={{ display: 'none' }}
+                                />
+                            </label>
                         </div>
 
                         {/* Notes history */}

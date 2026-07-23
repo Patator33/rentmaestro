@@ -18,6 +18,7 @@ export default async function TravauxPage({
             tenant: { select: { id: true, firstName: true, lastName: true } },
             apartment: { select: { id: true, address: true, name: true } },
             notes: { orderBy: { createdAt: 'asc' } },
+            documents: { orderBy: { createdAt: 'desc' } },
         },
         orderBy: { createdAt: 'desc' },
     });
