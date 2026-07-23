@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendQuittanceEmailCore, sendReminderEmailCore } from "@/lib/rent-emails";
+import { generateRentsForCurrentMonth } from "@/lib/rent-generation";
 
 export const dynamic = 'force-dynamic';
 
@@ -25,6 +26,12 @@ export async function GET(request: Request) {
 
         let sentQuittances = 0;
         let sentReminders = 0;
+
+        // -----------------------------------------------------
+        // 0. Generate this month's rent payments + mark overdue ones LATE
+        // (also reachable manually via /api/generate-rents)
+        // -----------------------------------------------------
+        const rentGeneration = await generateRentsForCurrentMonth();
 
         // -----------------------------------------------------
         // 1. Send automated quittances
@@ -109,6 +116,8 @@ export async function GET(request: Request) {
             success: true,
             message: `CRON Job success. Sent ${sentQuittances} quittances and ${sentReminders} reminders.`,
             stats: {
+                rentsCreated: rentGeneration.created,
+                rentsMarkedLate: rentGeneration.lateMarked,
                 quittancesSent: sentQuittances,
                 remindersSent: sentReminders,
                 auditLogsPurged: deletedLogs,
