@@ -11,17 +11,17 @@ export async function GET(request: Request) {
     const now = new Date();
     const startOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
 
-    const [leasesThisMonth, paidPayments, openIncidents, openTasks, unreadMessages] = await Promise.all([
+    const nextMonthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+
+    const [leasesThisMonth, openIncidents, openTasks, unreadMessages] = await Promise.all([
         prisma.lease.findMany({
             where: {
-                startDate: { lte: now },
+                // Un bail qui démarre plus tard dans le mois doit déjà son
+                // prorata : le borner à aujourd'hui le sortait du décompte.
+                startDate: { lt: nextMonthStart },
                 OR: [{ endDate: null }, { endDate: { gte: startOfMonth } }],
             },
             include: { payments: { where: { period: startOfMonth } } },
-        }),
-        prisma.rentPayment.aggregate({
-            where: { period: startOfMonth, status: 'PAID' },
-            _sum: { amount: true }
         }),
         prisma.task.count({
             where: { status: { in: ['TODO', 'IN_PROGRESS'] }, tenantId: { not: null } }
@@ -34,14 +34,22 @@ export async function GET(request: Request) {
         }),
     ]);
 
-    const activeLeasesThisMonth = leasesThisMonth.length;
+    // Montants du mois calculés depuis les baux : tant que la génération n'a pas
+    // créé les RentPayment, s'appuyer sur eux renvoyait 0.
+    const monthRows = leasesThisMonth
+        .map(lease => {
+            const payment = lease.payments[0] ?? null;
+            const expected = expectedRentForPeriod(lease, startOfMonth);
+            const received = payment?.status === 'PAID'
+                ? payment.amount
+                : payment?.status === 'PARTIAL' ? (payment.paidAmount ?? 0) : 0;
+            return { expected, received, settled: isRentSettled(payment, expected) };
+        })
+        .filter(r => r.expected > 0);
 
-    // A lease is considered paid if status=PAID or if paidAmount >= expected prorata (old bug fix)
-    const fullyPaidCount = leasesThisMonth.filter(lease =>
-        isRentSettled(lease.payments[0], expectedRentForPeriod(lease, startOfMonth))
-    ).length;
-
-    const pendingRents = activeLeasesThisMonth - fullyPaidCount;
+    const activeLeasesThisMonth = monthRows.length;
+    const pendingRents = monthRows.filter(r => !r.settled).length;
+    const monthRevenue = monthRows.reduce((s, r) => s + r.received, 0);
 
     // Active leases count (by date, excludes future leases)
     const todayMidnight = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
@@ -172,11 +180,15 @@ export async function GET(request: Request) {
         ...unpaidAll.filter(r => r.late).map(r => ({ ...r, period: startOfMonth })),
     ].slice(0, 5);
 
-    const pendingAmount = unpaidAll.reduce((sum, r) => sum + r.remaining, 0);
+    // Même source que pendingRents : unpaidAll ne sert qu'à repérer les retards
+    // et ignore les baux démarrant plus tard dans le mois.
+    const pendingAmount = monthRows
+        .filter(r => !r.settled)
+        .reduce((sum, r) => sum + Math.max(0, r.expected - r.received), 0);
 
     return NextResponse.json({
         pendingRents,
-        monthRevenue: paidPayments._sum.amount ?? 0,
+        monthRevenue,
         pendingAmount,
         openIncidents,
         openTasks,

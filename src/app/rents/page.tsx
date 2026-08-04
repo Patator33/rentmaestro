@@ -131,7 +131,7 @@ export default async function RentsPage({
         totalExpected += payment ? payment.amount : fallbackAmount;
         if (payment?.status === 'PAID') totalReceived += payment.amount;
         else if (payment?.status === 'PARTIAL' && (payment as any).paidAmount != null) totalReceived += (payment as any).paidAmount;
-        // Monthly costs per unique apartment (taxe foncière is annual → /12)
+        // Charges fixes par appartement, déjà saisies mensuellement dans le formulaire
         if (!seenApartments.has(lease.apartment.id)) {
             seenApartments.add(lease.apartment.id);
             totalMonthlyCosts +=

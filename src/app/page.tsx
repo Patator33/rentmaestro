@@ -31,9 +31,14 @@ async function getCashflowData() {
   for (let m = 0; m < 12; m++) {
     const monthStart = new Date(year, m, 1);
     const monthEnd = new Date(year, m + 1, 0);
+    // Encaissements réels : un loyer simplement attendu n'est pas un flux.
     const income = payments
       .filter((p: RentPayment) => p.period >= monthStart && p.period <= monthEnd)
-      .reduce((s: number, p: RentPayment) => s + p.amount, 0);
+      .reduce((s: number, p: any) => {
+        if (p.status === 'PAID') return s + p.amount;
+        if (p.status === 'PARTIAL') return s + (p.paidAmount ?? 0);
+        return s;
+      }, 0);
     const varExp = expenses
       .filter((e: Expense) => e.date >= monthStart && e.date <= monthEnd)
       .reduce((s: number, e: Expense) => s + e.amount, 0);
@@ -42,7 +47,9 @@ async function getCashflowData() {
       if (new Date(apt.createdAt) <= monthEnd)
         fixedExp += (apt.mortgageAmount || 0) + (apt.insuranceAmount || 0) + (apt.taxAmount || 0);
     });
-    monthlyData.push({ m: months[m], v: Math.max(0, income - varExp - fixedExp) });
+    // Valeur réelle, y compris négative : la plafonner à 0 affichait un cash
+    // flow nul là où les charges dépassent les encaissements.
+    monthlyData.push({ m: months[m], v: income - varExp - fixedExp });
   }
   return monthlyData;
 }
@@ -62,20 +69,36 @@ async function getStats() {
   const occupancyRate = apartmentCount > 0 ? Math.round((leaseCount / apartmentCount) * 100) : 0;
   const vacantCount = apartmentCount - leaseCount;
 
-  const activeLeasesThisMonth = await prisma.lease.count({
-    where: { startDate: { lte: now }, OR: [{ endDate: null }, { endDate: { gte: currentMonthStart } }] }
+  // Chiffres du mois calculés depuis les baux : tant que la génération mensuelle
+  // n'a pas créé les RentPayment, se baser sur eux affichait 0 partout.
+  const leasesThisMonth = await prisma.lease.findMany({
+    where: {
+      startDate: { lt: nextMonthStart },
+      OR: [{ endDate: null }, { endDate: { gte: currentMonthStart } }],
+    },
+    include: { payments: { where: { period: currentMonthStart } } },
   });
-  const paymentsThisMonth = await prisma.rentPayment.findMany({
-    where: { period: { gte: currentMonthStart, lt: nextMonthStart } }
-  });
-  const paidPayments = paymentsThisMonth.filter((p: RentPayment) => p.status === 'PAID').length;
+
+  const monthRows = leasesThisMonth.map(lease => {
+    const payment = lease.payments[0] ?? null;
+    const expected = expectedRentForPeriod(lease, currentMonthStart);
+    const received = payment?.status === 'PAID'
+      ? payment.amount
+      : payment?.status === 'PARTIAL' ? (payment.paidAmount ?? 0) : 0;
+    return { expected, received, settled: isRentSettled(payment, expected) };
+  }).filter(r => r.expected > 0);
+
+  const activeLeasesThisMonth = monthRows.length;
+  const paidPayments = monthRows.filter(r => r.settled).length;
   const paymentRate = activeLeasesThisMonth > 0
     ? Math.round((paidPayments / activeLeasesThisMonth) * 100) : 0;
 
-  const totalRevenue = paymentsThisMonth
-    .filter((p: RentPayment) => p.status === 'PAID')
-    .reduce((s: number, p: RentPayment) => s + p.amount, 0);
-  const expectedRevenue = paymentsThisMonth.reduce((s: number, p: RentPayment) => s + p.amount, 0);
+  const totalRevenue = monthRows.reduce((s, r) => s + r.received, 0);
+  const expectedRevenue = monthRows.reduce((s, r) => s + r.expected, 0);
+
+  const unsettledRows = monthRows.filter(r => !r.settled);
+  const pendingCount = unsettledRows.length;
+  const pendingAmount = unsettledRows.reduce((s, r) => s + Math.max(0, r.expected - r.received), 0);
 
   // Même logique dynamique que la liste des retards : ne pas dépendre du statut LATE stocké.
   const scanFrom = new Date(Date.UTC(now.getFullYear(), now.getMonth() - PAST_MONTHS_SCANNED, 1));
@@ -98,6 +121,7 @@ async function getStats() {
   return {
     apartmentCount, tenantCount, occupancyRate, vacantCount,
     paymentRate, totalRevenue, expectedRevenue, latePayments,
+    pendingCount, pendingAmount,
   };
 }
 
@@ -376,11 +400,13 @@ export default async function Home() {
         <Link href="/rents" className={styles.kpiCard}>
           <div className={styles.kpiHalo} style={{ background: 'radial-gradient(circle, rgba(248,113,113,.18), transparent 70%)' }} />
           <div className={styles.kpiLabel}>En attente</div>
-          <div className={styles.kpiValue} style={{ color: stats.latePayments > 0 ? '#f87171' : 'var(--text-main)' }}>
-            {stats.latePayments}
+          <div className={styles.kpiValue} style={{ color: stats.pendingCount > 0 ? '#f87171' : 'var(--text-main)' }}>
+            {stats.pendingCount}
           </div>
           <div className={styles.kpiMeta}>
-            <span className={styles.kpiSub}>retard{stats.latePayments !== 1 ? 's' : ''} à recouvrer</span>
+            <span className={styles.kpiSub}>
+              {fmtEur(stats.pendingAmount)} · {stats.latePayments} en retard
+            </span>
           </div>
         </Link>
       </div>
@@ -402,15 +428,17 @@ export default async function Home() {
           </div>
           <div className={styles.chartWrap}>
             {cashflow.map((d, i) => {
-              const hPct = Math.max(2, (d.v / maxCashflow) * 100);
+              // Les mois négatifs restent lisibles : barre au minimum, en rouge.
+              const hPct = Math.max(2, (Math.max(0, d.v) / maxCashflow) * 100);
               const isLast = i === currentMonthIdx;
+              const negative = d.v < 0;
               return (
                 <div
                   key={i}
                   className={styles.chartBar}
                   style={{
                     height: `${hPct}%`,
-                    background: isLast ? '#a3e635' : 'rgba(163,230,53,.35)',
+                    background: negative ? '#f87171' : isLast ? '#a3e635' : 'rgba(163,230,53,.35)',
                     animationDelay: `${i * 40}ms`,
                   }}
                   title={`${d.m}: ${fmtEur(d.v)}`}
