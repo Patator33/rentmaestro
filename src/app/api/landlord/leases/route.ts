@@ -30,7 +30,10 @@ export async function POST(request: Request) {
     if (!verifyMobileToken(request)) return unauthorized();
 
     const body = await request.json();
-    const { apartmentId, tenantId, startDate, endDate, rentAmount, chargesAmount, depositAmount } = body;
+    const {
+        apartmentId, tenantId, startDate, endDate, rentAmount, chargesAmount, depositAmount,
+        guarantorType, guarantorFirstName, guarantorLastName, guarantorEmail, guarantorPhone,
+    } = body;
 
     if (!apartmentId || !tenantId || !startDate || rentAmount == null || chargesAmount == null) {
         return NextResponse.json({ error: 'Données incomplètes.' }, { status: 400 });
@@ -47,6 +50,11 @@ export async function POST(request: Request) {
             depositAmount: depositAmount ? parseFloat(depositAmount) : null,
             depositStatus: depositAmount ? 'PENDING' : null,
             isActive: true,
+            guarantorType: guarantorType && guarantorType !== 'NONE' ? guarantorType : null,
+            guarantorFirstName: guarantorType === 'PRIVATE' ? (guarantorFirstName || null) : null,
+            guarantorLastName: guarantorType === 'PRIVATE' ? (guarantorLastName || null) : null,
+            guarantorEmail: guarantorType === 'PRIVATE' ? (guarantorEmail || null) : null,
+            guarantorPhone: guarantorType === 'PRIVATE' ? (guarantorPhone || null) : null,
         },
     });
 

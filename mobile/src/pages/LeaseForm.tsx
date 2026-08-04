@@ -8,6 +8,12 @@ function defaultNextMonth() {
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
 }
 
+const GUARANTOR_LABELS: Record<string, string> = {
+  NONE:    'Aucun',
+  PRIVATE: 'Garant privé',
+  VISALE:  'Garantie Visale',
+};
+
 const DEPOSIT_STATUS_LABELS: Record<string, string> = {
   PENDING:   'En attente',
   RECEIVED:  'Perçue',
@@ -25,6 +31,8 @@ export default function LeaseForm() {
     apartmentId: '', tenantId: '', startDate: '', endDate: '',
     rentAmount: '', chargesAmount: '', depositAmount: '', depositStatus: 'PENDING',
     rentEffectiveDate: defaultNextMonth(),
+    guarantorType: 'NONE',
+    guarantorFirstName: '', guarantorLastName: '', guarantorEmail: '', guarantorPhone: '',
   });
   const [apartments, setApartments] = useState<any[]>([]);
   const [tenants, setTenants] = useState<any[]>([]);
@@ -43,6 +51,11 @@ export default function LeaseForm() {
         depositAmount: l.depositAmount != null ? String(l.depositAmount) : '',
         depositStatus: l.depositStatus || 'PENDING',
         rentEffectiveDate: defaultNextMonth(),
+        guarantorType: l.guarantorType || 'NONE',
+        guarantorFirstName: l.guarantorFirstName ?? '',
+        guarantorLastName: l.guarantorLastName ?? '',
+        guarantorEmail: l.guarantorEmail ?? '',
+        guarantorPhone: l.guarantorPhone ?? '',
       }));
     }
   }, [id]);
@@ -123,6 +136,32 @@ export default function LeaseForm() {
               ))}
             </select>
           </div>
+          <div>
+            <label className="block text-xs text-text-secondary mb-1">Garant</label>
+            <select value={form.guarantorType} onChange={set('guarantorType')}
+              className="w-full bg-surface border border-border rounded-xl px-3 py-2.5 text-text-main text-sm focus:outline-none focus:border-primary">
+              {Object.entries(GUARANTOR_LABELS).map(([v, l]) => (
+                <option key={v} value={v}>{l}</option>
+              ))}
+            </select>
+          </div>
+
+          {form.guarantorType === 'PRIVATE' && (
+            <div className="rounded-xl border border-border p-3 space-y-3">
+              <p className="text-xs uppercase tracking-wide text-text-muted">Informations du garant</p>
+              <Field label="Prénom" value={form.guarantorFirstName} onChange={set('guarantorFirstName')} />
+              <Field label="Nom" value={form.guarantorLastName} onChange={set('guarantorLastName')} />
+              <Field label="Email" type="email" value={form.guarantorEmail} onChange={set('guarantorEmail')} />
+              <Field label="Téléphone" type="tel" value={form.guarantorPhone} onChange={set('guarantorPhone')} />
+            </div>
+          )}
+
+          {form.guarantorType === 'VISALE' && (
+            <p className="text-xs rounded-xl px-3 py-2.5" style={{ background: 'rgba(103,232,249,0.06)', border: '1px solid rgba(103,232,249,0.25)', color: 'var(--accent-color)' }}>
+              ℹ️ La garantie Visale sera notée sur le bail. Aucune information complémentaire requise.
+            </p>
+          )}
+
           {isEdit && (
             <div>
               <label className="block text-xs text-text-secondary mb-1">Date d'effet de la révision du loyer</label>

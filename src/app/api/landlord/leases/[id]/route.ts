@@ -43,7 +43,10 @@ export async function PUT(
     if (!verifyMobileToken(request)) return unauthorized();
     const { id } = await params;
     const body = await request.json();
-    const { startDate, endDate, rentAmount, chargesAmount, depositAmount, depositStatus, isActive, rentEffectiveDate } = body;
+    const {
+        startDate, endDate, rentAmount, chargesAmount, depositAmount, depositStatus, isActive, rentEffectiveDate,
+        guarantorType, guarantorFirstName, guarantorLastName, guarantorEmail, guarantorPhone,
+    } = body;
 
     let effectiveDate: Date | null = null;
     if (rentEffectiveDate) {
@@ -62,6 +65,15 @@ export async function PUT(
             depositStatus: depositStatus !== undefined ? depositStatus : undefined,
             isActive: isActive != null ? Boolean(isActive) : undefined,
             ...(effectiveDate ? { lastRentReviewDate: effectiveDate } : {}),
+            // Les coordonnées ne sont conservées que pour un garant privé :
+            // changer de type ne doit pas laisser traîner l'ancien garant.
+            ...(guarantorType !== undefined ? {
+                guarantorType: guarantorType && guarantorType !== 'NONE' ? guarantorType : null,
+                guarantorFirstName: guarantorType === 'PRIVATE' ? (guarantorFirstName || null) : null,
+                guarantorLastName: guarantorType === 'PRIVATE' ? (guarantorLastName || null) : null,
+                guarantorEmail: guarantorType === 'PRIVATE' ? (guarantorEmail || null) : null,
+                guarantorPhone: guarantorType === 'PRIVATE' ? (guarantorPhone || null) : null,
+            } : {}),
         },
     });
 
