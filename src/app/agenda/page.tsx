@@ -1,114 +1,13 @@
 import Link from 'next/link';
-import { prisma } from '@/lib/prisma';
-import { format, addMonths, differenceInDays } from 'date-fns';
+import { format, differenceInDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { getAgendaEvents, type AgendaEvent } from '@/lib/agenda-events';
 
 export const dynamic = 'force-dynamic';
 
-interface AgendaEvent {
-    date: Date;
-    type: 'LEASE_END' | 'RENT_REVIEW' | 'TASK_DUE' | 'LEASE_START';
-    label: string;
-    sublabel?: string;
-    href: string;
-    urgency: 'low' | 'medium' | 'high';
-}
-
 export default async function AgendaPage() {
     const now = new Date();
-    const horizon = addMonths(now, 6);
-
-    const [activeLeases, upcomingLeases, tasks] = await Promise.all([
-        prisma.lease.findMany({
-            where: { isActive: true },
-            include: { tenant: true, apartment: true },
-        }),
-        prisma.lease.findMany({
-            where: {
-                startDate: { gt: now, lte: horizon },
-            },
-            include: { tenant: true, apartment: true },
-        }),
-        prisma.task.findMany({
-            where: {
-                dueDate: { not: null, lte: horizon },
-                status: { not: 'DONE' },
-            },
-            include: { apartment: true, tenant: true },
-            orderBy: { dueDate: 'asc' },
-        }),
-    ]);
-
-    const events: AgendaEvent[] = [];
-
-    // Lease expirations
-    for (const lease of activeLeases) {
-        if (lease.endDate) {
-            const end = new Date(lease.endDate);
-            if (end >= now && end <= horizon) {
-                const daysLeft = differenceInDays(end, now);
-                events.push({
-                    date: end,
-                    type: 'LEASE_END',
-                    label: `Fin de bail — ${lease.tenant.firstName} ${lease.tenant.lastName}`,
-                    sublabel: lease.apartment.name || lease.apartment.address,
-                    href: `/apartments/${lease.apartmentId}`,
-                    urgency: daysLeft <= 30 ? 'high' : daysLeft <= 60 ? 'medium' : 'low',
-                });
-            }
-        }
-
-        // Rent reviews (every 12 months from start or last review)
-        const refDate = lease.lastRentReviewDate
-            ? new Date(lease.lastRentReviewDate)
-            : new Date(lease.startDate);
-        const nextReview = new Date(refDate);
-        nextReview.setFullYear(nextReview.getFullYear() + 1);
-
-        const leaseEndDate = lease.endDate ? new Date(lease.endDate) : null;
-        if (nextReview >= now && nextReview <= horizon && (!leaseEndDate || leaseEndDate >= nextReview)) {
-            const daysLeft = differenceInDays(nextReview, now);
-            events.push({
-                date: nextReview,
-                type: 'RENT_REVIEW',
-                label: `Révision de loyer — ${lease.tenant.firstName} ${lease.tenant.lastName}`,
-                sublabel: `${lease.apartment.name || lease.apartment.address} · ${(lease.rentAmount + lease.chargesAmount).toFixed(0)} €/mois`,
-                href: `/leases/${lease.id}`,
-                urgency: daysLeft <= 30 ? 'high' : daysLeft <= 60 ? 'medium' : 'low',
-            });
-        }
-    }
-
-    // Upcoming lease starts
-    for (const lease of upcomingLeases) {
-        events.push({
-            date: new Date(lease.startDate),
-            type: 'LEASE_START',
-            label: `Entrée — ${lease.tenant.firstName} ${lease.tenant.lastName}`,
-            sublabel: lease.apartment.name || lease.apartment.address,
-            href: `/apartments/${lease.apartmentId}`,
-            urgency: 'low',
-        });
-    }
-
-    // Task due dates
-    for (const task of tasks) {
-        if (task.dueDate) {
-            const due = new Date(task.dueDate);
-            const daysLeft = differenceInDays(due, now);
-            events.push({
-                date: due,
-                type: 'TASK_DUE',
-                label: `Tâche — ${task.title}`,
-                sublabel: (task.apartment.name || task.apartment.address) + (task.tenant ? ` · ${task.tenant.firstName} ${task.tenant.lastName}` : ''),
-                href: `/apartments/${task.apartmentId}`,
-                urgency: daysLeft <= 0 ? 'high' : daysLeft <= 14 ? 'medium' : 'low',
-            });
-        }
-    }
-
-    // Sort by date
-    events.sort((a, b) => a.date.getTime() - b.date.getTime());
+    const events = await getAgendaEvents(6);
 
     // Group by month
     const grouped: Record<string, AgendaEvent[]> = {};
