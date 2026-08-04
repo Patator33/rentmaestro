@@ -105,10 +105,81 @@ function extractVars(eventName: string, p: any): Record<string, string> {
     }
 }
 
+export interface TelegramConfig {
+    botToken: string;
+    chatId: string;
+    threadId: string;
+    parseMode: string;
+    silent: boolean;
+}
+
+/**
+ * Configuration Telegram, priorité aux réglages saisis dans Paramètres puis
+ * repli sur les variables d'environnement (installations antérieures).
+ */
+export async function getTelegramConfig(): Promise<TelegramConfig> {
+    const rows = await prisma.setting.findMany({
+        where: {
+            key: {
+                in: [
+                    'telegram_bot_token',
+                    'telegram_chat_id',
+                    'telegram_thread_id',
+                    'telegram_parse_mode',
+                    'telegram_silent',
+                ],
+            },
+        },
+    });
+    const get = (k: string) => rows.find(r => r.key === k)?.value?.trim() ?? '';
+
+    return {
+        botToken: get('telegram_bot_token') || (process.env.TELEGRAM_BOT_TOKEN ?? '').trim(),
+        chatId: get('telegram_chat_id') || (process.env.TELEGRAM_CHAT_ID ?? '').trim(),
+        threadId: get('telegram_thread_id'),
+        parseMode: get('telegram_parse_mode') || 'Markdown',
+        silent: get('telegram_silent') === 'true',
+    };
+}
+
+/** Envoie un message brut. Renvoie l'erreur renvoyée par Telegram le cas échéant. */
+export async function sendTelegramMessage(
+    text: string,
+    config?: TelegramConfig
+): Promise<{ success: boolean; error?: string }> {
+    const cfg = config ?? await getTelegramConfig();
+    if (!cfg.botToken) return { success: false, error: "Token du bot manquant." };
+    if (!cfg.chatId) return { success: false, error: "Identifiant de conversation manquant." };
+
+    const body: Record<string, unknown> = {
+        chat_id: cfg.chatId,
+        text,
+        disable_notification: cfg.silent,
+    };
+    // 'none' laisse Telegram afficher le texte tel quel : utile quand un nom
+    // contient un caractère que Markdown refuse, ce qui fait échouer l'envoi.
+    if (cfg.parseMode && cfg.parseMode !== 'none') body.parse_mode = cfg.parseMode;
+    if (cfg.threadId) body.message_thread_id = Number(cfg.threadId);
+
+    try {
+        const res = await fetch(`https://api.telegram.org/bot${cfg.botToken}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        if (!res.ok) {
+            const data = await res.json().catch(() => null);
+            return { success: false, error: data?.description || `Erreur HTTP ${res.status}` };
+        }
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: error instanceof Error ? error.message : 'Erreur réseau' };
+    }
+}
+
 async function notifyTelegram(eventName: string, payload: any) {
-    const botToken = process.env.TELEGRAM_BOT_TOKEN;
-    const chatId = process.env.TELEGRAM_CHAT_ID;
-    if (!botToken || !chatId) return;
+    const config = await getTelegramConfig();
+    if (!config.botToken || !config.chatId) return;
 
     const [enabledSetting, eventsSetting, templateSetting] = await Promise.all([
         prisma.setting.findUnique({ where: { key: 'telegram_enabled' } }),
@@ -135,14 +206,9 @@ async function notifyTelegram(eventName: string, payload: any) {
         text = `*${label}*\n${lines}`;
     }
 
-    try {
-        await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ chat_id: chatId, text, parse_mode: "Markdown" }),
-        });
-    } catch (error) {
-        console.error(`[Telegram] Error sending event ${eventName}:`, error);
+    const result = await sendTelegramMessage(text, config);
+    if (!result.success) {
+        console.error(`[Telegram] Error sending event ${eventName}:`, result.error);
     }
 }
 
