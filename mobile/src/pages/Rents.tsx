@@ -12,6 +12,8 @@ interface RentItem {
   status: string | null;
   paidAt: string | null;
   isLate?: boolean;
+  /** Impayé du mois précédent, affiché en plus et exclu des totaux du mois. */
+  carriedOver?: boolean;
   tenant: { id: string; firstName: string; lastName: string };
   apartment: { address: string; name: string | null; mortgageAmount?: number | null; insuranceAmount?: number | null; taxAmount?: number | null };
 }
@@ -28,6 +30,9 @@ export default function Rents() {
   const [rents, setRents] = useState<RentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  // Un même bail peut apparaître deux fois (report + mois courant) : la clé
+  // inclut la période pour ne pas mettre les deux lignes en chargement.
+  const rowKey = (item: RentItem) => `${item.leaseId}-${item.period}`;
   const [payModal, setPayModal] = useState<RentItem | null>(null);
   const [payInput, setPayInput] = useState('');
   const [payMsg, setPayMsg] = useState('');
@@ -60,7 +65,7 @@ export default function Rents() {
     if (!payModal) return;
     const amount = parseFloat(payInput);
     if (isNaN(amount) || amount <= 0) return;
-    setActionLoading(payModal.leaseId);
+    setActionLoading(rowKey(payModal));
     try {
       const period = new Date(payModal.period).toISOString().split('T')[0];
       await api.markPaid(payModal.leaseId, period, amount);
@@ -75,7 +80,7 @@ export default function Rents() {
 
   const handleUnpay = async (item: RentItem) => {
     if (!item.paymentId) return;
-    setActionLoading(item.leaseId);
+    setActionLoading(rowKey(item));
     try {
       await api.markUnpaid(item.paymentId);
       load(month);
@@ -87,7 +92,7 @@ export default function Rents() {
   const handleRemind = async (item: RentItem) => {
     const tenantName = `${item.tenant.firstName} ${item.tenant.lastName}`;
     if (!confirm(`Envoyer une relance de loyer à ${tenantName} ?`)) return;
-    setActionLoading(item.leaseId);
+    setActionLoading(rowKey(item));
     try {
       const period = new Date(item.period).toISOString().split('T')[0];
       await api.sendReminder(item.leaseId, period);
@@ -100,11 +105,15 @@ export default function Rents() {
   };
 
   const monthLabel = new Date(month + '-01').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-  const unpaidRents = rents.filter(r => r.status !== 'PAID');
-  const paidRents = rents.filter(r => r.status === 'PAID');
+  // Les reports du mois précédent sont affichés à part et n'entrent dans aucun
+  // total : la somme a déjà été comptée sur son mois d'origine.
+  const carriedRents = rents.filter(r => r.carriedOver);
+  const monthRents = rents.filter(r => !r.carriedOver);
+  const unpaidRents = monthRents.filter(r => r.status !== 'PAID');
+  const paidRents = monthRents.filter(r => r.status === 'PAID');
 
-  const totalExpected = rents.reduce((s, r) => s + r.amount, 0);
-  const totalReceived = rents.reduce((s, r) => {
+  const totalExpected = monthRents.reduce((s, r) => s + r.amount, 0);
+  const totalReceived = monthRents.reduce((s, r) => {
     if (r.status === 'PAID') return s + r.amount;
     if (r.status === 'PARTIAL' && r.paidAmount != null) return s + r.paidAmount;
     return s;
@@ -113,7 +122,7 @@ export default function Rents() {
 
   const seenApts = new Set<string>();
   let totalMonthlyCosts = 0;
-  for (const r of rents) {
+  for (const r of monthRents) {
     if (!seenApts.has(r.apartment.address + (r.apartment.name ?? ''))) {
       seenApts.add(r.apartment.address + (r.apartment.name ?? ''));
       totalMonthlyCosts += (r.apartment.mortgageAmount ?? 0) + (r.apartment.insuranceAmount ?? 0) + (r.apartment.taxAmount ?? 0);
@@ -133,7 +142,7 @@ export default function Rents() {
           <button onClick={() => navigate(-1)} className="text-text-muted px-3 py-1.5 border border-border rounded-lg text-sm">←</button>
           <div className="text-center">
             <h1 className="text-base font-bold text-text-main capitalize">{monthLabel}</h1>
-            <p className="text-text-muted text-xs">{paidRents.length}/{rents.length} payés</p>
+            <p className="text-text-muted text-xs">{paidRents.length}/{monthRents.length} payés</p>
           </div>
           <button onClick={() => navigate(1)} className="text-text-muted px-3 py-1.5 border border-border rounded-lg text-sm">→</button>
         </div>
@@ -165,6 +174,27 @@ export default function Rents() {
           <p className="text-text-muted text-sm text-center py-8">Aucun bail actif ce mois.</p>
         ) : (
           <div className="space-y-3">
+            {/* Carried-over unpaid rent from the previous month */}
+            {carriedRents.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide mb-2 px-1" style={{ color: '#f59e0b' }}>
+                  ↩ Reports du mois précédent — {carriedRents.length} (hors totaux)
+                </p>
+                <div className="space-y-2">
+                  {carriedRents.map(item => (
+                    <RentCard
+                      key={`carried-${item.leaseId}`}
+                      item={item}
+                      actionLoading={actionLoading}
+                      onPay={openPayModal}
+                      onUnpay={handleUnpay}
+                      onRemind={handleRemind}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Unpaid section */}
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide mb-2 px-1" style={{ color: '#ef4444' }}>
@@ -175,7 +205,7 @@ export default function Rents() {
               ) : (
                 <div className="space-y-2">
                   {unpaidRents.map(item => (
-                    <RentCard key={item.leaseId} item={item} actionLoading={actionLoading} onPay={openPayModal} onUnpay={handleUnpay} onRemind={handleRemind} />
+                    <RentCard key={`${item.leaseId}-${item.period}`} item={item} actionLoading={actionLoading} onPay={openPayModal} onUnpay={handleUnpay} onRemind={handleRemind} />
                   ))}
                 </div>
               )}
@@ -190,7 +220,7 @@ export default function Rents() {
               ) : (
                 <div className="space-y-2">
                   {paidRents.map(item => (
-                    <RentCard key={item.leaseId} item={item} actionLoading={actionLoading} onPay={openPayModal} onUnpay={handleUnpay} onRemind={handleRemind} />
+                    <RentCard key={`${item.leaseId}-${item.period}`} item={item} actionLoading={actionLoading} onPay={openPayModal} onUnpay={handleUnpay} onRemind={handleRemind} />
                   ))}
                 </div>
               )}
@@ -246,11 +276,11 @@ export default function Rents() {
             </button>
             <button
               onClick={handlePayConfirm}
-              disabled={actionLoading === payModal.leaseId || !payInput}
+              disabled={actionLoading === rowKey(payModal) || !payInput}
               className="flex-1 py-3 rounded-xl font-semibold text-sm text-white disabled:opacity-50"
               style={{ background: isPartialInput ? '#f59e0b' : '#22c55e' }}
             >
-              {actionLoading === payModal.leaseId ? '...' : isPartialInput ? '💰 Partiel' : '✓ Payé'}
+              {actionLoading === rowKey(payModal) ? '...' : isPartialInput ? '💰 Partiel' : '✓ Payé'}
             </button>
           </div>
         </div>
@@ -271,6 +301,11 @@ function RentCard({ item, actionLoading, onPay, onUnpay, onRemind }: {
         <div>
           <p className="text-text-main font-medium text-sm">{item.tenant.firstName} {item.tenant.lastName}</p>
           <p className="text-text-muted text-xs">{item.apartment.name || item.apartment.address}</p>
+          {item.carriedOver && (
+            <p className="text-xs" style={{ color: '#f59e0b' }}>
+              ↩ Report {new Date(item.period).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })} — hors totaux
+            </p>
+          )}
         </div>
         <div className="text-right">
           {item.status === 'PARTIAL' && item.paidAmount != null ? (
@@ -287,23 +322,23 @@ function RentCard({ item, actionLoading, onPay, onUnpay, onRemind }: {
       {item.status === 'PAID' ? (
         <button
           onClick={() => onUnpay(item)}
-          disabled={actionLoading === item.leaseId}
+          disabled={actionLoading === `${item.leaseId}-${item.period}`}
           className="w-full text-xs py-1.5 rounded-lg border border-border text-text-secondary disabled:opacity-50"
         >
-          {actionLoading === item.leaseId ? '...' : 'Annuler paiement'}
+          {actionLoading === `${item.leaseId}-${item.period}` ? '...' : 'Annuler paiement'}
         </button>
       ) : (
         <div className="flex gap-2">
           <button
             onClick={() => onPay(item)}
-            disabled={actionLoading === item.leaseId}
+            disabled={actionLoading === `${item.leaseId}-${item.period}`}
             className="flex-1 text-xs py-1.5 rounded-lg bg-paid/20 text-paid border border-paid/30 font-semibold disabled:opacity-50"
           >
-            {actionLoading === item.leaseId ? '...' : '✓ Marquer payé'}
+            {actionLoading === `${item.leaseId}-${item.period}` ? '...' : '✓ Marquer payé'}
           </button>
           <button
             onClick={() => onRemind(item)}
-            disabled={actionLoading === item.leaseId}
+            disabled={actionLoading === `${item.leaseId}-${item.period}`}
             className="text-xs py-1.5 px-2.5 rounded-lg border border-border text-text-secondary disabled:opacity-50"
           >
             📧

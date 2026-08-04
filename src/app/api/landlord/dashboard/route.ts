@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyMobileToken, unauthorized } from '@/lib/mobile-auth';
-import { expectedRentForPeriod, isRentSettled, isRentLate } from '@/lib/rent-period';
+import { expectedRentForPeriod, isRentSettled, isRentLate, unsettledPastRents, PAST_MONTHS_SCANNED } from '@/lib/rent-period';
 
 export const dynamic = 'force-dynamic';
 
@@ -135,21 +135,22 @@ export async function GET(request: Request) {
     // Loyers impayés du mois, calculés depuis les baux : se baser sur les
     // RentPayment existants faisait disparaître l'alerte tant que la génération
     // des loyers n'avait pas tourné.
+    const scanFrom = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - PAST_MONTHS_SCANNED, 1));
     const leasesForUnpaid = await prisma.lease.findMany({
         where: {
             startDate: { lte: todayMidnight },
-            OR: [{ endDate: null }, { endDate: { gte: startOfMonth } }],
+            OR: [{ endDate: null }, { endDate: { gte: scanFrom } }],
         },
         include: {
             tenant: true,
             apartment: true,
-            payments: { where: { period: startOfMonth } },
+            payments: { where: { period: { gte: scanFrom } } },
         },
     });
 
     const unpaidAll = leasesForUnpaid
         .map(lease => {
-            const payment = lease.payments[0];
+            const payment = lease.payments.find(p => p.period.getTime() === startOfMonth.getTime()) ?? null;
             const expected = expectedRentForPeriod(lease, startOfMonth);
             if (isRentSettled(payment, expected)) return null;
             const paid = payment?.status === 'PARTIAL' ? (payment.paidAmount ?? 0) : 0;
@@ -162,25 +163,12 @@ export async function GET(request: Request) {
         })
         .filter((r): r is NonNullable<typeof r> => r !== null);
 
-    // Impayés des mois passés : en retard par définition, sinon ils disparaissaient
-    // du dashboard au changement de mois.
-    const pastUnpaidRaw = await prisma.rentPayment.findMany({
-        where: { period: { lt: startOfMonth }, status: { not: 'PAID' } },
-        include: { lease: { include: { tenant: true, apartment: true } } },
-        orderBy: { period: 'desc' },
-        take: 20,
-    });
-    const pastUnpaid = pastUnpaidRaw
-        .map(p => {
-            const expected = expectedRentForPeriod(p.lease, p.period);
-            if (isRentSettled(p, expected)) return null;
-            const paid = p.status === 'PARTIAL' ? (p.paidAmount ?? 0) : 0;
-            return { lease: p.lease, payment: p, remaining: Math.max(0, expected - paid), period: p.period };
-        })
-        .filter((r): r is NonNullable<typeof r> => r !== null);
+    // Impayés des mois passés : en retard par définition. Calculés depuis les
+    // baux, un loyer jamais généré restant dû.
+    const pastUnpaid = unsettledPastRents(leasesForUnpaid, startOfMonth);
 
     const unpaidThisMonth = [
-        ...pastUnpaid.map(r => ({ ...r, late: true })),
+        ...pastUnpaid.map(r => ({ lease: r.lease, payment: r.payment, remaining: r.amount, period: r.period, late: true })),
         ...unpaidAll.filter(r => r.late).map(r => ({ ...r, period: startOfMonth })),
     ].slice(0, 5);
 

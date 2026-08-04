@@ -2,7 +2,8 @@ import Link from "next/link";
 import styles from "./page.module.css";
 import { prisma } from "@/lib/prisma";
 import { markRentReviewAsSent } from "@/actions/leases";
-import { expectedRentForPeriod, isRentSettled, isRentLate } from "@/lib/rent-period";
+import { expectedRentForPeriod, isRentSettled, isRentLate, unsettledPastRents, PAST_MONTHS_SCANNED } from "@/lib/rent-period";
+import { getAgendaEvents } from "@/lib/agenda-events";
 import { RentPayment, Expense, Apartment } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -77,28 +78,22 @@ async function getStats() {
   const expectedRevenue = paymentsThisMonth.reduce((s: number, p: RentPayment) => s + p.amount, 0);
 
   // Même logique dynamique que la liste des retards : ne pas dépendre du statut LATE stocké.
+  const scanFrom = new Date(Date.UTC(now.getFullYear(), now.getMonth() - PAST_MONTHS_SCANNED, 1));
   const leasesForLateCount = await prisma.lease.findMany({
     where: {
       startDate: { lte: today },
-      OR: [{ endDate: null }, { endDate: { gte: currentMonthStart } }],
+      OR: [{ endDate: null }, { endDate: { gte: scanFrom } }],
     },
-    include: { tenant: true, payments: { where: { period: currentMonthStart } } },
+    include: { tenant: true, payments: { where: { period: { gte: scanFrom } } } },
   });
+
   const currentLateCount = leasesForLateCount.filter(lease => {
-    const expected = expectedRentForPeriod(lease, currentMonthStart);
-    if (isRentSettled(lease.payments[0], expected)) return false;
+    const payment = lease.payments.find(p => p.period.getTime() === currentMonthStart.getTime()) ?? null;
+    if (isRentSettled(payment, expectedRentForPeriod(lease, currentMonthStart))) return false;
     return isRentLate(currentMonthStart, lease.tenant.paymentDay, lease.startDate);
   }).length;
 
-  const pastUnpaid = await prisma.rentPayment.findMany({
-    where: { period: { lt: currentMonthStart }, status: { not: 'PAID' } },
-    include: { lease: true },
-  });
-  const pastLateCount = pastUnpaid.filter(
-    p => !isRentSettled(p, expectedRentForPeriod(p.lease, p.period))
-  ).length;
-
-  const latePayments = currentLateCount + pastLateCount;
+  const latePayments = currentLateCount + unsettledPastRents(leasesForLateCount, currentMonthStart).length;
 
   return {
     apartmentCount, tenantCount, occupancyRate, vacantCount,
@@ -153,43 +148,38 @@ async function getRecentAlerts() {
   // Retard calculé ici plutôt que lu depuis le statut LATE stocké : ce statut
   // n'est posé que par la génération des loyers, donc un impayé restait absent
   // du dashboard tant que ce traitement n'avait pas tourné.
+  const scanFrom = new Date(Date.UTC(now.getFullYear(), now.getMonth() - PAST_MONTHS_SCANNED, 1));
   const leasesForLate = await prisma.lease.findMany({
     where: {
       startDate: { lte: today },
-      OR: [{ endDate: null }, { endDate: { gte: currentMonthStart } }],
+      OR: [{ endDate: null }, { endDate: { gte: scanFrom } }],
     },
     include: {
       tenant: true,
       apartment: true,
-      payments: { where: { period: currentMonthStart } },
+      payments: { where: { period: { gte: scanFrom } } },
     },
   });
 
   const currentMonthLate = leasesForLate
-    .filter(lease => {
+    .map(lease => {
+      const payment = lease.payments.find(p => p.period.getTime() === currentMonthStart.getTime()) ?? null;
       const expected = expectedRentForPeriod(lease, currentMonthStart);
-      if (isRentSettled(lease.payments[0], expected)) return false;
-      return isRentLate(currentMonthStart, lease.tenant.paymentDay, lease.startDate);
+      if (isRentSettled(payment, expected)) return null;
+      if (!isRentLate(currentMonthStart, lease.tenant.paymentDay, lease.startDate)) return null;
+      return {
+        id: payment?.id ?? lease.id,
+        amount: payment?.amount ?? expected,
+        period: currentMonthStart,
+        lease,
+      };
     })
-    .map(lease => ({
-      id: lease.payments[0]?.id ?? lease.id,
-      amount: lease.payments[0]?.amount ?? expectedRentForPeriod(lease, currentMonthStart),
-      period: currentMonthStart,
-      lease,
-    }));
+    .filter((r): r is NonNullable<typeof r> => r !== null);
 
-  // Les impayés des mois passés sont en retard par définition : sans eux, un
-  // loyer non réglé disparaissait du dashboard au changement de mois.
-  const pastUnpaidPayments = await prisma.rentPayment.findMany({
-    where: { period: { lt: currentMonthStart }, status: { not: 'PAID' } },
-    include: { lease: { include: { tenant: true, apartment: true } } },
-    orderBy: { period: 'desc' },
-    take: 20,
-  });
-
-  const pastLate = pastUnpaidPayments
-    .filter(p => !isRentSettled(p, expectedRentForPeriod(p.lease, p.period)))
-    .map(p => ({ id: p.id, amount: p.amount, period: p.period, lease: p.lease }));
+  // Impayés des mois passés, en retard par définition. Calculés depuis les baux
+  // et non depuis les RentPayment existants : quand la génération mensuelle n'a
+  // pas tourné, il n'y a aucune ligne en base et le loyer est pourtant bien dû.
+  const pastLate = unsettledPastRents(leasesForLate, currentMonthStart);
 
   const lateLeases = [...pastLate, ...currentMonthLate].slice(0, 5);
 
@@ -209,22 +199,22 @@ async function getRecentAlerts() {
   return { rentReviews, partialPayments, openIncidents, unreadMessages, lateLeases, incompleteGed };
 }
 
+// Deux mois d'horizon, tous types d'échéances confondus : l'encart ne montrait
+// que les fins de bail à 30 jours et paraissait vide alors que l'agenda listait
+// bien des événements sur la période.
 async function getUpcomingEvents() {
-  const now = new Date();
-  const in30 = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-  const upcoming = await prisma.lease.findMany({
-    where: {
-      isActive: true,
-      endDate: { gte: now, lte: in30 },
-    },
-    include: { tenant: true, apartment: true },
-    take: 4,
-    orderBy: { endDate: 'asc' },
-  });
-  return upcoming;
+  const events = await getAgendaEvents(2);
+  return events.slice(0, 5);
 }
 
 const MONTHS_SHORT = ['JAN','FÉV','MAR','AVR','MAI','JUI','JUI','AOÛ','SEP','OCT','NOV','DÉC'];
+
+const EVENT_COLORS: Record<string, string> = {
+  LEASE_END: '#ef4444',
+  RENT_REVIEW: '#22c55e',
+  TASK_DUE: '#fb923c',
+  LEASE_START: '#2b8cee',
+};
 
 export default async function Home() {
   const [stats, cashflow, alerts, upcoming] = await Promise.all([
@@ -445,20 +435,19 @@ export default async function Home() {
             <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Aucune échéance prochaine.</p>
           ) : (
             <div className={styles.eventList}>
-              {upcoming.map((lease: any) => {
-                const end = new Date(lease.endDate);
-                const day = end.getDate();
-                const month = MONTHS_SHORT[end.getMonth()];
+              {upcoming.map((ev, i) => {
+                const d = new Date(ev.date);
+                const color = EVENT_COLORS[ev.type] ?? '#fbbf24';
                 return (
-                  <Link key={lease.id} href={`/leases/${lease.id}`} className={styles.eventRow}>
+                  <Link key={`${ev.type}-${ev.href}-${i}`} href={ev.href} className={styles.eventRow}>
                     <div className={styles.eventDate}>
-                      <div className={styles.eventDay} style={{ color: '#fbbf24' }}>{day}</div>
-                      <div className={styles.eventMonth}>{month}</div>
+                      <div className={styles.eventDay} style={{ color }}>{d.getDate()}</div>
+                      <div className={styles.eventMonth}>{MONTHS_SHORT[d.getMonth()]}</div>
                     </div>
                     <div className={styles.eventDivider} />
                     <div className={styles.eventContent}>
-                      <div className={styles.eventLabel}>Bail — {lease.tenant.firstName} {lease.tenant.lastName}</div>
-                      <div className={styles.eventSub}>{lease.apartment.name || lease.apartment.address}</div>
+                      <div className={styles.eventLabel}>{ev.label}</div>
+                      {ev.sublabel && <div className={styles.eventSub}>{ev.sublabel}</div>}
                     </div>
                   </Link>
                 );
