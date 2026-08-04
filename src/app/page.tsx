@@ -2,6 +2,7 @@ import Link from "next/link";
 import styles from "./page.module.css";
 import { prisma } from "@/lib/prisma";
 import { markRentReviewAsSent } from "@/actions/leases";
+import { expectedRentForPeriod, isRentSettled, isRentLate } from "@/lib/rent-period";
 import { RentPayment, Expense, Apartment } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -74,7 +75,30 @@ async function getStats() {
     .filter((p: RentPayment) => p.status === 'PAID')
     .reduce((s: number, p: RentPayment) => s + p.amount, 0);
   const expectedRevenue = paymentsThisMonth.reduce((s: number, p: RentPayment) => s + p.amount, 0);
-  const latePayments = paymentsThisMonth.filter((p: RentPayment) => p.status === 'LATE').length;
+
+  // Même logique dynamique que la liste des retards : ne pas dépendre du statut LATE stocké.
+  const leasesForLateCount = await prisma.lease.findMany({
+    where: {
+      startDate: { lte: today },
+      OR: [{ endDate: null }, { endDate: { gte: currentMonthStart } }],
+    },
+    include: { tenant: true, payments: { where: { period: currentMonthStart } } },
+  });
+  const currentLateCount = leasesForLateCount.filter(lease => {
+    const expected = expectedRentForPeriod(lease, currentMonthStart);
+    if (isRentSettled(lease.payments[0], expected)) return false;
+    return isRentLate(currentMonthStart, lease.tenant.paymentDay, lease.startDate);
+  }).length;
+
+  const pastUnpaid = await prisma.rentPayment.findMany({
+    where: { period: { lt: currentMonthStart }, status: { not: 'PAID' } },
+    include: { lease: true },
+  });
+  const pastLateCount = pastUnpaid.filter(
+    p => !isRentSettled(p, expectedRentForPeriod(p.lease, p.period))
+  ).length;
+
+  const latePayments = currentLateCount + pastLateCount;
 
   return {
     apartmentCount, tenantCount, occupancyRate, vacantCount,
@@ -87,8 +111,13 @@ async function getRecentAlerts() {
   const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
   const currentMonthStart = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
 
+  // isActive seul ne suffit pas : un bail dont la date de fin est passée peut
+  // l'avoir gardé à true et continuait donc à déclencher des alertes.
   const activeLeases = await prisma.lease.findMany({
-    where: { isActive: true },
+    where: {
+      isActive: true,
+      OR: [{ endDate: null }, { endDate: { gte: today } }],
+    },
     include: { tenant: true, apartment: true, documents: true }
   });
 
@@ -121,14 +150,53 @@ async function getRecentAlerts() {
     take: 5,
   });
 
-  const lateLeases = await prisma.rentPayment.findMany({
-    where: { period: currentMonthStart, status: 'LATE' },
-    include: { lease: { include: { tenant: true, apartment: true } } },
-    take: 5,
+  // Retard calculé ici plutôt que lu depuis le statut LATE stocké : ce statut
+  // n'est posé que par la génération des loyers, donc un impayé restait absent
+  // du dashboard tant que ce traitement n'avait pas tourné.
+  const leasesForLate = await prisma.lease.findMany({
+    where: {
+      startDate: { lte: today },
+      OR: [{ endDate: null }, { endDate: { gte: currentMonthStart } }],
+    },
+    include: {
+      tenant: true,
+      apartment: true,
+      payments: { where: { period: currentMonthStart } },
+    },
   });
+
+  const currentMonthLate = leasesForLate
+    .filter(lease => {
+      const expected = expectedRentForPeriod(lease, currentMonthStart);
+      if (isRentSettled(lease.payments[0], expected)) return false;
+      return isRentLate(currentMonthStart, lease.tenant.paymentDay, lease.startDate);
+    })
+    .map(lease => ({
+      id: lease.payments[0]?.id ?? lease.id,
+      amount: lease.payments[0]?.amount ?? expectedRentForPeriod(lease, currentMonthStart),
+      period: currentMonthStart,
+      lease,
+    }));
+
+  // Les impayés des mois passés sont en retard par définition : sans eux, un
+  // loyer non réglé disparaissait du dashboard au changement de mois.
+  const pastUnpaidPayments = await prisma.rentPayment.findMany({
+    where: { period: { lt: currentMonthStart }, status: { not: 'PAID' } },
+    include: { lease: { include: { tenant: true, apartment: true } } },
+    orderBy: { period: 'desc' },
+    take: 20,
+  });
+
+  const pastLate = pastUnpaidPayments
+    .filter(p => !isRentSettled(p, expectedRentForPeriod(p.lease, p.period)))
+    .map(p => ({ id: p.id, amount: p.amount, period: p.period, lease: p.lease }));
+
+  const lateLeases = [...pastLate, ...currentMonthLate].slice(0, 5);
 
   const incompleteGed = activeLeases
     .filter((lease: any) => {
+      // Pas d'alerte GED sur un bail qui n'a pas encore commencé.
+      if (new Date(lease.startDate) > today) return false;
       const types = lease.documents.map((d: any) => d.docType);
       return !types.includes('BAIL') || !types.includes('EDL');
     })
@@ -322,7 +390,7 @@ export default async function Home() {
             {stats.latePayments}
           </div>
           <div className={styles.kpiMeta}>
-            <span className={styles.kpiSub}>retard{stats.latePayments !== 1 ? 's' : ''} ce mois</span>
+            <span className={styles.kpiSub}>retard{stats.latePayments !== 1 ? 's' : ''} à recouvrer</span>
           </div>
         </Link>
       </div>
@@ -409,7 +477,7 @@ export default async function Home() {
             <Link href="/rents" className={styles.sectionLink}>Suivi</Link>
           </div>
           {alerts.lateLeases.length === 0 ? (
-            <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Aucun retard ce mois. 🎉</p>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Aucun retard. 🎉</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {alerts.lateLeases.map((p: any) => {
@@ -420,7 +488,11 @@ export default async function Home() {
                     <div className={styles.lateAvatar}>{initials}</div>
                     <div className={styles.lateInfo}>
                       <div className={styles.lateName}>{t.firstName} {t.lastName}</div>
-                      <div className={styles.lateSub}>{p.lease.apartment.name || p.lease.apartment.address}</div>
+                      <div className={styles.lateSub}>
+                        {p.lease.apartment.name || p.lease.apartment.address}
+                        {' · '}
+                        {new Date(p.period).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
+                      </div>
                     </div>
                     <div className={styles.lateAmount}>{fmtEur(p.amount)}</div>
                     <span className="pill pill-err" style={{ marginLeft: 8, flexShrink: 0 }}>RETARD</span>
