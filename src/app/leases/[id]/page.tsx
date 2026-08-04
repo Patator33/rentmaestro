@@ -166,25 +166,37 @@ export default async function LeaseDetailPage({ params }: { params: Promise<{ id
                 </div>
                 <div>
                     <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Garant</span>
-                    {guarantorType ? (
-                        <>
-                            <div style={{ fontWeight: 600, fontSize: '0.95rem', marginTop: '0.2rem' }}>
-                                {guarantorType === 'VISALE' ? (
-                                    <span style={{ color: 'var(--accent-color)' }}>Visale</span>
-                                ) : (
-                                    <span>{(lease as any).guarantorFirstName} {(lease as any).guarantorLastName}</span>
-                                )}
-                            </div>
-                            {guarantorType === 'PRIVATE' && (
-                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-                                    {(lease as any).guarantorPhone && <div>{(lease as any).guarantorPhone}</div>}
-                                    {(lease as any).guarantorEmail && <div>{(lease as any).guarantorEmail}</div>}
+                    {/* L'encart n'était qu'un affichage : le lien mène au formulaire,
+                        seul endroit où le garant se change. */}
+                    <Link
+                        href={`/leases/${lease.id}/edit`}
+                        style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}
+                        title="Modifier le garant"
+                    >
+                        {guarantorType ? (
+                            <>
+                                <div style={{ fontWeight: 600, fontSize: '0.95rem', marginTop: '0.2rem' }}>
+                                    {guarantorType === 'VISALE' ? (
+                                        <span style={{ color: 'var(--accent-color)' }}>Visale</span>
+                                    ) : (
+                                        <span>{(lease as any).guarantorFirstName} {(lease as any).guarantorLastName}</span>
+                                    )}
+                                    <span style={{ color: 'var(--primary-color)', fontSize: '0.75rem', marginLeft: '0.4rem' }}>✏️</span>
                                 </div>
-                            )}
-                        </>
-                    ) : (
-                        <div style={{ fontWeight: 500, fontSize: '0.95rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>Aucun</div>
-                    )}
+                                {guarantorType === 'PRIVATE' && (
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                                        {(lease as any).guarantorPhone && <div>{(lease as any).guarantorPhone}</div>}
+                                        {(lease as any).guarantorEmail && <div>{(lease as any).guarantorEmail}</div>}
+                                    </div>
+                                )}
+                            </>
+                        ) : (
+                            <div style={{ fontWeight: 500, fontSize: '0.95rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                                Aucun
+                                <span style={{ color: 'var(--primary-color)', fontSize: '0.75rem', marginLeft: '0.4rem' }}>✏️</span>
+                            </div>
+                        )}
+                    </Link>
                 </div>
             </div>
 
