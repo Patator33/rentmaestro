@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { calculateFutureProrata } from '@/lib/utils';
+import { expectedRentForPeriod } from '@/lib/rent-period';
 
 /**
  * Crée les RentPayment du mois en cours pour les baux actifs qui n'en ont pas
@@ -46,12 +46,7 @@ export async function generateRentsForCurrentMonth() {
             continue;
         }
 
-        const totalAmount = lease.rentAmount + lease.chargesAmount;
-        const leaseStart = new Date(lease.startDate);
-        const nextPeriod = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 1));
-        const isFirstMonth = leaseStart >= period && leaseStart < nextPeriod;
-        const prorata = isFirstMonth ? calculateFutureProrata(totalAmount, leaseStart) : null;
-        const amount = prorata ? Math.round(prorata.amount * 100) / 100 : totalAmount;
+        const amount = expectedRentForPeriod(lease, period);
         await prisma.rentPayment.create({
             data: {
                 leaseId: lease.id,

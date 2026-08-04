@@ -2,7 +2,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import styles from "./page.module.css";
-import { formatDate, calculateFutureProrata } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
+import { expectedRentForPeriod, isRentSettled, isRentLate } from "@/lib/rent-period";
 import { sendRentReminder } from "@/actions/rents";
 import PaymentEmailActions from "@/components/PaymentEmailActions";
 import MarkRentPaidButton from "@/components/MarkRentPaidButton";
@@ -36,17 +37,22 @@ export default async function RentsPage({
     const prevMonthStr = prevMonth.toISOString().slice(0, 7); // YYYY-MM
     const nextMonthStr = nextMonth.toISOString().slice(0, 7);
     const currentMonthStr = startOfMonth.toISOString().slice(0, 10); // YYYY-MM-DD (full date for consistency)
+    const prevMonthPeriodStr = prevMonth.toISOString().slice(0, 10);
 
     // Find active leases for this period
     // Active if startDate <= today (or end of month for past months) AND (no endDate OR endDate >= start of month)
     const isCurrentMonth = startOfMonth.getFullYear() === now.getFullYear() && startOfMonth.getMonth() === now.getMonth();
 
-    const rawLeases = await prisma.lease.findMany({
+    // On remonte aussi les baux terminés le mois précédent : ils peuvent encore
+    // avoir un impayé à reporter, même s'ils ne figurent plus dans la liste du mois.
+    const fetchedLeases = await prisma.lease.findMany({
         where: {
-            startDate: { lte: nextMonth },
+            // `lt` et non `lte` : un bail qui démarre le 1er du mois suivant
+            // ne doit aucun loyer sur le mois affiché.
+            startDate: { lt: nextMonth },
             OR: [
                 { endDate: null },
-                { endDate: { gte: startOfMonth } }
+                { endDate: { gte: prevMonth } }
             ]
         },
         include: {
@@ -54,11 +60,28 @@ export default async function RentsPage({
             tenant: true,
             payments: {
                 where: {
-                    period: startOfMonth
+                    period: { in: [prevMonth, startOfMonth] }
                 }
             }
         }
     });
+
+    const sameTime = (a: Date, b: Date) => new Date(a).getTime() === b.getTime();
+    const rawLeases = fetchedLeases
+        .filter(l => !l.endDate || new Date(l.endDate) >= startOfMonth)
+        .map(l => ({ ...l, payments: l.payments.filter(p => sameTime(p.period, startOfMonth)) }));
+
+    // Report : impayé du mois précédent, affiché en plus dans le mois courant.
+    // Volontairement exclu de tous les totaux — il a déjà été compté le mois passé.
+    const carriedOver = fetchedLeases
+        .map(lease => {
+            const payment = lease.payments.find(p => sameTime(p.period, prevMonth));
+            if (!payment) return null;
+            const expected = expectedRentForPeriod(lease, prevMonth);
+            if (isRentSettled(payment, expected)) return null;
+            return { lease, payment, expected };
+        })
+        .filter((r): r is { lease: typeof fetchedLeases[0]; payment: typeof fetchedLeases[0]['payments'][0]; expected: number } => r !== null);
 
     const leases = [...rawLeases].sort((a, b) => {
         const pa = a.payments[0], pb = b.payments[0];
@@ -86,21 +109,17 @@ export default async function RentsPage({
         return dir === 'asc' ? (av as number) - (bv as number) : (bv as number) - (av as number);
     });
 
-    const unpaidLeases = leases.filter(l => l.payments[0]?.status !== 'PAID');
-    const paidLeases = leases.filter(l => l.payments[0]?.status === 'PAID');
+    const unpaidLeases = leases.filter(l => !isRentSettled(l.payments[0], expectedRentForPeriod(l, startOfMonth)));
+    const paidLeases = leases.filter(l => isRentSettled(l.payments[0], expectedRentForPeriod(l, startOfMonth)));
 
-    // Summary totals
+    // Summary totals — le report du mois précédent n'entre dans aucun de ces calculs.
     let totalReceived = 0;
     let totalExpected = 0;
     const seenApartments = new Set<string>();
     let totalMonthlyCosts = 0;
     for (const lease of leases) {
         const payment = lease.payments[0];
-        const totalAmount = lease.rentAmount + lease.chargesAmount;
-        const leaseStart = new Date(lease.startDate);
-        const isFirstMonth = leaseStart >= startOfMonth && leaseStart < nextMonth;
-        const prorata = isFirstMonth ? calculateFutureProrata(totalAmount, leaseStart) : null;
-        const fallbackAmount = prorata ? Math.round(prorata.amount * 100) / 100 : totalAmount;
+        const fallbackAmount = expectedRentForPeriod(lease, startOfMonth);
         totalExpected += payment ? payment.amount : fallbackAmount;
         if (payment?.status === 'PAID') totalReceived += payment.amount;
         else if (payment?.status === 'PARTIAL' && (payment as any).paidAmount != null) totalReceived += (payment as any).paidAmount;
@@ -117,14 +136,13 @@ export default async function RentsPage({
 
     const renderRow = (lease: typeof leases[0]) => {
         const payment = lease.payments[0];
-        const totalAmount = lease.rentAmount + lease.chargesAmount;
         const leaseStart = new Date(lease.startDate);
         const isFirstMonth = leaseStart >= startOfMonth && leaseStart < nextMonth;
-        const prorata = isFirstMonth ? calculateFutureProrata(totalAmount, leaseStart) : null;
-        const fallbackAmount = prorata ? Math.round(prorata.amount * 100) / 100 : totalAmount;
-        const isEffectivelyPaid = payment?.status === 'PARTIAL' && payment?.paidAmount != null && (payment.paidAmount as number) >= fallbackAmount - 0.01;
-        const isPaid = payment?.status === 'PAID' || isEffectivelyPaid;
+        const fallbackAmount = expectedRentForPeriod(lease, startOfMonth);
+        const isPaid = isRentSettled(payment, fallbackAmount);
         const displayAmount = fallbackAmount;
+        const leaveDate = lease.endDate ? new Date(lease.endDate) : null;
+        const isLastMonth = leaveDate != null && leaveDate >= startOfMonth && leaveDate < nextMonth;
 
         return (
             <tr key={lease.id}>
@@ -138,7 +156,14 @@ export default async function RentsPage({
                         {lease.tenant.firstName} {lease.tenant.lastName}
                     </Link>
                 </td>
-                <td>{displayAmount.toFixed(2)} €</td>
+                <td>
+                    {displayAmount.toFixed(2)} €
+                    {(isFirstMonth || isLastMonth) && (
+                        <span style={{ display: 'block', fontSize: '0.75em', color: 'var(--text-muted)' }}>
+                            prorata {isLastMonth ? `départ ${formatDate(lease.endDate)}` : `entrée ${formatDate(lease.startDate)}`}
+                        </span>
+                    )}
+                </td>
                 <td>
                     {isPaid ? (
                         <span className={styles.statusPaid}>✓ Payé {formatDate(payment.paidAt)}</span>
@@ -152,10 +177,8 @@ export default async function RentsPage({
                             )}
                         </span>
                     ) : payment ? (() => {
-                        const paymentDay = lease.tenant.paymentDay || 5;
-                        const notStartedYet = isFirstMonth && leaseStart > now;
-                        const daysOverdue = now.getDate() - paymentDay;
-                        const isLate = !notStartedYet && daysOverdue > 4;
+                        const daysOverdue = now.getDate() - (lease.tenant.paymentDay || 5);
+                        const isLate = isRentLate(startOfMonth, lease.tenant.paymentDay, lease.startDate, now);
                         return isLate ? (
                             <span className={styles.statusPending}>
                                 ⚠ En retard ({daysOverdue}j)
@@ -225,6 +248,62 @@ export default async function RentsPage({
                                 📄 Quittance
                             </a>
                         )}
+                    </div>
+                </td>
+            </tr>
+        );
+    };
+
+    const renderCarriedRow = ({ lease, payment, expected }: typeof carriedOver[0]) => {
+        const alreadyPaid = payment.status === 'PARTIAL' && payment.paidAmount != null ? payment.paidAmount : 0;
+        const remaining = Math.max(0, expected - alreadyPaid);
+        const prevLabel = prevMonth.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+
+        return (
+            <tr key={`carried-${lease.id}`} style={{ background: 'rgba(245,158,11,0.05)' }}>
+                <td>
+                    <Link href={`/leases/${lease.id}`} style={{ color: 'var(--text-main)' }}>
+                        {lease.apartment.name || lease.apartment.address}
+                    </Link>
+                </td>
+                <td>
+                    <Link href={`/tenants/${lease.tenant.id}`} style={{ color: 'var(--text-main)' }}>
+                        {lease.tenant.firstName} {lease.tenant.lastName}
+                    </Link>
+                </td>
+                <td>
+                    {remaining.toFixed(2)} €
+                    {alreadyPaid > 0 && (
+                        <span style={{ display: 'block', fontSize: '0.75em', color: 'var(--text-muted)' }}>
+                            solde sur {expected.toFixed(2)} €
+                        </span>
+                    )}
+                </td>
+                <td>
+                    <span style={{ display: 'inline-block', background: 'rgba(245,158,11,0.15)', color: '#f59e0b', fontWeight: 700, fontSize: '0.8rem', padding: '0.15rem 0.4rem', borderRadius: '4px' }}>
+                        ↩ Report {prevLabel}
+                    </span>
+                    <span style={{ display: 'block', fontSize: '0.75em', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
+                        Impayé du mois précédent — non compté dans les totaux
+                    </span>
+                </td>
+                <td>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <MarkRentPaidButton
+                            leaseId={lease.id}
+                            periodStr={prevMonthPeriodStr}
+                            defaultAmount={expected}
+                            existingPaidAmount={alreadyPaid > 0 ? alreadyPaid : undefined}
+                            buttonStyle={`${styles.actionButton} ${styles.paidButton}`}
+                        />
+                        <PaymentEmailActions
+                            paymentId={payment.id}
+                            leaseId={lease.id}
+                            periodStr={prevMonthPeriodStr}
+                            isPaid={false}
+                            hasEmail={!!lease.tenant.email}
+                            buttonStyle={styles.actionButton}
+                        />
                     </div>
                 </td>
             </tr>
@@ -303,12 +382,22 @@ export default async function RentsPage({
                         </tr>
                     </thead>
                     <tbody>
-                        {leases.length === 0 ? (
+                        {leases.length === 0 && carriedOver.length === 0 ? (
                             <tr>
                                 <td colSpan={5} style={{ textAlign: 'center', padding: '2rem' }}>Aucun contrat actif pour cette période.</td>
                             </tr>
                         ) : (
                             <>
+                                {carriedOver.length > 0 && (
+                                    <>
+                                        <tr>
+                                            <td colSpan={5} style={{ background: 'rgba(245,158,11,0.08)', padding: '0.4rem 0.75rem', fontWeight: 700, fontSize: '0.8rem', color: '#f59e0b', borderBottom: '1px solid rgba(245,158,11,0.25)' }}>
+                                                ↩ Reports du mois précédent — {carriedOver.length} {carriedOver.length > 1 ? 'impayés' : 'impayé'} (hors totaux)
+                                            </td>
+                                        </tr>
+                                        {carriedOver.map(renderCarriedRow)}
+                                    </>
+                                )}
                                 <tr>
                                     <td colSpan={5} style={{ background: 'rgba(239,68,68,0.06)', padding: '0.4rem 0.75rem', fontWeight: 700, fontSize: '0.8rem', color: '#ef4444', borderBottom: '1px solid rgba(239,68,68,0.2)' }}>
                                         ⚠ Non payés — {unpaidLeases.length} {unpaidLeases.length > 1 ? 'baux' : 'bail'}

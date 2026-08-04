@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { notifyN8n } from "@/lib/n8n";
 import { logAction } from "@/lib/audit";
-import { calculateFutureProrata } from "@/lib/utils";
+import { expectedRentForPeriod } from "@/lib/rent-period";
 import { requireAuth } from "@/lib/session";
 
 export async function markRentAsPaid(leaseId: string, periodStr: string, paidAmount: number) {
@@ -27,13 +27,7 @@ export async function markRentAsPaid(leaseId: string, periodStr: string, paidAmo
         } else {
             const lease = await prisma.lease.findUnique({ where: { id: leaseId } });
             if (!lease) throw new Error("Bail introuvable.");
-            const totalAmount = lease.rentAmount + lease.chargesAmount;
-            const leaseStart = new Date(lease.startDate);
-            const periodStart = new Date(Date.UTC(period.getFullYear(), period.getMonth(), 1));
-            const periodEnd = new Date(Date.UTC(period.getFullYear(), period.getMonth() + 1, 1));
-            const isFirstMonth = leaseStart >= periodStart && leaseStart < periodEnd;
-            const prorata = isFirstMonth ? calculateFutureProrata(totalAmount, leaseStart) : null;
-            expectedAmount = prorata ? Math.round(prorata.amount * 100) / 100 : totalAmount;
+            expectedAmount = expectedRentForPeriod(lease, period);
         }
 
         // Accumulate with any prior partial payment
@@ -120,13 +114,7 @@ export async function sendRentReminder(leaseId: string, periodStr: string) {
                 throw new Error("Bail introuvable.");
             }
 
-            const totalAmount = lease.rentAmount + lease.chargesAmount;
-            const leaseStart = new Date(lease.startDate);
-            const periodStart = new Date(Date.UTC(period.getFullYear(), period.getMonth(), 1));
-            const periodEnd = new Date(Date.UTC(period.getFullYear(), period.getMonth() + 1, 1));
-            const isFirstMonth = leaseStart >= periodStart && leaseStart < periodEnd;
-            const prorata = isFirstMonth ? calculateFutureProrata(totalAmount, leaseStart) : null;
-            const amount = prorata ? Math.round(prorata.amount * 100) / 100 : totalAmount;
+            const amount = expectedRentForPeriod(lease, period);
 
             await prisma.rentPayment.create({
                 data: {
