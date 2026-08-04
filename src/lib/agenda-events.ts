@@ -24,8 +24,16 @@ export async function getAgendaEvents(horizonMonths: number): Promise<AgendaEven
     const horizon = addMonths(now, horizonMonths);
 
     const [activeLeases, upcomingLeases, tasks] = await Promise.all([
+        // Les sorties comptent aussi quand le bail a déjà été résilié : mettre
+        // fin à un bail bascule isActive à false, ce qui faisait disparaître la
+        // date de départ de l'échéancier alors qu'elle est encore à venir.
         prisma.lease.findMany({
-            where: { isActive: true },
+            where: {
+                OR: [
+                    { isActive: true },
+                    { endDate: { gte: now, lte: horizon } },
+                ],
+            },
             include: { tenant: true, apartment: true },
         }),
         prisma.lease.findMany({
@@ -59,6 +67,9 @@ export async function getAgendaEvents(horizonMonths: number): Promise<AgendaEven
                 });
             }
         }
+
+        // Pas de révision à prévoir sur un bail déjà résilié.
+        if (!lease.isActive) continue;
 
         // Révision annuelle : un an après la dernière révision, ou après le début du bail.
         const refDate = lease.lastRentReviewDate
