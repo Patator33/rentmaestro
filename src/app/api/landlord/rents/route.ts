@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyMobileToken, unauthorized } from '@/lib/mobile-auth';
-import { calculateFutureProrata } from '@/lib/utils';
+import { expectedRentForPeriod, isRentSettled, isRentLate } from '@/lib/rent-period';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,11 +23,11 @@ export async function GET(request: Request) {
     const startOfMonth = new Date(Date.UTC(year, month, 1));
     const endOfMonth = new Date(Date.UTC(year, month + 1, 1));
 
-    const isCurrentMonth = year === now.getUTCFullYear() && month === now.getUTCMonth();
 
     const leases = await prisma.lease.findMany({
         where: {
-            startDate: { lte: endOfMonth },
+            // `lt` : un bail démarrant le 1er du mois suivant ne doit rien sur ce mois.
+            startDate: { lt: endOfMonth },
             OR: [{ endDate: null }, { endDate: { gte: startOfMonth } }],
         },
         include: {
@@ -38,28 +38,18 @@ export async function GET(request: Request) {
         orderBy: [{ apartment: { address: 'asc' } }],
     });
 
-    const currentDay = now.getUTCDate();
-    const isPastMonth = year < now.getUTCFullYear() || (year === now.getUTCFullYear() && month < now.getUTCMonth());
-
     const result = leases.map(lease => {
         const payment = lease.payments[0] ?? null;
-        const paymentDay = lease.tenant.paymentDay || 5;
-        const totalAmount = lease.rentAmount + lease.chargesAmount;
-        const leaseStart = new Date(lease.startDate);
-        const isFirstMonth = leaseStart >= startOfMonth && leaseStart < endOfMonth;
-        const notStartedYet = isFirstMonth && leaseStart > now;
-        const isLate = !notStartedYet && (isPastMonth || (isCurrentMonth && currentDay > paymentDay + 4));
-        const prorata = isFirstMonth ? calculateFutureProrata(totalAmount, leaseStart) : null;
-        const fallbackAmount = prorata ? Math.round(prorata.amount * 100) / 100 : totalAmount;
+        // Prorata d'entrée ET de sortie : le mois de départ d'un locataire n'est
+        // pas dû en entier.
+        const fallbackAmount = expectedRentForPeriod(lease, startOfMonth);
+        const isLate = isRentLate(startOfMonth, lease.tenant.paymentDay, lease.startDate, now);
 
         // Auto-fix: PARTIAL where paidAmount covers the expected amount → mark as PAID in DB
         let effectiveStatus = payment?.status ?? null;
-        if (payment?.status === 'PARTIAL') {
-            const paid = (payment as any).paidAmount ?? 0;
-            if (paid >= fallbackAmount - 0.01) {
-                effectiveStatus = 'PAID';
-                prisma.rentPayment.update({ where: { id: payment.id }, data: { status: 'PAID', paidAmount: null } }).catch(() => {});
-            }
+        if (payment?.status === 'PARTIAL' && isRentSettled(payment, fallbackAmount)) {
+            effectiveStatus = 'PAID';
+            prisma.rentPayment.update({ where: { id: payment.id }, data: { status: 'PAID', paidAmount: null } }).catch(() => {});
         }
 
         return {

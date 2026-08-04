@@ -73,15 +73,23 @@ export default async function RentsPage({
 
     // Report : impayé du mois précédent, affiché en plus dans le mois courant.
     // Volontairement exclu de tous les totaux — il a déjà été compté le mois passé.
+    // Piloté par le bail et non par les RentPayment existants : un loyer jamais
+    // généré est tout aussi impayé qu'un loyer généré et non réglé.
     const carriedOver = fetchedLeases
         .map(lease => {
-            const payment = lease.payments.find(p => sameTime(p.period, prevMonth));
-            if (!payment) return null;
+            // Le bail devait-il un loyer le mois précédent ?
+            const startedBefore = new Date(lease.startDate) < startOfMonth;
+            const notEndedBefore = !lease.endDate || new Date(lease.endDate) >= prevMonth;
+            if (!startedBefore || !notEndedBefore) return null;
+
             const expected = expectedRentForPeriod(lease, prevMonth);
+            if (expected <= 0) return null;
+
+            const payment = lease.payments.find(p => sameTime(p.period, prevMonth)) ?? null;
             if (isRentSettled(payment, expected)) return null;
             return { lease, payment, expected };
         })
-        .filter((r): r is { lease: typeof fetchedLeases[0]; payment: typeof fetchedLeases[0]['payments'][0]; expected: number } => r !== null);
+        .filter((r): r is { lease: typeof fetchedLeases[0]; payment: typeof fetchedLeases[0]['payments'][0] | null; expected: number } => r !== null);
 
     const leases = [...rawLeases].sort((a, b) => {
         const pa = a.payments[0], pb = b.payments[0];
@@ -255,7 +263,7 @@ export default async function RentsPage({
     };
 
     const renderCarriedRow = ({ lease, payment, expected }: typeof carriedOver[0]) => {
-        const alreadyPaid = payment.status === 'PARTIAL' && payment.paidAmount != null ? payment.paidAmount : 0;
+        const alreadyPaid = payment?.status === 'PARTIAL' && payment.paidAmount != null ? payment.paidAmount : 0;
         const remaining = Math.max(0, expected - alreadyPaid);
         const prevLabel = prevMonth.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
 
@@ -297,7 +305,7 @@ export default async function RentsPage({
                             buttonStyle={`${styles.actionButton} ${styles.paidButton}`}
                         />
                         <PaymentEmailActions
-                            paymentId={payment.id}
+                            paymentId={payment?.id ?? null}
                             leaseId={lease.id}
                             periodStr={prevMonthPeriodStr}
                             isPaid={false}
