@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { saveSetting } from '@/actions/settings';
+import { saveSetting, sendTelegramTest } from '@/actions/settings';
 import { setTheme } from '@/actions/theme';
 import { THEMES, type ThemeId } from '@/themes/index';
 import { EVENT_LABELS, EVENT_VARIABLES } from '@/lib/n8n';
@@ -19,7 +19,9 @@ const VARIABLES = [
     { name: '{{prenom_locataire}}', desc: 'Prénom du locataire' },
     { name: '{{nom_locataire}}', desc: 'Nom complet du locataire' },
     { name: '{{nom_colocataire}}', desc: 'Nom complet du co-locataire' },
-    { name: '{{adresse_bien}}', desc: 'Adresse du logement' },
+    { name: '{{adresse_bien}}', desc: 'Adresse du logement (sans le complément)' },
+    { name: '{{complement_adresse}}', desc: "Complément d'adresse (bâtiment, étage…), vide si non renseigné" },
+    { name: '{{adresse_complete}}', desc: "Adresse complète, complément inclus" },
     { name: '{{loyer_hc}}', desc: 'Loyer hors charges' },
     { name: '{{charges}}', desc: 'Charges' },
     { name: '{{loyer_cc}}', desc: 'Loyer charges comprises' },
@@ -30,9 +32,36 @@ const VARIABLES = [
 
 type SaveState = 'idle' | 'dirty' | 'saving' | 'saved';
 
+const fieldLabelStyle: React.CSSProperties = {
+    display: 'block',
+    fontSize: '0.8rem',
+    fontWeight: 600,
+    marginBottom: '0.3rem',
+    color: 'var(--text-secondary)',
+};
+
+const fieldInputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '0.5rem 0.75rem',
+    borderRadius: 'var(--radius-md)',
+    border: '1px solid var(--border-color)',
+    background: 'var(--bg)',
+    color: 'var(--text-main)',
+    fontSize: '0.9rem',
+    fontFamily: 'inherit',
+};
+
+const fieldHintStyle: React.CSSProperties = {
+    fontSize: '0.75rem',
+    color: 'var(--text-muted)',
+    marginTop: '0.25rem',
+};
+
 export default function ParametresForm({
     defaultSubject, defaultBody, defaultHaWebhook, currentTheme, defaultTelegramEnabled, defaultTelegramEvents,
     defaultTelegramTemplates, defaultIrlIndices, defaultIrlSubject, defaultIrlBody,
+    defaultTelegramChatId, defaultTelegramThreadId, defaultTelegramParseMode, defaultTelegramSilent,
+    telegramTokenConfigured, telegramTokenHint,
     userEmail, userId, totpEnabled, passkeyCount,
 }: {
     defaultSubject: string;
@@ -45,6 +74,12 @@ export default function ParametresForm({
     defaultIrlIndices: IrlIndex[];
     defaultIrlSubject: string;
     defaultIrlBody: string;
+    defaultTelegramChatId: string;
+    defaultTelegramThreadId: string;
+    defaultTelegramParseMode: string;
+    defaultTelegramSilent: boolean;
+    telegramTokenConfigured: boolean;
+    telegramTokenHint: string;
     userEmail: string;
     userId: string;
     totpEnabled: boolean;
@@ -60,15 +95,43 @@ export default function ParametresForm({
     const [telegramEvents, setTelegramEvents] = useState<string[]>(defaultTelegramEvents ?? ALL_EVENTS);
     const [telegramTemplates, setTelegramTemplates] = useState<Record<string, string>>(defaultTelegramTemplates);
     const [telegramSaveState, setTelegramSaveState] = useState<SaveState>('idle');
+    const [telegramChatId, setTelegramChatId] = useState(defaultTelegramChatId);
+    const [telegramThreadId, setTelegramThreadId] = useState(defaultTelegramThreadId);
+    const [telegramParseMode, setTelegramParseMode] = useState(defaultTelegramParseMode);
+    const [telegramSilent, setTelegramSilent] = useState(defaultTelegramSilent);
+    // Vide = on conserve le token déjà enregistré (il n'est jamais renvoyé ici).
+    const [telegramToken, setTelegramToken] = useState('');
+    const [telegramTestState, setTelegramTestState] = useState<'idle' | 'sending' | 'ok' | 'error'>('idle');
+    const [telegramTestError, setTelegramTestError] = useState('');
 
     const handleSaveTelegram = async () => {
         setTelegramSaveState('saving');
         await Promise.all([
             saveSetting('telegram_enabled', telegramEnabled ? 'true' : 'false'),
             saveSetting('telegram_events', JSON.stringify(telegramEvents)),
+            saveSetting('telegram_chat_id', telegramChatId.trim()),
+            saveSetting('telegram_thread_id', telegramThreadId.trim()),
+            saveSetting('telegram_parse_mode', telegramParseMode),
+            saveSetting('telegram_silent', telegramSilent ? 'true' : 'false'),
+            ...(telegramToken.trim() ? [saveSetting('telegram_bot_token', telegramToken.trim())] : []),
             ...ALL_EVENTS.map(ev => saveSetting(`telegram_template_${ev}`, telegramTemplates[ev] ?? '')),
         ]);
+        setTelegramToken('');
         setTelegramSaveState('saved');
+    };
+
+    const handleTestTelegram = async () => {
+        setTelegramTestState('sending');
+        setTelegramTestError('');
+        // Enregistré d'abord : le test doit porter sur ce qui est affiché.
+        await handleSaveTelegram();
+        const res = await sendTelegramTest();
+        if (res.success) {
+            setTelegramTestState('ok');
+        } else {
+            setTelegramTestState('error');
+            setTelegramTestError(res.error ?? 'Échec inconnu');
+        }
     };
 
     // IRL settings
@@ -249,6 +312,102 @@ export default function ParametresForm({
                         }} />
                     </button>
                 </div>
+
+                {telegramEnabled && (
+                    <div style={{ border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '1rem', marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                        <h3 style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
+                            Connexion
+                        </h3>
+
+                        <div>
+                            <label style={fieldLabelStyle}>Token du bot</label>
+                            <input
+                                type="password"
+                                value={telegramToken}
+                                onChange={e => { setTelegramToken(e.target.value); setTelegramSaveState('dirty'); }}
+                                placeholder={telegramTokenConfigured ? `Enregistré (${telegramTokenHint}) — laisser vide pour conserver` : '123456789:AA...'}
+                                autoComplete="off"
+                                style={fieldInputStyle}
+                            />
+                            <p style={fieldHintStyle}>
+                                Fourni par @BotFather. Laissez vide pour garder celui déjà enregistré.
+                            </p>
+                        </div>
+
+                        <div>
+                            <label style={fieldLabelStyle}>Conversation (chat ID)</label>
+                            <input
+                                type="text"
+                                value={telegramChatId}
+                                onChange={e => { setTelegramChatId(e.target.value); setTelegramSaveState('dirty'); }}
+                                placeholder="-1001234567890 ou @moncanal"
+                                style={fieldInputStyle}
+                            />
+                            <p style={fieldHintStyle}>
+                                Identifiant numérique du groupe ou du canal, ou @nom pour un canal public.
+                            </p>
+                        </div>
+
+                        <div>
+                            <label style={fieldLabelStyle}>Sujet du groupe (optionnel)</label>
+                            <input
+                                type="text"
+                                value={telegramThreadId}
+                                onChange={e => { setTelegramThreadId(e.target.value); setTelegramSaveState('dirty'); }}
+                                placeholder="12"
+                                style={fieldInputStyle}
+                            />
+                            <p style={fieldHintStyle}>
+                                Pour publier dans un sujet précis d'un groupe à sujets.
+                            </p>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                            <div style={{ flex: 1, minWidth: 160 }}>
+                                <label style={fieldLabelStyle}>Mise en forme</label>
+                                <select
+                                    value={telegramParseMode}
+                                    onChange={e => { setTelegramParseMode(e.target.value); setTelegramSaveState('dirty'); }}
+                                    style={fieldInputStyle}
+                                >
+                                    <option value="Markdown">Markdown</option>
+                                    <option value="MarkdownV2">MarkdownV2</option>
+                                    <option value="HTML">HTML</option>
+                                    <option value="none">Aucune (texte brut)</option>
+                                </select>
+                                <p style={fieldHintStyle}>
+                                    « Aucune » évite les échecs quand un nom contient un caractère réservé.
+                                </p>
+                            </div>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', cursor: 'pointer', paddingBottom: '1.4rem' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={telegramSilent}
+                                    onChange={e => { setTelegramSilent(e.target.checked); setTelegramSaveState('dirty'); }}
+                                    style={{ width: 16, height: 16, accentColor: 'var(--primary-color)', cursor: 'pointer' }}
+                                />
+                                Notification silencieuse
+                            </label>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                            <button
+                                onClick={handleTestTelegram}
+                                disabled={telegramTestState === 'sending'}
+                                className="std-add-button"
+                                style={{ whiteSpace: 'nowrap' }}
+                            >
+                                {telegramTestState === 'sending' ? '⏳ Envoi…' : '✈️ Envoyer un message de test'}
+                            </button>
+                            {telegramTestState === 'ok' && (
+                                <span style={{ color: '#22c55e', fontSize: '0.85rem' }}>✓ Message envoyé</span>
+                            )}
+                            {telegramTestState === 'error' && (
+                                <span style={{ color: '#ef4444', fontSize: '0.85rem' }}>⚠ {telegramTestError}</span>
+                            )}
+                        </div>
+                    </div>
+                )}
 
                 {telegramEnabled && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1rem' }}>

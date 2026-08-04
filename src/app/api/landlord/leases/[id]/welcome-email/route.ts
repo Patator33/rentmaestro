@@ -49,6 +49,13 @@ async function buildPreview(id: string) {
         nom_locataire: `${lease.tenant.firstName} ${lease.tenant.lastName}`,
         nom_colocataire: coTenantName,
         adresse_bien: `${lease.apartment.address}, ${lease.apartment.zipCode ?? ''} ${lease.apartment.city}`.trim(),
+        complement_adresse: lease.apartment.complement ?? '',
+        // Adresse complète, complément inclus quand il est renseigné.
+        adresse_complete: [
+            lease.apartment.address,
+            lease.apartment.complement,
+            `${lease.apartment.zipCode ?? ''} ${lease.apartment.city}`.trim(),
+        ].filter(Boolean).join(', '),
         loyer_hc: lease.rentAmount.toFixed(2),
         charges: lease.chargesAmount.toFixed(2),
         loyer_cc: (lease.rentAmount + lease.chargesAmount).toFixed(2),
