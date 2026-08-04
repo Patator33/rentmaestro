@@ -45,9 +45,11 @@ interface DashboardData {
   partialPayments: PartialPayment[];
   incompleteGed: IncompleteGed[];
   unpaidThisMonth: Array<{
-    paymentId: string;
+    // null quand le loyer du mois n'a pas encore de ligne en base
+    paymentId: string | null;
     amount: number;
     status: string;
+    late: boolean;
     leaseId: string;
     period: string;
     tenant: { id: string; firstName: string; lastName: string };
@@ -172,21 +174,25 @@ export default function Dashboard() {
 
             {data.unpaidThisMonth.length > 0 && (
               <div className="rounded-xl p-3 mb-3" style={{ background: 'rgba(239,68,68,0.06)', border: '2px solid #ef4444' }}>
-                <p className="text-xs uppercase tracking-wide mb-2 font-semibold" style={{ color: '#ef4444' }}>Loyers impayés ce mois</p>
+                <p className="text-xs uppercase tracking-wide mb-2 font-semibold" style={{ color: '#ef4444' }}>Loyers impayés</p>
                 {data.unpaidThisMonth.map(p => (
                   <div
-                    key={p.paymentId}
+                    key={p.paymentId ?? `${p.leaseId}-${p.period}`}
                     className="flex items-center justify-between py-2 border-b border-border last:border-0 active:opacity-70"
                     style={{ cursor: 'pointer' }}
                     onClick={() => { setRemindModal(p); setRemindMsg(''); }}
                   >
                     <div>
                       <p className="text-text-main text-sm font-medium">{p.tenant.firstName} {p.tenant.lastName}</p>
-                      <p className="text-text-muted text-xs">{p.apartment.name || p.apartment.address}</p>
+                      <p className="text-text-muted text-xs">
+                        {p.apartment.name || p.apartment.address}
+                        {' · '}
+                        {new Date(`${p.period}-01`).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
+                      </p>
                     </div>
                     <div className="text-right">
                       <p className="text-text-main text-sm font-semibold">{p.amount.toFixed(2)} €</p>
-                      <p className={`text-xs ${p.status === 'LATE' ? 'text-late' : 'text-pending'}`}>{p.status === 'LATE' ? 'En retard' : 'En attente'}</p>
+                      <p className={`text-xs ${p.late ? 'text-late' : 'text-pending'}`}>{p.late ? 'En retard' : 'En attente'}</p>
                     </div>
                   </div>
                 ))}

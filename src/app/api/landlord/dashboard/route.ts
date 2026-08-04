@@ -204,6 +204,7 @@ export async function GET(request: Request) {
             paymentId: r.payment?.id ?? null,
             amount: r.remaining,
             status: r.payment?.status ?? 'PENDING',
+            late: r.late,
             tenant: { id: r.lease.tenant.id, firstName: r.lease.tenant.firstName, lastName: r.lease.tenant.lastName },
             apartment: { id: r.lease.apartment.id, address: r.lease.apartment.address, name: r.lease.apartment.name },
             leaseId: r.lease.id,
