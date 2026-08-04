@@ -73,7 +73,7 @@ export default function RentRevision({
 
     const [subject, setSubject] = useState('');
     const [body, setBody] = useState('');
-    const [emailResult, setEmailResult] = useState<{ success: boolean; error?: string } | null>(null);
+    const [emailResult, setEmailResult] = useState<{ success: boolean; error?: string; revisionApplied?: boolean } | null>(null);
     const [sending, setSending] = useState(false);
 
     const openLetter = () => {
@@ -104,10 +104,25 @@ export default function RentRevision({
             const res = await fetch(`/api/leases/${leaseId}/irl-letter/email`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ subject, body }),
+                body: JSON.stringify({
+                    subject,
+                    body,
+                    // Informer le locataire acte la révision : le loyer est mis à jour à l'envoi.
+                    revision: result ? {
+                        newRent: result.newRent,
+                        baseQuarter, baseIndex: baseIdx,
+                        newQuarter, newIndex: newIdx,
+                        effectiveDate,
+                    } : null,
+                }),
             });
             const data = await res.json();
-            setEmailResult(res.ok ? { success: true } : { success: false, error: data.error });
+            if (!res.ok) {
+                setEmailResult({ success: false, error: data.error });
+            } else {
+                setEmailResult({ success: true, revisionApplied: data.revisionApplied });
+                if (data.revisionApplied) { setDone(true); router.refresh(); }
+            }
         } catch {
             setEmailResult({ success: false, error: 'Erreur réseau' });
         } finally {
@@ -183,7 +198,10 @@ export default function RentRevision({
                     {showLetter && (
                         <div style={{ marginTop: '1.25rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
                             {emailResult?.success ? (
-                                <p style={{ color: '#22c55e', fontWeight: 600 }}>✅ Courrier envoyé au locataire.</p>
+                                <p style={{ color: '#22c55e', fontWeight: 600 }}>
+                                    ✅ Courrier envoyé au locataire.
+                                    {emailResult.revisionApplied && ' Nouveau loyer appliqué.'}
+                                </p>
                             ) : (
                                 <>
                                     <label style={{ fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: '0.3rem' }}>Objet</label>

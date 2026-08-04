@@ -1,15 +1,22 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { sendEmail } from '@/lib/email';
+import { readSession } from '@/lib/session';
+import { applyRentRevisionCore, type RevisionParams } from '@/lib/rent-revision';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(
-    request: Request,
+    request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
+    const session = await readSession(request);
+    if (!session.userId || session.pendingTotp) {
+        return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+
     const { id } = await params;
-    const { subject, body } = await request.json();
+    const { subject, body, revision } = await request.json();
     if (!subject || !body) return NextResponse.json({ error: 'Contenu manquant' }, { status: 400 });
 
     const lease = await prisma.lease.findUnique({
@@ -27,8 +34,19 @@ export async function POST(
 
     try {
         await sendEmail({ to: recipients.join(','), subject, html });
-        return NextResponse.json({ success: true });
     } catch (e: any) {
         return NextResponse.json({ error: e.message || 'Erreur envoi' }, { status: 500 });
     }
+
+    // Le locataire est informé : la révision est actée. Uniquement après un
+    // envoi réussi, pour ne pas changer le loyer si le mail n'est pas parti.
+    if (revision) {
+        const applied = await applyRentRevisionCore(id, revision as RevisionParams);
+        if (!applied.success) {
+            return NextResponse.json({ success: true, revisionApplied: false, error: applied.error });
+        }
+        return NextResponse.json({ success: true, revisionApplied: true });
+    }
+
+    return NextResponse.json({ success: true, revisionApplied: false });
 }

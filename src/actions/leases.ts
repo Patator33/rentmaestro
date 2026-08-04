@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { logAction } from "@/lib/audit";
 import { requireAuth } from "@/lib/session";
+import { applyRentRevisionCore, type RevisionParams } from "@/lib/rent-revision";
 
 export async function createLease(formData: FormData) {
     await requireAuth();
@@ -251,65 +252,14 @@ export async function setGuarantorVisaleOk(leaseId: string, ok: boolean) {
 
 // Applies an IRL rent revision: updates the rent, records the new baseline
 // index/quarter, and propagates the new amount to future unpaid rent payments.
-export async function applyRentRevision(
-    leaseId: string,
-    params: {
-        newRent: number;
-        baseQuarter: string;
-        baseIndex: number;
-        newQuarter: string;
-        newIndex: number;
-        effectiveDate?: string | null;
-    }
-) {
+export async function applyRentRevision(leaseId: string, params: RevisionParams) {
     await requireAuth();
-    const { newRent, baseQuarter, baseIndex, newQuarter, newIndex, effectiveDate } = params;
-    if (isNaN(newRent) || newRent <= 0) {
-        return { success: false, error: 'Nouveau loyer invalide.' };
-    }
-    try {
-        const lease = await prisma.lease.findUnique({ where: { id: leaseId } });
-        if (!lease) return { success: false, error: 'Bail introuvable.' };
+    const result = await applyRentRevisionCore(leaseId, params);
+    if (!result.success) return result;
 
-        let effective: Date = new Date();
-        if (effectiveDate) {
-            const [y, m] = effectiveDate.split('-').map(Number);
-            effective = new Date(Date.UTC(y, m - 1, 1));
-        }
-
-        await prisma.lease.update({
-            where: { id: leaseId },
-            data: {
-                rentAmount: newRent,
-                lastRentReviewDate: effective,
-                irlBaseIndex: newIndex,
-                irlBaseQuarter: newQuarter,
-            } as any,
-        });
-
-        // Propagate to future unpaid rent payments
-        await prisma.rentPayment.updateMany({
-            where: {
-                leaseId,
-                period: { gte: effective },
-                status: { in: ['PENDING', 'LATE'] },
-            },
-            data: { amount: newRent + lease.chargesAmount },
-        });
-
-        await logAction({
-            action: 'RENT_REVISION',
-            entity: 'Lease',
-            entityId: leaseId,
-            details: `IRL ${baseQuarter} (${baseIndex}) → ${newQuarter} (${newIndex}) — nouveau loyer ${newRent}€`,
-        });
-    } catch (error) {
-        console.error('Erreur lors de la révision du loyer:', error);
-        return { success: false, error: 'Impossible d\'appliquer la révision.' };
-    }
     revalidatePath('/', 'layout');
     revalidatePath(`/leases/${leaseId}`);
-    return { success: true };
+    return result;
 }
 
 export async function markRentReviewAsSent(leaseId: string) {
