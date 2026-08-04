@@ -9,6 +9,7 @@ import { sendEmail } from "@/lib/email";
 import { logAction } from "@/lib/audit";
 import { headers } from "next/headers";
 import { requireAuth } from "@/lib/session";
+import { DEFAULT_PORTAL_INVITE_SUBJECT, DEFAULT_PORTAL_INVITE_BODY, escapeHtml } from "@/lib/portal-invite";
 
 async function getBaseUrl() {
     const h = await headers();
@@ -152,44 +153,34 @@ export async function sendPortalInvite(tenantId: string) {
         const portalUrl = `${baseUrl}/portal/${tenant.portalToken}`;
         const apkUrl = `${baseUrl}/downloads/rentmaestro-tenant.apk`;
 
+        const [subjectTpl, bodyTpl] = await Promise.all([
+            prisma.setting.findUnique({ where: { key: 'portal_invite_subject' } })
+                .then(s => s?.value || DEFAULT_PORTAL_INVITE_SUBJECT),
+            prisma.setting.findUnique({ where: { key: 'portal_invite_body' } })
+                .then(s => s?.value || DEFAULT_PORTAL_INVITE_BODY),
+        ]);
+
+        const vars: Record<string, string> = {
+            prenom_locataire: tenant.firstName,
+            nom_locataire: `${tenant.firstName} ${tenant.lastName}`,
+            lien_portail: portalUrl,
+            code_acces: tenant.portalToken,
+            lien_application: apkUrl,
+        };
+        const applyVars = (tpl: string) =>
+            Object.entries(vars).reduce((t, [k, v]) => t.replaceAll(`{{${k}}}`, v ?? ''), tpl);
+
+        const body = applyVars(bodyTpl);
+        // Le corps est saisi en texte simple : seuls les liens et les sauts de
+        // ligne sont mis en forme, comme pour les autres modèles d'email.
+        const htmlBody = escapeHtml(body)
+            .replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" style="color:#2b8cee">$1</a>')
+            .replace(/\n/g, '<br />');
+
         await sendEmail({
             to: tenant.email,
-            subject: `Accès à votre espace locataire — RentMaestro`,
-            html: `
-                <div style="font-family: sans-serif; color: #333; max-width: 560px; line-height: 1.6;">
-                    <h2 style="color: #1e293b;">Bonjour ${tenant.firstName},</h2>
-                    <p>Céline et Nicolas vous invitent à accéder à votre <strong>espace locataire RentMaestro</strong>.</p>
-                    <p>Vous y trouverez :</p>
-                    <ul>
-                        <li>Votre historique de paiements et quittances</li>
-                        <li>La messagerie avec votre propriétaire</li>
-                        <li>Le signalement d'incidents techniques</li>
-                    </ul>
-
-                    <h3 style="color: #1e293b; margin-top: 2rem;">🌐 Accès web</h3>
-                    <p>Cliquez sur le lien ci-dessous pour accéder depuis votre navigateur :</p>
-                    <a href="${portalUrl}" style="display: inline-block; padding: 0.7rem 1.4rem; background: #2b8cee; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
-                        Accéder à mon espace →
-                    </a>
-                    <p style="color: #64748b; font-size: 0.85rem; margin-top: 0.5rem;">${portalUrl}</p>
-
-                    <h3 style="color: #1e293b; margin-top: 2rem;">📱 Application mobile Android</h3>
-                    <p>Téléchargez l'application RentMaestro sur votre smartphone Android :</p>
-                    <a href="${apkUrl}" style="display: inline-block; padding: 0.7rem 1.4rem; background: #10b981; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
-                        ⬇️ Télécharger l'application Android
-                    </a>
-                    <p style="color: #64748b; font-size: 0.85rem; margin-top: 0.5rem;">
-                        Après installation, entrez ce code d'accès lors du premier lancement :
-                    </p>
-                    <div style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; font-family: monospace; font-size: 1rem; letter-spacing: 0.05em; word-break: break-all; color: #0f172a;">
-                        ${tenant.portalToken}
-                    </div>
-
-                    <p style="margin-top: 2rem; color: #94a3b8; font-size: 0.8rem;">
-                        <em>Ne partagez pas ce code avec d'autres personnes. — RentMaestro</em>
-                    </p>
-                </div>
-            `,
+            subject: applyVars(subjectTpl),
+            html: `<div style="font-family: sans-serif; color: #333; max-width: 560px; line-height: 1.6;">${htmlBody}</div>`,
         });
 
         return { success: true };

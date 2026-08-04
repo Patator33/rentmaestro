@@ -30,6 +30,14 @@ const VARIABLES = [
     { name: '{{prorata_premier_mois}}', desc: 'Montant du premier mois (prorata si entrée en cours de mois)' },
 ];
 
+const PORTAL_INVITE_VARIABLES = [
+    { name: '{{prenom_locataire}}', desc: 'Prénom du locataire' },
+    { name: '{{nom_locataire}}', desc: 'Nom complet du locataire' },
+    { name: '{{lien_portail}}', desc: "Lien vers l'espace locataire" },
+    { name: '{{code_acces}}', desc: "Code d'accès pour l'application mobile" },
+    { name: '{{lien_application}}', desc: "Lien de téléchargement de l'application Android" },
+];
+
 type SaveState = 'idle' | 'dirty' | 'saving' | 'saved';
 
 const fieldLabelStyle: React.CSSProperties = {
@@ -57,11 +65,62 @@ const fieldHintStyle: React.CSSProperties = {
     marginTop: '0.25rem',
 };
 
+/**
+ * Section repliable. La page empilait une dizaine de blocs dépliés, rendant la
+ * recherche d'un réglage pénible : tout est fermé par défaut.
+ * `headerRight` reste hors du bouton pour ne pas imbriquer deux contrôles.
+ */
+function Collapsible({ title, subtitle, headerRight, children }: {
+    title: string;
+    subtitle?: string;
+    headerRight?: React.ReactNode;
+    children: React.ReactNode;
+}) {
+    const [open, setOpen] = useState(false);
+    return (
+        <section style={{ background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-xl)', padding: '1.5rem', marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <button
+                    type="button"
+                    onClick={() => setOpen(o => !o)}
+                    aria-expanded={open}
+                    style={{
+                        flex: 1, display: 'flex', alignItems: 'center', gap: '0.75rem',
+                        background: 'transparent', border: 'none', padding: 0, cursor: 'pointer',
+                        textAlign: 'left', color: 'inherit', font: 'inherit',
+                    }}
+                >
+                    <span
+                        aria-hidden
+                        style={{
+                            display: 'inline-block', fontSize: '0.9rem', color: 'var(--text-muted)',
+                            transform: open ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s',
+                        }}
+                    >
+                        ▶
+                    </span>
+                    <span style={{ flex: 1 }}>
+                        <span style={{ display: 'block', fontSize: '1.1rem', fontWeight: 700 }}>{title}</span>
+                        {subtitle && (
+                            <span style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.15rem' }}>
+                                {subtitle}
+                            </span>
+                        )}
+                    </span>
+                </button>
+                {headerRight}
+            </div>
+            {open && <div style={{ marginTop: '1.25rem' }}>{children}</div>}
+        </section>
+    );
+}
+
 export default function ParametresForm({
     defaultSubject, defaultBody, defaultHaWebhook, currentTheme, defaultTelegramEnabled, defaultTelegramEvents,
     defaultTelegramTemplates, defaultIrlIndices, defaultIrlSubject, defaultIrlBody,
     defaultTelegramChatId, defaultTelegramThreadId, defaultTelegramParseMode, defaultTelegramSilent,
     telegramTokenConfigured, telegramTokenHint,
+    defaultPortalSubject, defaultPortalBody,
     userEmail, userId, totpEnabled, passkeyCount,
 }: {
     defaultSubject: string;
@@ -80,6 +139,8 @@ export default function ParametresForm({
     defaultTelegramSilent: boolean;
     telegramTokenConfigured: boolean;
     telegramTokenHint: string;
+    defaultPortalSubject: string;
+    defaultPortalBody: string;
     userEmail: string;
     userId: string;
     totpEnabled: boolean;
@@ -103,6 +164,19 @@ export default function ParametresForm({
     const [telegramToken, setTelegramToken] = useState('');
     const [telegramTestState, setTelegramTestState] = useState<'idle' | 'sending' | 'ok' | 'error'>('idle');
     const [telegramTestError, setTelegramTestError] = useState('');
+
+    const [portalSubject, setPortalSubject] = useState(defaultPortalSubject);
+    const [portalBody, setPortalBody] = useState(defaultPortalBody);
+    const [portalSaveState, setPortalSaveState] = useState<SaveState>('idle');
+
+    const handleSavePortalInvite = async () => {
+        setPortalSaveState('saving');
+        await Promise.all([
+            saveSetting('portal_invite_subject', portalSubject),
+            saveSetting('portal_invite_body', portalBody),
+        ]);
+        setPortalSaveState('saved');
+    };
 
     const handleSaveTelegram = async () => {
         setTelegramSaveState('saving');
@@ -213,8 +287,7 @@ export default function ParametresForm({
             </p>
 
             {/* Thème */}
-            <section style={{ background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-xl)', padding: '1.5rem', marginBottom: '1.5rem' }}>
-                <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '1rem' }}>🎨 Apparence</h2>
+            <Collapsible title="🎨 Apparence" subtitle="Thème de l'interface">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     {THEMES.map(theme => {
                         const active = currentTheme === theme.id;
@@ -248,11 +321,10 @@ export default function ParametresForm({
                         );
                     })}
                 </div>
-            </section>
+            </Collapsible>
 
             {/* Home Assistant */}
-            <section style={{ background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-xl)', padding: '1.5rem', marginBottom: '1.5rem' }}>
-                <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.4rem' }}>🏠 Home Assistant</h2>
+            <Collapsible title="🏠 Home Assistant" subtitle="Webhook de notification">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1rem' }}>
                     URL du webhook appelé lorsqu'un locataire envoie un message.
                 </p>
@@ -277,18 +349,15 @@ export default function ParametresForm({
                         {haSaveState === 'saving' ? '⏳' : haSaveState === 'saved' ? '✓ Enregistré' : '💾 Enregistrer'}
                     </button>
                 </div>
-            </section>
+            </Collapsible>
 
             {/* Telegram */}
-            <section style={{ background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-xl)', padding: '1.5rem', marginBottom: '1.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                    <div>
-                        <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.2rem' }}>✈️ Notifications Telegram</h2>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                            Recevez une notification Telegram pour chaque événement sélectionné.
-                        </p>
-                    </div>
+            <Collapsible
+                title="✈️ Notifications Telegram"
+                subtitle="Une notification pour chaque événement sélectionné"
+                headerRight={
                     <button
+                        type="button"
                         onClick={() => { setTelegramEnabled(v => !v); setTelegramSaveState('dirty'); }}
                         style={{
                             flexShrink: 0,
@@ -311,8 +380,8 @@ export default function ParametresForm({
                             transition: 'left 0.2s',
                         }} />
                     </button>
-                </div>
-
+                }
+            >
                 {telegramEnabled && (
                     <div style={{ border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '1rem', marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                         <h3 style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
@@ -459,11 +528,10 @@ export default function ParametresForm({
                 >
                     {telegramSaveState === 'saving' ? '⏳' : telegramSaveState === 'saved' ? '✓ Enregistré' : '💾 Enregistrer'}
                 </button>
-            </section>
+            </Collapsible>
 
             {/* Indices IRL */}
-            <section style={{ background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-xl)', padding: '1.5rem', marginBottom: '1.5rem' }}>
-                <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.4rem' }}>📈 Indices IRL & révision de loyer</h2>
+            <Collapsible title="📈 Indices IRL & révision de loyer" subtitle="Indices INSEE et modèle de courrier">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
                     Indices de référence des loyers (INSEE) utilisés pour la révision annuelle.
                 </p>
@@ -537,11 +605,10 @@ export default function ParametresForm({
                 >
                     {irlSaveState === 'saving' ? '⏳' : irlSaveState === 'saved' ? '✓ Enregistré' : '💾 Enregistrer'}
                 </button>
-            </section>
+            </Collapsible>
 
             {/* Sécurité */}
-            <section style={{ background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-xl)', padding: '1.5rem', marginBottom: '1.5rem' }}>
-                <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.25rem' }}>🔐 Sécurité</h2>
+            <Collapsible title="🔐 Sécurité" subtitle="Double authentification et clés d'accès">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
                     Authentification et sécurité du compte <strong>{userEmail}</strong>
                 </p>
@@ -571,11 +638,10 @@ export default function ParametresForm({
                         Consulter les logs →
                     </Link>
                 </div>
-            </section>
+            </Collapsible>
 
             {/* Email de bienvenue */}
-            <section style={{ background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-xl)', padding: '1.5rem' }}>
-                <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '1rem' }}>📧 Email de bienvenue (nouveau bail)</h2>
+            <Collapsible title="📧 Email de bienvenue (nouveau bail)" subtitle="Modèle envoyé à la signature d'un bail">
 
                 <div style={{ marginBottom: '1.25rem', padding: '0.75rem 1rem', background: 'rgba(43,140,238,0.07)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(43,140,238,0.2)' }}>
                     <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#2b8cee', marginBottom: '0.5rem' }}>Variables disponibles :</p>
@@ -607,18 +673,69 @@ export default function ParametresForm({
                         />
                     </div>
                 </div>
-            </section>
 
-            <div style={{ marginTop: '1.5rem' }}>
-                <button
-                    onClick={handleSave}
-                    disabled={saveState === 'saving' || !isDirty}
-                    className="std-add-button"
-                    style={btnStyle()}
-                >
-                    {btnLabel()}
-                </button>
-            </div>
+                <div style={{ marginTop: '1.25rem' }}>
+                    <button
+                        onClick={handleSave}
+                        disabled={saveState === 'saving' || !isDirty}
+                        className="std-add-button"
+                        style={btnStyle()}
+                    >
+                        {btnLabel()}
+                    </button>
+                </div>
+            </Collapsible>
+
+            <Collapsible title="🔑 Email d'accès à l'espace locataire" subtitle="Modèle envoyé lors de la création de l'espace">
+                <div style={{ marginBottom: '1.25rem', padding: '0.75rem 1rem', background: 'rgba(43,140,238,0.07)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(43,140,238,0.2)' }}>
+                    <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#2b8cee', marginBottom: '0.5rem' }}>Variables disponibles :</p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                        {PORTAL_INVITE_VARIABLES.map(v => (
+                            <span key={v.name} title={v.desc} style={{ fontSize: '0.75rem', fontFamily: 'monospace', background: 'rgba(43,140,238,0.12)', color: '#2b8cee', padding: '0.15rem 0.4rem', borderRadius: 4, cursor: 'default' }}>
+                                {v.name}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div>
+                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem', color: 'var(--text-secondary)' }}>Objet</label>
+                        <input
+                            value={portalSubject}
+                            onChange={e => { setPortalSubject(e.target.value); setPortalSaveState('dirty'); }}
+                            style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--bg)', color: 'var(--text-main)', fontSize: '0.9rem' }}
+                        />
+                    </div>
+                    <div>
+                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem', color: 'var(--text-secondary)' }}>Corps du message</label>
+                        <textarea
+                            value={portalBody}
+                            onChange={e => { setPortalBody(e.target.value); setPortalSaveState('dirty'); }}
+                            rows={16}
+                            style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--bg)', color: 'var(--text-main)', fontSize: '0.9rem', fontFamily: 'inherit', resize: 'vertical' }}
+                        />
+                        <p style={fieldHintStyle}>
+                            Les liens et les sauts de ligne sont mis en forme automatiquement à l'envoi.
+                        </p>
+                    </div>
+                </div>
+
+                <div style={{ marginTop: '1.25rem' }}>
+                    <button
+                        onClick={handleSavePortalInvite}
+                        disabled={portalSaveState === 'saving' || portalSaveState === 'idle' || portalSaveState === 'saved'}
+                        className="std-add-button"
+                        style={
+                            portalSaveState === 'saved' ? { background: 'rgba(43,140,238,0.15)', color: '#2b8cee', borderColor: 'rgba(43,140,238,0.3)' } :
+                            portalSaveState === 'dirty' ? { background: 'rgba(34,197,94,0.15)', color: '#22c55e', borderColor: 'rgba(34,197,94,0.3)' } :
+                            undefined
+                        }
+                    >
+                        {portalSaveState === 'saving' ? '⏳' : portalSaveState === 'saved' ? '✓ Enregistré' : '💾 Enregistrer'}
+                    </button>
+                </div>
+            </Collapsible>
         </div>
     );
 }

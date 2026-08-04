@@ -1,4 +1,5 @@
 import { getSetting, getTelegramTokenHint } from '@/actions/settings';
+import { DEFAULT_PORTAL_INVITE_SUBJECT, DEFAULT_PORTAL_INVITE_BODY } from '@/lib/portal-invite';
 import { cookies } from 'next/headers';
 import { THEME_COOKIE, DEFAULT_THEME, type ThemeId } from '@/themes/index';
 import ParametresForm from './ParametresForm';
@@ -51,7 +52,7 @@ export default async function ParametresPage() {
     const user = await getUserById(session.userId);
     if (!user) redirect('/login');
 
-    const [subject, body, haWebhook, telegramEnabled, telegramEvents, dbTheme, store, passkeyCount, telegramTemplateRows, irlIndicesRaw, irlSubject, irlBody, telegramChatId, telegramThreadId, telegramParseMode, telegramSilent, telegramToken] = await Promise.all([
+    const [subject, body, haWebhook, telegramEnabled, telegramEvents, dbTheme, store, passkeyCount, telegramTemplateRows, irlIndicesRaw, irlSubject, irlBody, telegramChatId, telegramThreadId, telegramParseMode, telegramSilent, telegramToken, portalSubject, portalBody] = await Promise.all([
         getSetting('welcome_email_subject').then(v => v ?? DEFAULT_SUBJECT),
         getSetting('welcome_email_body').then(v => v ?? DEFAULT_BODY),
         getSetting('ha_webhook_url').then(v => v ?? ''),
@@ -69,6 +70,8 @@ export default async function ParametresPage() {
         getSetting('telegram_parse_mode').then(v => v ?? 'Markdown'),
         getSetting('telegram_silent').then(v => v === 'true'),
         getTelegramTokenHint(),
+        getSetting('portal_invite_subject').then(v => v || DEFAULT_PORTAL_INVITE_SUBJECT),
+        getSetting('portal_invite_body').then(v => v || DEFAULT_PORTAL_INVITE_BODY),
     ]);
     const currentTheme = (dbTheme ?? store.get(THEME_COOKIE)?.value ?? DEFAULT_THEME) as ThemeId;
     const telegramTemplates = Object.fromEntries(telegramTemplateRows) as Record<string, string>;
@@ -90,6 +93,8 @@ export default async function ParametresPage() {
             defaultTelegramSilent={telegramSilent}
             telegramTokenConfigured={telegramToken.configured}
             telegramTokenHint={telegramToken.hint}
+            defaultPortalSubject={portalSubject}
+            defaultPortalBody={portalBody}
             defaultIrlIndices={irlIndices}
             defaultIrlSubject={irlSubject}
             defaultIrlBody={irlBody}
