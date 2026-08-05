@@ -10,7 +10,13 @@ import { saveUploadedFile } from "@/lib/uploads";
 // Authentifié par le portalToken (même niveau de confiance que reportIncident /
 // sendPortalMessage). Le fichier est validé/assaini par saveUploadedFile
 // (allowlist d'extensions, taille max, nom aléatoire — pas de traversée).
-export async function uploadPortalDocument(formData: FormData, token: string) {
+// Type de retour explicite : union discriminée pour que le client puisse
+// narrower proprement sur `success` (sinon `doc` reste possiblement undefined).
+type PortalUploadResult =
+    | { success: true; doc: { id: string; name: string; url: string; docType: string; createdAt: Date } }
+    | { success: false; error: string };
+
+export async function uploadPortalDocument(formData: FormData, token: string): Promise<PortalUploadResult> {
     try {
         const tenant = await prisma.tenant.findUnique({ where: { portalToken: token } });
         if (!tenant) return { success: false, error: "Non autorisé" };
