@@ -279,6 +279,22 @@ model Message {
   tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 }
 
+/// Virement reçu en attente de validation par le propriétaire via Telegram.
+/// Rien n'est écrit sur les loyers tant que la réponse n'est pas arrivée.
+model PendingTransfer {
+  id         String   @id @default(uuid())
+  sender     String
+  amount     Float
+  receivedAt DateTime @default(now())
+  status     String   @default("PENDING") // PENDING, CONFIRMED, REJECTED
+  /// Choix proposés dans le message Telegram, indexés par position du bouton.
+  options    String   @default("[]")
+  chatId     String?
+  messageId  String?
+  resolvedAt DateTime?
+  createdAt  DateTime @default(now())
+}
+
 model Inspection {
   id        String   @id @default(uuid())
   leaseId   String

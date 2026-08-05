@@ -162,7 +162,7 @@ export async function sendTelegramMessage(
     if (cfg.threadId) body.message_thread_id = Number(cfg.threadId);
 
     try {
-        const res = await fetch(`https://api.telegram.org/bot${cfg.botToken}/sendMessage`, {
+        const res = await fetch(`${telegramApiBase()}/bot${cfg.botToken}/sendMessage`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body),
@@ -241,4 +241,9 @@ export async function notifyN8n(eventName: string, payload: any) {
     } catch (error) {
         console.error(`[n8n Webhook] Error sending event ${eventName}:`, error);
     }
+}
+
+/** Surchargeable pour tester sans appeler Telegram, ou passer par un relais. */
+export function telegramApiBase(): string {
+    return process.env.TELEGRAM_API_BASE || 'https://api.telegram.org';
 }

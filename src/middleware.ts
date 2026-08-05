@@ -14,6 +14,7 @@ const PUBLIC_PATHS = [
     '/api/landlord',
     '/api/cron', // protégé par x-cron-secret
     '/api/automation', // protégé par x-automation-secret
+    '/api/telegram', // protégé par le jeton secret renvoyé par Telegram
 ];
 
 function isPublic(pathname: string): boolean {
