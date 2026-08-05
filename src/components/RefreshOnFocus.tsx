@@ -4,11 +4,15 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 /**
- * Rafraîchit silencieusement les Server Components quand :
- * - l'onglet redevient visible (retour depuis un autre onglet)
- * - l'intervalle de polling s'écoule (défaut : 60s)
+ * Rafraîchit silencieusement les Server Components quand l'onglet redevient
+ * visible (retour depuis un autre onglet ou une autre app).
+ *
+ * Pas de polling périodique : un `router.refresh()` régulier rejoue l'animation
+ * `page-enter` et fait sauter le contenu pendant la navigation, ce qui donne
+ * l'impression que l'application se relance toute seule. Le rafraîchissement au
+ * retour de focus suffit à garder les données à jour.
  */
-export default function RefreshOnFocus({ intervalMs = 60000 }: { intervalMs?: number }) {
+export default function RefreshOnFocus() {
   const router = useRouter();
 
   useEffect(() => {
@@ -16,12 +20,8 @@ export default function RefreshOnFocus({ intervalMs = 60000 }: { intervalMs?: nu
       if (!document.hidden) router.refresh();
     };
     document.addEventListener('visibilitychange', onVisible);
-    const timer = setInterval(() => router.refresh(), intervalMs);
-    return () => {
-      document.removeEventListener('visibilitychange', onVisible);
-      clearInterval(timer);
-    };
-  }, [router, intervalMs]);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [router]);
 
   return null;
 }
