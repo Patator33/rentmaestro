@@ -65,6 +65,58 @@ export async function editMessageText(chatId: string, messageId: string, text: s
     return callTelegram('editMessageText', payload, cfg);
 }
 
+export interface WebhookStatus {
+    configured: boolean;
+    url: string;
+    pendingUpdates: number;
+    lastError: string | null;
+}
+
+/** Adresse que Telegram doit appeler, dérivée de l'URL publique de l'application. */
+export function webhookUrl(baseUrl: string): string {
+    return `${baseUrl.replace(/\/+$/, '')}/api/telegram/webhook`;
+}
+
+export async function getWebhookInfo(): Promise<{ ok: boolean; status?: WebhookStatus; error?: string }> {
+    const res = await callTelegram('getWebhookInfo', {});
+    if (!res.ok) return { ok: false, error: res.error };
+    return {
+        ok: true,
+        status: {
+            configured: !!res.result.url,
+            url: res.result.url || '',
+            pendingUpdates: res.result.pending_update_count ?? 0,
+            lastError: res.result.last_error_message ?? null,
+        },
+    };
+}
+
+/**
+ * Déclare l'adresse de rappel auprès de Telegram.
+ *
+ * `allowed_updates` limité aux clics sur boutons : le bot n'a pas à recevoir
+ * les messages de la conversation.
+ */
+export async function registerWebhook(baseUrl: string): Promise<{ ok: boolean; url?: string; error?: string }> {
+    const secret = process.env.TELEGRAM_WEBHOOK_SECRET;
+    if (!secret || secret.length < 16) {
+        return { ok: false, error: "TELEGRAM_WEBHOOK_SECRET manquant ou trop court (16 caractères minimum)." };
+    }
+
+    const url = webhookUrl(baseUrl);
+    if (!url.startsWith('https://')) {
+        // Telegram refuse le HTTP simple : autant le dire clairement.
+        return { ok: false, error: `Telegram exige une adresse HTTPS publique (reçu : ${url}).` };
+    }
+
+    const res = await callTelegram('setWebhook', {
+        url,
+        secret_token: secret,
+        allowed_updates: ['callback_query'],
+    });
+    return res.ok ? { ok: true, url } : { ok: false, error: res.error };
+}
+
 /** Sans cette réponse, Telegram laisse le bouton en état de chargement. */
 export async function answerCallbackQuery(callbackQueryId: string, text?: string) {
     return callTelegram('answerCallbackQuery', {

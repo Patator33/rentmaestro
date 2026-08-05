@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { requireAuth } from '@/lib/session';
 import { sendTelegramMessage } from '@/lib/n8n';
+import { headers } from 'next/headers';
+import { registerWebhook, getWebhookInfo, webhookUrl, type WebhookStatus } from '@/lib/telegram-buttons';
 
 export async function getSetting(key: string): Promise<string | null> {
     await requireAuth();
@@ -37,4 +39,38 @@ export async function getTelegramTokenHint(): Promise<{ configured: boolean; hin
 export async function sendTelegramTest(): Promise<{ success: boolean; error?: string }> {
     await requireAuth();
     return sendTelegramMessage('✅ RentMaestro — message de test. La configuration Telegram fonctionne.');
+}
+
+async function publicBaseUrl(): Promise<string> {
+    const h = await headers();
+    const host = h.get('host') || 'localhost:3000';
+    const proto = h.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
+    return process.env.APP_BASE_URL || `${proto}://${host}`;
+}
+
+/** État du rappel Telegram, tel que Telegram lui-même le connaît. */
+export async function getTelegramWebhookStatus(): Promise<{
+    status: WebhookStatus | null;
+    expectedUrl: string;
+    secretConfigured: boolean;
+    error?: string;
+}> {
+    await requireAuth();
+    const expectedUrl = webhookUrl(await publicBaseUrl());
+    const secret = process.env.TELEGRAM_WEBHOOK_SECRET ?? '';
+    const info = await getWebhookInfo();
+    return {
+        status: info.status ?? null,
+        expectedUrl,
+        secretConfigured: secret.length >= 16,
+        error: info.error,
+    };
+}
+
+export async function registerTelegramWebhook(): Promise<{ success: boolean; url?: string; error?: string }> {
+    await requireAuth();
+    const res = await registerWebhook(await publicBaseUrl());
+    if (!res.ok) return { success: false, error: res.error };
+    revalidatePath('/gestion/parametres');
+    return { success: true, url: res.url };
 }

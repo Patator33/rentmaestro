@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { saveSetting, sendTelegramTest } from '@/actions/settings';
+import { saveSetting, sendTelegramTest, registerTelegramWebhook } from '@/actions/settings';
 import { setTheme } from '@/actions/theme';
 import { THEMES, type ThemeId } from '@/themes/index';
 import { EVENT_LABELS, EVENT_VARIABLES } from '@/lib/n8n';
@@ -164,6 +164,22 @@ export default function ParametresForm({
     const [telegramToken, setTelegramToken] = useState('');
     const [telegramTestState, setTelegramTestState] = useState<'idle' | 'sending' | 'ok' | 'error'>('idle');
     const [telegramTestError, setTelegramTestError] = useState('');
+    const [webhookState, setWebhookState] = useState<'idle' | 'working' | 'ok' | 'error'>('idle');
+    const [webhookMessage, setWebhookMessage] = useState('');
+
+    const handleRegisterWebhook = async () => {
+        setWebhookState('working');
+        setWebhookMessage('');
+        // Le token est lu côté serveur : il ne transite jamais par le navigateur.
+        const res = await registerTelegramWebhook();
+        if (res.success) {
+            setWebhookState('ok');
+            setWebhookMessage(`Déclaré sur ${res.url}`);
+        } else {
+            setWebhookState('error');
+            setWebhookMessage(res.error ?? 'Échec inconnu');
+        }
+    };
 
     const [portalSubject, setPortalSubject] = useState(defaultPortalSubject);
     const [portalBody, setPortalBody] = useState(defaultPortalBody);
@@ -474,6 +490,30 @@ export default function ParametresForm({
                             {telegramTestState === 'error' && (
                                 <span style={{ color: '#ef4444', fontSize: '0.85rem' }}>⚠ {telegramTestError}</span>
                             )}
+                        </div>
+
+                        <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '0.85rem' }}>
+                            <label style={fieldLabelStyle}>Validation des virements par boutons</label>
+                            <p style={fieldHintStyle}>
+                                Nécessaire pour répondre aux demandes de validation depuis Telegram.
+                                Indique à Telegram où envoyer tes clics.
+                            </p>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', marginTop: '0.6rem' }}>
+                                <button
+                                    onClick={handleRegisterWebhook}
+                                    disabled={webhookState === 'working'}
+                                    className="std-add-button"
+                                    style={{ whiteSpace: 'nowrap' }}
+                                >
+                                    {webhookState === 'working' ? '⏳ …' : '🔗 Déclarer le webhook'}
+                                </button>
+                                {webhookMessage && (
+                                    <span style={{ color: webhookState === 'error' ? '#ef4444' : '#22c55e', fontSize: '0.85rem' }}>
+                                        {webhookState === 'error' ? '⚠ ' : '✓ '}{webhookMessage}
+                                    </span>
+                                )}
+                            </div>
                         </div>
                     </div>
                 )}
