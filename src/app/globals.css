@@ -605,6 +605,8 @@ label {
 .tenant-portal-desktop-nav { display: flex; }
 .tenant-portal-mobile-top { display: none; }
 .tenant-portal-bottom-nav { display: none; }
+/* Libellés courts des raccourcis : mobile uniquement. */
+.tenant-portal-label-short { display: none; }
 
 @media (max-width: 768px) {
   .tenant-portal-desktop-nav { display: none; }
@@ -629,6 +631,27 @@ label {
   .tenant-portal-sidebar-mobile-hidden {
     display: none !important;
   }
+
+  /* Compaction de l'accueil : le bloc profil et l'aperçu doivent tenir sur un
+     seul écran. Les !important surchargent les styles inline du composant,
+     qui portent les valeurs desktop. */
+  .tenant-portal-mobile-top { padding: 10px 14px !important; }
+  .tenant-portal-container { gap: 14px !important; padding: 12px 14px !important; }
+  .tenant-portal-sidebar { gap: 10px !important; }
+  .tenant-portal-greeting { font-size: 23px !important; }
+  .tenant-portal-main h2 { margin-bottom: 10px !important; }
+
+  /* Les trois raccourcis passent en ligne, libellés abrégés. */
+  .tenant-portal-quick { flex-direction: row !important; gap: 8px !important; }
+  .tenant-portal-quick > * {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 9px 4px !important;
+    font-size: 12px !important;
+    gap: 5px !important;
+  }
+  .tenant-portal-label-long { display: none; }
+  .tenant-portal-label-short { display: inline; }
 }
 
 /* Light mode support removed — Dark Premium only */

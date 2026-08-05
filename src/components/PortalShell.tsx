@@ -680,13 +680,13 @@ export default function PortalShell({
                 </div>
             </div>
 
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 30, maxWidth: 1240, margin: '0 auto', padding: 30 }}>
+            <div className="tenant-portal-container" style={{ display: 'flex', flexWrap: 'wrap', gap: 30, maxWidth: 1240, margin: '0 auto', padding: 30 }}>
                 <aside
-                    className={page === 'accueil' ? undefined : 'tenant-portal-sidebar-mobile-hidden'}
+                    className={`tenant-portal-sidebar${page === 'accueil' ? '' : ' tenant-portal-sidebar-mobile-hidden'}`}
                     style={{ flex: '1 1 280px', maxWidth: 360, display: 'flex', flexDirection: 'column', gap: 20 }}
                 >
                     <div>
-                        <h1 style={{ fontFamily: t.font, fontWeight: t.headingWeight, fontSize: 30, margin: '0 0 4px', color: t.text }}>Bonjour, {firstName}</h1>
+                        <h1 className="tenant-portal-greeting" style={{ fontFamily: t.font, fontWeight: t.headingWeight, fontSize: 30, margin: '0 0 4px', color: t.text }}>Bonjour {firstName},</h1>
                         <div style={{ fontSize: 14, color: t.textMuted }}>Espace locataire</div>
                     </div>
 
@@ -708,23 +708,31 @@ export default function PortalShell({
                         <div style={card}><p style={mutedText}>Aucun bail actif.</p></div>
                     )}
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {/* Sur mobile ces trois actions passent en ligne, avec des
+                        libellés courts, pour que l'aperçu reste visible sans défiler. */}
+                    <div className="tenant-portal-quick" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         <Hover onClick={() => setPage('incidents')} base={{ ...btnSecondary, width: '100%', justifyContent: 'center', padding: '11px 16px' }} hover={btnSecondaryHover}>
-                            <Icon name="alert" size={15} />Signaler un incident
+                            <Icon name="alert" size={15} />
+                            <span className="tenant-portal-label-long">Signaler un incident</span>
+                            <span className="tenant-portal-label-short">Incident</span>
                         </Hover>
                         <Hover onClick={() => setPage('messages')} base={{ ...btnSecondary, width: '100%', justifyContent: 'center', padding: '11px 16px' }} hover={btnSecondaryHover}>
-                            <Icon name="message" size={15} />Contacter le propriétaire
+                            <Icon name="message" size={15} />
+                            <span className="tenant-portal-label-long">Contacter le propriétaire</span>
+                            <span className="tenant-portal-label-short">Message</span>
                         </Hover>
                         {latestPaid && (
                             <Hover as="a" href={`/api/portal/${token}/quittance/${latestPaid.id}`} target="_blank" rel="noopener noreferrer"
-                                base={{ ...btnPrimary, width: '100%', padding: '11px 16px', textDecoration: 'none', boxSizing: 'border-box' }} hover={btnPrimaryHover}>
-                                <Icon name="download" size={15} />Télécharger la quittance
+                                base={{ ...btnPrimary, width: '100%', padding: '11px 16px', textDecoration: 'none', boxSizing: 'border-box', justifyContent: 'center' }} hover={btnPrimaryHover}>
+                                <Icon name="download" size={15} />
+                                <span className="tenant-portal-label-long">Télécharger la quittance</span>
+                                <span className="tenant-portal-label-short">Quittance</span>
                             </Hover>
                         )}
                     </div>
                 </aside>
 
-                <main style={{ flex: '3 1 480px', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                <main className="tenant-portal-main" style={{ flex: '3 1 480px', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                     {page === 'accueil' && AccueilPage}
                     {page === 'paiements' && PaiementsPage}
                     {page === 'incidents' && IncidentsPage}
