@@ -19,7 +19,7 @@ interface SearchParams {
 export default async function TenantsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
     const params = await searchParams;
     const query = params.q?.toLowerCase() || '';
-    const view = params.view === 'list' ? 'list' : 'grid';
+    const view = params.view === 'grid' ? 'grid' : 'list';
     const sort = params.sort || 'name';
     const dir = params.dir === 'desc' ? 'desc' : 'asc';
 

@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import BottomNav from "@/components/BottomNav";
 import GlobalSearch from "@/components/GlobalSearch";
+import Logo from "@/components/Logo";
 
 const NAV_ITEMS = [
   {
@@ -91,6 +92,7 @@ export default function NavBar() {
       {/* Desktop Sidebar */}
       <aside className="app-sidebar">
         <div className="sidebar-brand">
+          <Logo size={22} />
           <span className="sidebar-brand-name">RentMaestro</span>
           <span className="sidebar-brand-dot" />
         </div>

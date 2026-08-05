@@ -11,7 +11,9 @@ export default function ViewToggle({ currentView }: { currentView: 'grid' | 'lis
 
     const setView = (view: 'grid' | 'list') => {
         const params = new URLSearchParams(searchParams.toString());
-        if (view === 'grid') {
+        // 'list' est le mode par défaut : on garde l'URL propre dans ce cas et
+        // on n'ajoute le paramètre que pour la vue cartes.
+        if (view === 'list') {
             params.delete('view');
         } else {
             params.set('view', view);
@@ -48,7 +50,7 @@ export default function ViewToggle({ currentView }: { currentView: 'grid' | 'lis
                 style={{
                     ...btnBase,
                     background: currentView === 'grid' ? 'var(--primary-color)' : 'transparent',
-                    color: currentView === 'grid' ? 'white' : 'var(--text-muted)',
+                    color: currentView === 'grid' ? 'var(--btn-text)' : 'var(--text-muted)',
                 }}
             >
                 ⊞
@@ -59,7 +61,7 @@ export default function ViewToggle({ currentView }: { currentView: 'grid' | 'lis
                 style={{
                     ...btnBase,
                     background: currentView === 'list' ? 'var(--primary-color)' : 'transparent',
-                    color: currentView === 'list' ? 'white' : 'var(--text-muted)',
+                    color: currentView === 'list' ? 'var(--btn-text)' : 'var(--text-muted)',
                 }}
             >
                 ☰

@@ -5,6 +5,30 @@ import styles from "./page.module.css";
 import DeleteApartmentButton from "@/components/DeleteApartmentButton";
 import SearchBar from "@/components/SearchBar";
 import ViewToggle from "@/components/ViewToggle";
+import {
+    expectedRentForPeriod,
+    isRentSettled,
+    isRentLate,
+    unsettledPastRents,
+    PAST_MONTHS_SCANNED,
+} from "@/lib/rent-period";
+
+// Palette de statut, alignée sur celle du tableau de bord.
+const STATUS_COLORS = {
+    ok: '#a3e635',      // vert   — loyer payé
+    late: '#ef4444',    // rouge  — en retard
+    pending: '#fbbf24', // jaune  — pas encore payé
+    vacant: '#fb923c',  // orange — logement vacant
+    soon: '#67e8f9',    // cyan   — bail à venir
+} as const;
+
+const MONTHS_ABBR = ['JAN', 'FÉV', 'MAR', 'AVR', 'MAI', 'JUI', 'JUL', 'AOÛ', 'SEP', 'OCT', 'NOV', 'DÉC'];
+
+// « MAR 26 » : période courte, comme sur la maquette.
+function shortPeriod(d: Date | string): string {
+    const date = new Date(d);
+    return `${MONTHS_ABBR[date.getUTCMonth()]} ${String(date.getUTCFullYear()).slice(2)}`;
+}
 
 export const dynamic = "force-dynamic";
 
@@ -24,19 +48,30 @@ export default async function ApartmentsPage({ searchParams }: { searchParams: P
     const filter = params.filter || '';
     const companyFilter = params.company || '';
     const buildingFilter = params.building || '';
-    const view = params.view === 'list' ? 'list' : 'grid';
+    const view = params.view === 'grid' ? 'grid' : 'list';
     const sort = params.sort || 'name';
     const dir = params.dir === 'desc' ? 'desc' : 'asc';
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    // Premier jour du mois courant (UTC), comme les périodes stockées.
+    const currentPeriod = new Date(Date.UTC(today.getFullYear(), today.getMonth(), 1));
+    const scanFrom = new Date(Date.UTC(today.getFullYear(), today.getMonth() - PAST_MONTHS_SCANNED, 1));
+
     const [allApartments, companies, buildings] = await Promise.all([
         prisma.apartment.findMany({
             include: {
                 leases: {
                     orderBy: { endDate: 'desc' },
-                    include: { tenant: true }
+                    include: {
+                        tenant: true,
+                        // Nécessaire pour le dernier versement et le retard affichés en liste.
+                        payments: {
+                            where: { period: { gte: scanFrom } },
+                            orderBy: { period: 'desc' },
+                        },
+                    },
                 },
                 company: true,
                 building: true,
@@ -58,6 +93,42 @@ export default async function ApartmentsPage({ searchParams }: { searchParams: P
     const getFutureLease = (apt: typeof allApartments[0]) => apt.leases.find(l => {
         return new Date(l.startDate) > today;
     });
+
+    // État du loyer d'un logement : alimente la pastille ÉTAT et le tri.
+    type RentState =
+        | { code: 'ok' }
+        | { code: 'pending' }
+        | { code: 'late'; days: number }
+        | { code: 'vacant' }
+        | { code: 'soon' };
+
+    const getRentState = (apt: typeof allApartments[0]): RentState => {
+        const lease = getCurrentLease(apt);
+        if (!lease) return getFutureLease(apt) ? { code: 'soon' } : { code: 'vacant' };
+
+        const dueDay = lease.tenant.paymentDay || 5;
+        const expected = expectedRentForPeriod(lease, currentPeriod);
+        const current = lease.payments.find(p => new Date(p.period).getTime() === currentPeriod.getTime()) ?? null;
+        const currentSettled = isRentSettled(current, expected);
+
+        // Un mois passé jamais soldé prime : le retard se compte depuis le plus ancien.
+        const past = unsettledPastRents([lease], currentPeriod);
+        const oldestUnpaid = past.length > 0 ? new Date(past[0].period) : currentSettled ? null : currentPeriod;
+        if (!oldestUnpaid) return { code: 'ok' };
+
+        const late = past.length > 0 || isRentLate(currentPeriod, dueDay, lease.startDate);
+        if (!late) return { code: 'pending' };
+
+        const dueDate = new Date(oldestUnpaid.getUTCFullYear(), oldestUnpaid.getUTCMonth(), dueDay);
+        const days = Math.max(1, Math.floor((today.getTime() - dueDate.getTime()) / 86400000));
+        return { code: 'late', days };
+    };
+
+    // Dernier loyer effectivement encaissé (paiements triés du plus récent au plus ancien).
+    const getLastPaidPeriod = (apt: typeof allApartments[0]): Date | null => {
+        const paid = getCurrentLease(apt)?.payments.find(p => p.status === 'PAID');
+        return paid ? new Date(paid.period) : null;
+    };
 
     let apartments = allApartments;
 
@@ -111,9 +182,16 @@ export default async function ApartmentsPage({ searchParams }: { searchParams: P
                 av = al ? new Date(al.startDate).getTime() : 0;
                 bv = bl ? new Date(bl.startDate).getTime() : 0;
                 break;
-            case 'status':
-                av = al ? 0 : getFutureLease(a) ? 1 : 2;
-                bv = bl ? 0 : getFutureLease(b) ? 1 : 2;
+            case 'status': {
+                // Du plus urgent au plus sain : retard, attente, vacant, à venir, ok.
+                const rank = { late: 0, pending: 1, vacant: 2, soon: 3, ok: 4 } as const;
+                av = rank[getRentState(a).code];
+                bv = rank[getRentState(b).code];
+                break;
+            }
+            case 'lastPaid':
+                av = getLastPaidPeriod(a)?.getTime() ?? 0;
+                bv = getLastPaidPeriod(b)?.getTime() ?? 0;
                 break;
             default:
                 av = (a.name || a.address).toLowerCase();
@@ -196,13 +274,10 @@ export default async function ApartmentsPage({ searchParams }: { searchParams: P
                                 <thead>
                                     <tr>
                                         {Th('name', 'Bien')}
-                                        {Th('city', 'Ville')}
-                                        {Th('rent', 'Loyer HC')}
-                                        {Th('charges', 'Charges')}
-                                        {Th('cc', 'CC')}
                                         {Th('tenant', 'Locataire')}
-                                        {Th('since', 'Bail depuis')}
-                                        {Th('status', 'Statut')}
+                                        <th style={{ textAlign: 'right' }}>Loyer</th>
+                                        {Th('lastPaid', 'Dernier vers.')}
+                                        {Th('status', 'État')}
                                         <th></th>
                                     </tr>
                                 </thead>
@@ -210,50 +285,62 @@ export default async function ApartmentsPage({ searchParams }: { searchParams: P
                                     {apts.map((apt) => {
                                         const currentLease = getCurrentLease(apt);
                                         const futureLease = getFutureLease(apt);
-                                        const isOccupied = !!currentLease;
+                                        const state = getRentState(apt);
+                                        const lastPaid = getLastPaidPeriod(apt);
+                                        const rentCC = currentLease
+                                            ? currentLease.rentAmount + currentLease.chargesAmount
+                                            : apt.rent + apt.charges;
+
+                                        const pill = {
+                                            ok: { label: 'OK', color: STATUS_COLORS.ok },
+                                            pending: { label: 'ATTENTE', color: STATUS_COLORS.pending },
+                                            late: { label: `J+${state.code === 'late' ? state.days : 0}`, color: STATUS_COLORS.late },
+                                            vacant: { label: 'VAC', color: STATUS_COLORS.vacant },
+                                            soon: { label: 'À VENIR', color: STATUS_COLORS.soon },
+                                        }[state.code];
+
                                         return (
                                             <tr key={apt.id}>
                                                 <td>
-                                                    <Link href={`/apartments/${apt.id}`} style={{ fontWeight: 600, color: 'var(--primary-color)' }}>
+                                                    <Link href={`/apartments/${apt.id}`} style={{ fontWeight: 600, color: 'var(--text-main)' }}>
                                                         {apt.name || apt.address}
                                                     </Link>
-                                                    {apt.name && (
-                                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{apt.address}</div>
-                                                    )}
-                                                    {(apt as any).building && (
-                                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>🏢 {(apt as any).building.name}</div>
-                                                    )}
-                                                </td>
-                                                <td>{apt.city} {apt.zipCode}</td>
-                                                <td>{apt.rent.toFixed(2)} €</td>
-                                                <td>{apt.charges.toFixed(2)} €</td>
-                                                <td style={{ fontWeight: 600 }}>
-                                                    {isOccupied ? `${(currentLease.rentAmount + currentLease.chargesAmount).toFixed(2)} €` : '—'}
+                                                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', marginTop: 2 }}>
+                                                        {apt.city}
+                                                        {apt.surface ? ` · ${apt.surface} m²` : ''}
+                                                        {(apt as any).building ? ` · ${(apt as any).building.name}` : ''}
+                                                    </div>
                                                 </td>
                                                 <td>
                                                     {currentLease ? (
-                                                        <Link href={`/tenants/${currentLease.tenant.id}`} style={{ color: 'var(--text-main)' }}>
+                                                        <Link href={`/tenants/${currentLease.tenant.id}`} style={{ color: 'var(--primary-color)' }}>
                                                             {currentLease.tenant.firstName} {currentLease.tenant.lastName}
                                                         </Link>
                                                     ) : futureLease ? (
-                                                        <span style={{ color: 'var(--accent-color)', fontSize: '0.85rem' }}>
+                                                        <span style={{ color: STATUS_COLORS.soon, fontSize: '0.85rem' }}>
                                                             À venir · {futureLease.tenant.firstName} {futureLease.tenant.lastName}
                                                         </span>
                                                     ) : (
-                                                        <span style={{ color: 'var(--text-muted)' }}>—</span>
+                                                        <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>— vacant —</span>
                                                     )}
                                                 </td>
-                                                <td style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                                                    {currentLease ? formatDate(currentLease.startDate) : '—'}
+                                                <td style={{ textAlign: 'right', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                                    {rentCC.toFixed(2)} €
+                                                </td>
+                                                <td style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', letterSpacing: '0.06em', color: state.code === 'late' ? STATUS_COLORS.late : 'var(--text-secondary)' }}>
+                                                    {lastPaid ? shortPeriod(lastPaid) : '—'}
                                                 </td>
                                                 <td>
-                                                    {isOccupied ? (
-                                                        <span style={{ background: 'rgba(16,185,129,0.12)', color: 'var(--success)', padding: '0.2rem 0.6rem', borderRadius: '9999px', fontSize: '0.8rem', fontWeight: 600 }}>Occupé</span>
-                                                    ) : futureLease ? (
-                                                        <span style={{ background: 'rgba(255,165,0,0.12)', color: 'var(--accent-color)', padding: '0.2rem 0.6rem', borderRadius: '9999px', fontSize: '0.8rem', fontWeight: 600 }}>À venir</span>
-                                                    ) : (
-                                                        <span style={{ background: 'rgba(245,158,11,0.12)', color: 'var(--warning)', padding: '0.2rem 0.6rem', borderRadius: '9999px', fontSize: '0.8rem', fontWeight: 600 }}>Vacant</span>
-                                                    )}
+                                                    <span style={{
+                                                        display: 'inline-block', minWidth: 42, textAlign: 'center',
+                                                        background: `${pill.color}1f`, color: pill.color,
+                                                        border: `1px solid ${pill.color}55`,
+                                                        padding: '0.15rem 0.55rem', borderRadius: '9999px',
+                                                        fontFamily: 'var(--font-mono)', fontSize: '0.7rem', fontWeight: 700,
+                                                        letterSpacing: '0.06em', whiteSpace: 'nowrap',
+                                                    }}>
+                                                        {pill.label}
+                                                    </span>
                                                 </td>
                                                 <td><DeleteApartmentButton id={apt.id} /></td>
                                             </tr>

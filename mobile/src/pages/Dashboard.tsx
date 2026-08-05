@@ -4,6 +4,7 @@ import { api } from '../api/landlord';
 import { clearAuth } from '../lib/storage';
 import PullToRefresh from '../components/PullToRefresh';
 import GlobalSearch from '../components/GlobalSearch';
+import Logo from '../components/Logo';
 import { useAutoRefresh } from '../hooks/useAutoRefresh';
 
 interface RentReview {
@@ -143,9 +144,12 @@ export default function Dashboard() {
       <div className="pb-nav safe-top" style={{ minHeight: '100%' }}>
       <div className="px-4 py-4">
         <div className="flex items-center justify-between mb-3">
-          <div>
-            <h1 className="text-xl font-bold text-text-main">Tableau de bord</h1>
-            <p className="text-text-muted text-xs">{monthLabel}</p>
+          <div className="flex items-center gap-2.5">
+            <Logo size={30} />
+            <div>
+              <h1 className="text-xl font-bold text-text-main">Tableau de bord</h1>
+              <p className="text-text-muted text-xs">{monthLabel}</p>
+            </div>
           </div>
           <button onClick={handleLogout} className="text-text-muted text-xs px-3 py-1.5 border border-border rounded-lg">
             Déconnexion

@@ -20,5 +20,7 @@ export const THEMES = [
 ] as const;
 
 export type ThemeId = typeof THEMES[number]['id'];
-export const DEFAULT_THEME: ThemeId = 'original';
+// Palette lime : le surlignage des menus (var(--primary-color)) est alors vert,
+// cohérent avec les graphiques du dashboard qui utilisent déjà #a3e635.
+export const DEFAULT_THEME: ThemeId = 'dark-colored';
 export const THEME_COOKIE = 'rm_theme';

@@ -226,13 +226,22 @@
 }
 
 .chartXLabels {
+  /* Même structure que .chartWrap (flex + gap identique) pour que chaque
+     libellé s'aligne sur la barre correspondante. */
   display: flex;
-  justify-content: space-between;
+  gap: 6px;
   margin-top: 8px;
   font-family: var(--font-mono);
   font-size: 9px;
   letter-spacing: 0.1em;
   color: var(--text-muted);
+}
+
+.chartXLabel {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  white-space: nowrap;
 }
 
 /* Event rows */

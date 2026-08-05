@@ -69,6 +69,9 @@ button {
 
 input, select, textarea {
   font-family: inherit;
+  /* Les deux thèmes sont sombres : indique au navigateur de dessiner les
+     widgets natifs (liste déroulante, sélecteur de date) en sombre. */
+  color-scheme: dark;
 }
 
 /* Page fade-in */
@@ -554,6 +557,15 @@ select, textarea {
 input:focus, select:focus, textarea:focus {
   border-color: var(--primary-color);
   box-shadow: var(--focus-ring);
+}
+/* Menus déroulants : la liste ouverte est dessinée par le système. Les <option>
+   héritaient de la couleur de texte claire tout en gardant le fond blanc natif
+   (texte blanc sur blanc). On force le fond, et color-scheme aligne aussi les
+   autres widgets natifs (calendriers, ascenseurs) sur nos thèmes sombres. */
+select option,
+select optgroup {
+  background: var(--surface);
+  color: var(--text-main);
 }
 input::placeholder, textarea::placeholder { color: var(--text-muted); }
 label {
