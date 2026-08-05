@@ -4,6 +4,71 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { notifyN8n } from "@/lib/n8n";
 import { sendEmail } from "@/lib/email";
+import { saveUploadedFile } from "@/lib/uploads";
+
+// Upload d'un document par le locataire depuis son portail.
+// Authentifié par le portalToken (même niveau de confiance que reportIncident /
+// sendPortalMessage). Le fichier est validé/assaini par saveUploadedFile
+// (allowlist d'extensions, taille max, nom aléatoire — pas de traversée).
+export async function uploadPortalDocument(formData: FormData, token: string) {
+    try {
+        const tenant = await prisma.tenant.findUnique({ where: { portalToken: token } });
+        if (!tenant) return { success: false, error: "Non autorisé" };
+
+        const file = formData.get("file") as File | null;
+        if (!file || file.size === 0) return { success: false, error: "Aucun fichier fourni." };
+
+        const { url, originalName } = await saveUploadedFile(file);
+
+        const doc = await prisma.tenantDocument.create({
+            data: {
+                name: originalName,
+                url,
+                type: file.type || "application/octet-stream",
+                size: file.size,
+                tenantId: tenant.id,
+            },
+        });
+
+        // Trace + notification propriétaire (non bloquantes)
+        await prisma.tenantNote.create({
+            data: {
+                tenantId: tenant.id,
+                type: "NOTE",
+                content: `📎 Document envoyé par le locataire : ${originalName}`,
+            },
+        }).catch(() => {});
+
+        await notifyN8n("TENANT_DOCUMENT_UPLOADED", {
+            tenantName: `${tenant.firstName} ${tenant.lastName}`,
+            document: originalName,
+        }).catch(() => {});
+
+        if (process.env.SMTP_USER) {
+            sendEmail({
+                to: process.env.SMTP_USER,
+                subject: `Nouveau document — ${tenant.firstName} ${tenant.lastName}`,
+                html: `<div style="font-family:sans-serif;color:#333;line-height:1.6;max-width:500px;">
+                    <h2 style="color:#1e293b;">📎 Document envoyé par votre locataire</h2>
+                    <p><strong>${tenant.firstName} ${tenant.lastName}</strong> a déposé le document
+                    <strong>${originalName}</strong> depuis son espace locataire.</p>
+                    <p style="color:#64748b;font-size:0.9rem;"><em>Rentmaestro — Gestion Locative</em></p>
+                </div>`,
+            }).catch(() => {});
+        }
+
+        revalidatePath(`/portal/${token}`);
+        revalidatePath(`/tenants/${tenant.id}`);
+
+        return {
+            success: true,
+            doc: { id: doc.id, name: doc.name, url: doc.url, docType: "", createdAt: doc.createdAt },
+        };
+    } catch (error: any) {
+        console.error("Erreur uploadPortalDocument:", error);
+        return { success: false, error: error?.message || "Impossible d'envoyer le document." };
+    }
+}
 
 export async function reportIncident(
     apartmentId: string,

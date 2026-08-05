@@ -1,6 +1,22 @@
 import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
+import { Source_Serif_4, Inter } from 'next/font/google';
 import PortalShell from '@/components/PortalShell';
+
+// Polices du design (thème clair = serif presse, thème sombre = Inter).
+const portalSerif = Source_Serif_4({
+    subsets: ['latin'],
+    weight: ['400', '600'],
+    style: ['normal', 'italic'],
+    variable: '--font-portal-serif',
+    display: 'swap',
+});
+const portalInter = Inter({
+    subsets: ['latin'],
+    weight: ['400', '500', '600', '700'],
+    variable: '--font-portal-inter',
+    display: 'swap',
+});
 
 export const dynamic = 'force-dynamic';
 
@@ -65,25 +81,35 @@ export default async function TenantPortalPage({ params }: { params: Promise<{ t
     const fileUrl = (url: string) =>
         url.startsWith('/uploads/') ? `/api/portal/${token}/file?u=${encodeURIComponent(url)}` : url;
 
+    const docDto = (d: any, docType: string) => ({
+        id: d.id,
+        name: d.name,
+        url: fileUrl(d.url),
+        docType,
+        createdAt: d.createdAt,
+    });
+
     const portalDocuments = {
-        leaseDocs: currentLease ? (currentLease as any).documents.map((d: any) => ({ name: d.name, url: fileUrl(d.url), docType: d.docType })) : [],
-        tenantDocs: tenant.documents.map(d => ({ name: d.name, url: fileUrl(d.url), docType: '' })),
-        apartmentDocs: currentLease ? (currentLease.apartment as any).documents.map((d: any) => ({ name: d.name, url: fileUrl(d.url), docType: d.docType ?? 'AUTRE' })) : [],
-        companyDocs: currentLease ? ((currentLease.apartment as any).company?.documents ?? []).map((d: any) => ({ name: d.name, url: fileUrl(d.url), docType: d.docType })) : [],
-        globalDocs: globalDocuments.map(d => ({ name: d.name, url: fileUrl(d.url), docType: d.docType })),
+        leaseDocs: currentLease ? (currentLease as any).documents.map((d: any) => docDto(d, d.docType)) : [],
+        tenantDocs: tenant.documents.map(d => docDto(d, '')),
+        apartmentDocs: currentLease ? (currentLease.apartment as any).documents.map((d: any) => docDto(d, d.docType ?? 'AUTRE')) : [],
+        companyDocs: currentLease ? ((currentLease.apartment as any).company?.documents ?? []).map((d: any) => docDto(d, d.docType)) : [],
+        globalDocs: globalDocuments.map(d => docDto(d, d.docType)),
     };
 
     return (
-        <PortalShell
-            tenantId={tenant.id}
-            firstName={tenant.firstName}
-            lastName={tenant.lastName}
-            token={token}
-            currentLease={currentLease}
-            allPayments={allPayments}
-            initialTasks={allTasks}
-            initialMessages={tenant.messages}
-            portalDocuments={portalDocuments}
-        />
+        <div className={`${portalSerif.variable} ${portalInter.variable}`}>
+            <PortalShell
+                tenantId={tenant.id}
+                firstName={tenant.firstName}
+                lastName={tenant.lastName}
+                token={token}
+                currentLease={currentLease}
+                allPayments={allPayments}
+                initialTasks={allTasks}
+                initialMessages={tenant.messages}
+                portalDocuments={portalDocuments}
+            />
+        </div>
     );
 }

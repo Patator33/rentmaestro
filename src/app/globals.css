@@ -580,17 +580,12 @@ label {
   to   { transform: scaleY(1); }
 }
 
-/* Portal shell (unchanged) */
-.portal-mobile  { display: none; }
-.portal-desktop { display: block; }
-@media (max-width: 768px) {
-  .portal-mobile {
-    display: flex;
-    flex-direction: column;
-    height: 100dvh;
-    height: 100vh;
-  }
-  .portal-desktop { display: none; }
+/* ---- Tenant portal (refonte) ---- */
+/* Le portail locataire gère son propre fond plein écran et son propre thème
+   clair/sombre (indépendants du thème de l'app). On neutralise le padding bas
+   mobile hérité de la navbar propriétaire, qui ne s'applique pas ici. */
+.main-content:has(.tenant-portal-root) {
+  padding-bottom: 0 !important;
 }
 
 /* Light mode support removed — Dark Premium only */
