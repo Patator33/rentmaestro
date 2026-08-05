@@ -622,6 +622,13 @@ label {
   .tenant-portal-root {
     padding-bottom: calc(74px + env(safe-area-inset-bottom, 0px)) !important;
   }
+
+  /* Le bloc profil/logement/raccourcis n'a de sens que sur l'accueil en mobile :
+     ailleurs il repousserait le contenu de la section sous la ligne de flottaison.
+     !important car l'élément porte un display inline. */
+  .tenant-portal-sidebar-mobile-hidden {
+    display: none !important;
+  }
 }
 
 /* Light mode support removed — Dark Premium only */

@@ -681,7 +681,10 @@ export default function PortalShell({
             </div>
 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 30, maxWidth: 1240, margin: '0 auto', padding: 30 }}>
-                <aside style={{ flex: '1 1 280px', maxWidth: 360, display: 'flex', flexDirection: 'column', gap: 20 }}>
+                <aside
+                    className={page === 'accueil' ? undefined : 'tenant-portal-sidebar-mobile-hidden'}
+                    style={{ flex: '1 1 280px', maxWidth: 360, display: 'flex', flexDirection: 'column', gap: 20 }}
+                >
                     <div>
                         <h1 style={{ fontFamily: t.font, fontWeight: t.headingWeight, fontSize: 30, margin: '0 0 4px', color: t.text }}>Bonjour, {firstName}</h1>
                         <div style={{ fontSize: 14, color: t.textMuted }}>Espace locataire</div>
