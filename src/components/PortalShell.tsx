@@ -336,6 +336,21 @@ export default function PortalShell({
     });
     const dot = <span style={{ width: 6, height: 6, borderRadius: '50%', background: t.accent2, display: 'inline-block' }} />;
 
+    // Bouton pilule, partagé par le sélecteur de thème et l'Accueil mobile.
+    const themeToggleBase: React.CSSProperties = {
+        display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: t.text,
+        background: 'transparent', border: `1px solid ${t.divider}`, borderRadius: 999,
+        padding: '6px 12px', cursor: 'pointer', fontFamily: t.font, whiteSpace: 'nowrap',
+    };
+
+    // Sections de la barre fixe mobile (Accueil et le thème restent en haut).
+    const bottomNavItems: { id: Page; icon: string; label: string; dot: boolean }[] = [
+        { id: 'paiements', icon: 'card', label: 'Paiements', dot: false },
+        { id: 'incidents', icon: 'alert', label: 'Incidents', dot: false },
+        { id: 'messages', icon: 'message', label: 'Messages', dot: hasUnreadMessage },
+        { id: 'documents', icon: 'folder', label: 'Documents', dot: hasNewDoc },
+    ];
+
     const card: React.CSSProperties = {
         display: 'flex', flexDirection: 'column', gap: 8, padding: 15, borderRadius: t.radiusMd,
         background: t.surface, border: dark ? `1px solid ${t.divider}` : 'none', boxShadow: dark ? t.shadowSm : 'none',
@@ -630,7 +645,8 @@ export default function PortalShell({
     // ─────────────────────────────────────────────────────────
     return (
         <div className="tenant-portal-root" style={{ minHeight: '100vh', background: t.bg, color: t.text, fontFamily: t.font, transition: 'background .2s,color .2s', paddingBottom: 60 }}>
-            <nav style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', rowGap: 10, gap: 20, padding: '15px 20px', maxWidth: 1240, margin: '0 auto' }}>
+            {/* Desktop : barre horizontale complète */}
+            <nav className="tenant-portal-desktop-nav" style={{ alignItems: 'center', flexWrap: 'wrap', rowGap: 10, gap: 20, padding: '15px 20px', maxWidth: 1240, margin: '0 auto' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 9, marginRight: 'auto' }}>
                     <Logo size={26} />
                     <span style={{ fontFamily: t.font, fontWeight: t.headingWeight, fontSize: 19, color: t.text }}>RentMaestro</span>
@@ -640,12 +656,29 @@ export default function PortalShell({
                 <button onClick={() => setPage('incidents')} style={navLink('incidents')}><Icon name="alert" />Incidents</button>
                 <button onClick={() => setPage('messages')} style={navLink('messages')}><Icon name="message" />Messages{hasUnreadMessage && dot}</button>
                 <button onClick={() => setPage('documents')} style={navLink('documents')}><Icon name="folder" />Documents{hasNewDoc && dot}</button>
-                <Hover onClick={toggleTheme} aria-label="Changer de thème"
-                    base={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: t.text, background: 'transparent', border: `1px solid ${t.divider}`, borderRadius: 999, padding: '6px 12px', cursor: 'pointer', fontFamily: t.font }}
-                    hover={{ background: t.accentTint, borderColor: t.accent }}>
+                <Hover onClick={toggleTheme} aria-label="Changer de thème" base={themeToggleBase} hover={{ background: t.accentTint, borderColor: t.accent }}>
                     <Icon name={dark ? 'sun' : 'moon'} size={15} />{dark ? 'Mode clair' : 'Mode sombre'}
                 </Hover>
             </nav>
+
+            {/* Mobile : marque à gauche, Accueil puis le thème empilés à droite.
+                Les autres sections passent dans la barre fixe du bas. */}
+            <div className="tenant-portal-mobile-top" style={{ alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, padding: '14px 16px' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 9, paddingTop: 2 }}>
+                    <Logo size={26} />
+                    <span style={{ fontFamily: t.font, fontWeight: t.headingWeight, fontSize: 18, color: t.text }}>RentMaestro</span>
+                </span>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, flexShrink: 0 }}>
+                    <Hover onClick={() => setPage('accueil')} aria-label="Accueil"
+                        base={{ ...themeToggleBase, color: page === 'accueil' ? t.accent : t.text, borderColor: page === 'accueil' ? t.accent : t.divider }}
+                        hover={{ background: t.accentTint, borderColor: t.accent }}>
+                        <Icon name="home" size={15} />Accueil
+                    </Hover>
+                    <Hover onClick={toggleTheme} aria-label="Changer de thème" base={themeToggleBase} hover={{ background: t.accentTint, borderColor: t.accent }}>
+                        <Icon name={dark ? 'sun' : 'moon'} size={15} />{dark ? 'Mode clair' : 'Mode sombre'}
+                    </Hover>
+                </div>
+            </div>
 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 30, maxWidth: 1240, margin: '0 auto', padding: 30 }}>
                 <aside style={{ flex: '1 1 280px', maxWidth: 360, display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -696,6 +729,36 @@ export default function PortalShell({
                     {page === 'documents' && DocumentsPage}
                 </main>
             </div>
+
+            {/* Barre de navigation fixe (mobile uniquement, cf. globals.css) */}
+            <nav className="tenant-portal-bottom-nav" style={{ background: t.surface, borderTop: `1px solid ${t.divider}` }}>
+                {bottomNavItems.map(item => {
+                    const active = page === item.id;
+                    return (
+                        <button
+                            key={item.id}
+                            onClick={() => setPage(item.id)}
+                            aria-current={active ? 'page' : undefined}
+                            style={{
+                                flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                                padding: '9px 0 8px', background: 'transparent', border: 'none', cursor: 'pointer',
+                                fontFamily: t.font, color: active ? t.accent : t.textMuted, position: 'relative',
+                            }}
+                        >
+                            <span style={{ position: 'relative', display: 'flex' }}>
+                                <Icon name={item.icon} size={20} />
+                                {item.dot && (
+                                    <span style={{
+                                        position: 'absolute', top: -2, right: -4, width: 6, height: 6,
+                                        borderRadius: '50%', background: t.accent2,
+                                    }} />
+                                )}
+                            </span>
+                            <span style={{ fontSize: 10.5, fontWeight: active ? 600 : 400 }}>{item.label}</span>
+                        </button>
+                    );
+                })}
+            </nav>
         </div>
     );
 }

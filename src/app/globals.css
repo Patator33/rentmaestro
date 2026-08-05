@@ -600,4 +600,28 @@ label {
   padding-bottom: 0 !important;
 }
 
+/* Navigation du portail : barre horizontale sur desktop, barre fixe en bas
+   sur mobile (avec Accueil et le thème renvoyés en haut à droite). */
+.tenant-portal-desktop-nav { display: flex; }
+.tenant-portal-mobile-top { display: none; }
+.tenant-portal-bottom-nav { display: none; }
+
+@media (max-width: 768px) {
+  .tenant-portal-desktop-nav { display: none; }
+  .tenant-portal-mobile-top { display: flex; }
+  .tenant-portal-bottom-nav {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 50;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  /* Le contenu ne doit pas passer sous la barre fixe (padding inline surchargé). */
+  .tenant-portal-root {
+    padding-bottom: calc(74px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+
 /* Light mode support removed — Dark Premium only */
