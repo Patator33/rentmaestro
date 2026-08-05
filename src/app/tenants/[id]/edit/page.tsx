@@ -72,6 +72,22 @@ export default async function EditTenantPage({ params }: { params: Promise<{ id:
                             Le retard est calculé après ce jour du mois.
                         </small>
                     </div>
+
+                    <div className={styles.formGroup}>
+                        <label htmlFor="bankLabel" className={styles.label}>Libellé bancaire</label>
+                        <input
+                            type="text"
+                            id="bankLabel"
+                            name="bankLabel"
+                            defaultValue={tenant.bankLabel ?? ''}
+                            className={styles.input}
+                            placeholder="MLLE NOMENA TINAHY"
+                        />
+                        <small style={{ color: 'var(--text-muted)', display: 'block', marginTop: '0.25rem' }}>
+                            Nom tel qu'il apparaît sur les virements reçus. Sert au rapprochement
+                            automatique des loyers ; se remplit tout seul à la première validation.
+                        </small>
+                    </div>
                 </div>
 
                 <div className={styles.section}>

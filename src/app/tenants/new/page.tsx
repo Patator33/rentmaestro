@@ -81,6 +81,21 @@ export default function NewTenantPage() {
                     </small>
                 </div>
 
+                <div className={styles.formGroup}>
+                    <label htmlFor="bankLabel" className={styles.label}>Libellé bancaire</label>
+                    <input
+                        type="text"
+                        id="bankLabel"
+                        name="bankLabel"
+                        className={styles.input}
+                        placeholder="MLLE NOMENA TINAHY"
+                    />
+                    <small style={{ color: 'var(--text-muted)', display: 'block', marginTop: '0.25rem' }}>
+                        Facultatif : nom tel qu'il apparaît sur les virements reçus, pour le
+                        rapprochement automatique des loyers.
+                    </small>
+                </div>
+
                 <div className={styles.sectionSeparator} style={{ margin: '2rem 0', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
                     <h2 className={styles.subtitle} style={{ fontSize: '1.1rem', marginBottom: '1rem', color: 'var(--text-main)' }}>Colocataire (Optionnel)</h2>
                 </div>

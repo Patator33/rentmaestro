@@ -13,6 +13,7 @@ const PUBLIC_PATHS = [
     '/api/verify',
     '/api/landlord',
     '/api/cron', // protégé par x-cron-secret
+    '/api/automation', // protégé par x-automation-secret
 ];
 
 function isPublic(pathname: string): boolean {

@@ -69,6 +69,9 @@ model Tenant {
   paymentDay        Int?             @default(5)
   portalToken       String?          @unique
   isArchived        Boolean          @default(false)
+  /// Libellé tel qu'il apparaît sur les virements bancaires (souvent différent
+  /// du nom d'usage). Sert au rapprochement automatique des paiements.
+  bankLabel         String?
   leases            Lease[]
   documents         TenantDocument[]
   notes             TenantNote[]

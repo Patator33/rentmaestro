@@ -30,6 +30,7 @@ export async function createTenant(formData: FormData) {
         coTenantEmail: formData.get("coTenantEmail") as string,
         coTenantPhone: formData.get("coTenantPhone") as string,
         paymentDay: formData.get("paymentDay") ? parseInt(formData.get("paymentDay") as string) : 5,
+        bankLabel: (formData.get("bankLabel") as string) || undefined,
     };
 
     const parsed = tenantSchema.safeParse(rawData);
@@ -83,6 +84,7 @@ export async function updateTenant(id: string, formData: FormData) {
         coTenantEmail: formData.get("coTenantEmail") as string,
         coTenantPhone: formData.get("coTenantPhone") as string,
         paymentDay: formData.get("paymentDay") ? parseInt(formData.get("paymentDay") as string) : 5,
+        bankLabel: (formData.get("bankLabel") as string) || undefined,
     };
 
     try {

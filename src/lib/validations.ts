@@ -9,6 +9,8 @@ export const tenantSchema = z.object({
     email: z.string().email("Email invalide"),
     phone: z.string().regex(phoneRegex, "Format de téléphone invalide (ex: 06 12 34 56 78)").optional().or(z.literal("")),
     paymentDay: z.number().min(1).max(31).default(5),
+    // Libellé du virement bancaire, pour le rapprochement automatique des loyers.
+    bankLabel: z.string().optional(),
     // Co-tenant fields
     coTenantFirstName: z.string().optional(),
     coTenantLastName: z.string().optional(),
