@@ -6,6 +6,7 @@ import { addPortalTaskNote, updatePortalTaskNote } from '@/actions/tasks';
 import { sendPortalMessage, markPortalMessagesRead } from '@/actions/messages';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import Logo from '@/components/Logo';
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -205,10 +206,10 @@ export default function PortalShell({
             const y = new Date(p.period).getFullYear();
             (byYear.get(y) ?? byYear.set(y, []).get(y)!).push(p);
         }
-        return [...byYear.entries()].sort((a, b) => b[0] - a[0]).map(([year, rows]) => {
-            const sorted = rows.slice().sort((a, b) => new Date(b.period).getTime() - new Date(a.period).getTime());
-            return { year, rows: sorted, total: sorted.reduce((s, p) => s + p.amount, 0), count: sorted.length };
-        });
+        return [...byYear.entries()].sort((a, b) => b[0] - a[0]).map(([year, rows]) => ({
+            year,
+            rows: rows.slice().sort((a, b) => new Date(b.period).getTime() - new Date(a.period).getTime()),
+        }));
     }, [allPayments]);
 
     const latestPaid = useMemo(() => allPayments.find(p => p.status === 'PAID') ?? null, [allPayments]);
@@ -418,7 +419,7 @@ export default function PortalShell({
                         <button onClick={() => setOpenYear(open ? null : grp.year)}
                             style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 0', fontSize: 14.5, fontWeight: 600, background: 'transparent', border: 'none', color: t.text, cursor: 'pointer', fontFamily: t.font, width: '100%', textAlign: 'left' }}>
                             <span style={{ display: 'flex', transform: `rotate(${open ? 180 : 0}deg)`, transition: 'transform .15s' }}><Icon name="chevron" size={16} /></span>
-                            {grp.year} · {grp.count} mois · {eur(grp.total)}
+                            {grp.year}
                         </button>
                         {open && (
                             <div style={{ overflowX: 'auto' }}>
@@ -630,7 +631,10 @@ export default function PortalShell({
     return (
         <div className="tenant-portal-root" style={{ minHeight: '100vh', background: t.bg, color: t.text, fontFamily: t.font, transition: 'background .2s,color .2s', paddingBottom: 60 }}>
             <nav style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', rowGap: 10, gap: 20, padding: '15px 20px', maxWidth: 1240, margin: '0 auto' }}>
-                <span style={{ fontFamily: t.font, fontWeight: t.headingWeight, fontSize: 19, marginRight: 'auto', color: t.text }}>RentMaestro</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 9, marginRight: 'auto' }}>
+                    <Logo size={26} />
+                    <span style={{ fontFamily: t.font, fontWeight: t.headingWeight, fontSize: 19, color: t.text }}>RentMaestro</span>
+                </span>
                 <button onClick={() => setPage('accueil')} style={navLink('accueil')}><Icon name="home" />Accueil</button>
                 <button onClick={() => setPage('paiements')} style={navLink('paiements')}><Icon name="card" />Paiements</button>
                 <button onClick={() => setPage('incidents')} style={navLink('incidents')}><Icon name="alert" />Incidents</button>
