@@ -31,6 +31,27 @@ interface IncompleteGed {
   missing: string[];
 }
 
+type OccupancyCode = 'ok' | 'pending' | 'late' | 'vacant' | 'soon';
+
+// Même palette que le tableau de bord web.
+const OCCUPANCY_COLORS: Record<OccupancyCode, string> = {
+  ok: '#a3e635',      // vert   — loyer payé
+  pending: '#fbbf24', // jaune  — pas encore payé
+  late: '#ef4444',    // rouge  — en retard
+  vacant: '#fb923c',  // orange — logement vacant
+  soon: '#67e8f9',    // cyan   — bail à venir
+};
+
+interface Occupancy {
+  ok: number;
+  pending: number;
+  late: number;
+  vacant: number;
+  soon: number;
+  slots: OccupancyCode[];
+  total: number;
+}
+
 interface DashboardData {
   pendingRents: number;
   monthRevenue: number;
@@ -41,6 +62,8 @@ interface DashboardData {
   activeLeases: number;
   apartmentCount: number;
   occupancyRate: number;
+  // Optionnel : une APK plus ancienne que l'API ne doit pas planter.
+  occupancy?: Occupancy;
   currentMonth: string;
   rentReviews: RentReview[];
   partialPayments: PartialPayment[];
@@ -163,6 +186,39 @@ export default function Dashboard() {
           <p className="text-red-400 text-sm text-center py-8 break-all">{error}</p>
         ) : data && (
           <>
+            {/* Occupation : pleine largeur, juste sous la recherche. */}
+            {data.occupancy && data.occupancy.total > 0 && (
+              <div className="bg-surface border border-border rounded-xl p-3.5 mb-3">
+                <p className="text-text-muted text-[0.65rem] uppercase tracking-[0.08em] mb-1">Occupation</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl font-bold" style={{ color: OCCUPANCY_COLORS.ok }}>
+                    {data.occupancyRate ?? 0}
+                  </span>
+                  <span className="text-text-muted text-lg">%</span>
+                </div>
+                <p className="text-text-muted text-xs mb-2.5">
+                  {data.occupancy.total - data.occupancy.vacant} loués · {data.occupancy.vacant} vacant
+                  {data.occupancy.vacant !== 1 ? 's' : ''}
+                </p>
+                <div className="flex gap-1 mb-2">
+                  {data.occupancy.slots.map((slot, i) => (
+                    <div
+                      key={i}
+                      className="flex-1 h-1.5 rounded-full"
+                      style={{ background: OCCUPANCY_COLORS[slot] }}
+                    />
+                  ))}
+                </div>
+                <div className="flex flex-wrap gap-x-3 gap-y-1 text-[0.65rem] font-semibold tracking-wide">
+                  {data.occupancy.ok > 0 && <span style={{ color: OCCUPANCY_COLORS.ok }}>PAYÉ {data.occupancy.ok}</span>}
+                  {data.occupancy.late > 0 && <span style={{ color: OCCUPANCY_COLORS.late }}>RETARD {data.occupancy.late}</span>}
+                  {data.occupancy.pending > 0 && <span style={{ color: OCCUPANCY_COLORS.pending }}>ATTENTE {data.occupancy.pending}</span>}
+                  {data.occupancy.soon > 0 && <span style={{ color: OCCUPANCY_COLORS.soon }}>À VENIR {data.occupancy.soon}</span>}
+                  {data.occupancy.vacant > 0 && <span style={{ color: OCCUPANCY_COLORS.vacant }}>VACANT {data.occupancy.vacant}</span>}
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-3 mb-3">
               <KpiCard label="Loyers en attente" value={data.pendingRents} sub={`${data.pendingAmount.toFixed(0)} €`} color="text-pending" onClick={() => navigate('/rents')} />
               <KpiCard label="Revenus encaissés" value={`${data.monthRevenue.toFixed(0)} €`} sub="ce mois" color="text-paid" />

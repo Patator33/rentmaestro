@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyMobileToken, unauthorized } from '@/lib/mobile-auth';
 import { expectedRentForPeriod, isRentSettled, isRentLate, unsettledPastRents, PAST_MONTHS_SCANNED } from '@/lib/rent-period';
+import { occupancyBreakdown } from '@/lib/apartment-state';
 
 export const dynamic = 'force-dynamic';
 
@@ -63,6 +64,21 @@ export async function GET(request: Request) {
         prisma.apartment.count(),
     ]);
     const occupancyRate = apartmentCount > 0 ? Math.round((activeLeases / apartmentCount) * 100) : 0;
+
+    // Répartition du parc par état, une entrée par logement (même helper que le web).
+    const scanFromOccupancy = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - PAST_MONTHS_SCANNED, 1));
+    const occupancyApartments = await prisma.apartment.findMany({
+        where: { soldAt: null, OR: [{ availableFrom: null }, { availableFrom: { lte: todayMidnight } }] },
+        include: {
+            leases: {
+                include: {
+                    tenant: { select: { paymentDay: true } },
+                    payments: { where: { period: { gte: scanFromOccupancy } }, orderBy: { period: 'desc' } },
+                },
+            },
+        },
+    });
+    const occupancy = occupancyBreakdown(occupancyApartments, startOfMonth, now);
 
     // Partial payments this month
     const partialPaymentsRaw = await prisma.rentPayment.findMany({
@@ -196,6 +212,7 @@ export async function GET(request: Request) {
         activeLeases,
         apartmentCount,
         occupancyRate,
+        occupancy,
         currentMonth: startOfMonth.toISOString().slice(0, 7),
         rentReviews,
         incompleteGed,

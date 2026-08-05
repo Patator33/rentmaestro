@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { markRentReviewAsSent } from "@/actions/leases";
 import { expectedRentForPeriod, isRentSettled, isRentLate, unsettledPastRents, PAST_MONTHS_SCANNED } from "@/lib/rent-period";
 import { getAgendaEvents } from "@/lib/agenda-events";
+import { occupancyBreakdown, type ApartmentStateCode } from "@/lib/apartment-state";
 import { RentPayment, Expense, Apartment } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -118,14 +119,26 @@ async function getStats() {
 
   const latePayments = currentLateCount + unsettledPastRents(leasesForLateCount, currentMonthStart).length;
 
+  // Barre d'occupation : un état par logement. Compter les baux donnait un total
+  // supérieur au parc (changement de locataire en cours de mois = deux baux).
+  const occupancyApartments = await prisma.apartment.findMany({
+    where: { soldAt: null, OR: [{ availableFrom: null }, { availableFrom: { lte: today } }] },
+    include: {
+      leases: {
+        include: {
+          tenant: { select: { paymentDay: true } },
+          payments: { where: { period: { gte: scanFrom } }, orderBy: { period: 'desc' } },
+        },
+      },
+    },
+  });
+  const occupancy = occupancyBreakdown(occupancyApartments, currentMonthStart, now);
+
   return {
     apartmentCount, tenantCount, occupancyRate, vacantCount,
     paymentRate, totalRevenue, expectedRevenue, latePayments,
     pendingCount, pendingAmount,
-    // Pour la barre d'occupation : état réel de chaque logement ce mois-ci.
-    // `latePayments` inclut les mois passés, donc inutilisable ici.
-    paidCount: paidPayments,
-    currentLateCount,
+    occupancy,
   };
 }
 
@@ -239,20 +252,20 @@ const MONTHS_SHORT = ['JAN','FÉV','MAR','AVR','MAI','JUI','JUI','AOÛ','SEP','O
 
 // Palette de statut unique, partagée par la barre d'occupation et les dates
 // « À venir » pour que l'ensemble du dashboard parle le même langage couleur.
-const STATUS_COLORS = {
+const STATUS_COLORS: Record<ApartmentStateCode, string> = {
   ok: '#a3e635',      // vert   — payé / à jour
   late: '#ef4444',    // rouge  — en retard
   pending: '#fbbf24', // jaune  — pas encore payé
   vacant: '#fb923c',  // orange — logement vacant
-} as const;
+  soon: '#67e8f9',    // cyan   — bail signé, pas encore commencé
+};
 
-type OccupancyState = keyof typeof STATUS_COLORS;
-
-const OCCUPANCY_LABELS: Record<OccupancyState, string> = {
+const OCCUPANCY_LABELS: Record<ApartmentStateCode, string> = {
   ok: 'Loyer payé',
   late: 'Loyer en retard',
   pending: 'Loyer pas encore payé',
   vacant: 'Logement vacant',
+  soon: 'Bail à venir',
 };
 
 const EVENT_COLORS: Record<string, string> = {
@@ -283,17 +296,9 @@ export default async function Home() {
 
   const totalExpensesMonth = alerts.partialPayments.reduce((s: number, p: any) => s + (p.amount - (p.paidAmount ?? 0)), 0);
 
-  // Répartition des logements par état de loyer, bornée au parc réel :
-  // « en retard » est un sous-ensemble des impayés du mois, d'où la soustraction.
-  const occupancyCounts = {
-    ok: Math.max(0, stats.paidCount),
-    late: Math.max(0, stats.currentLateCount),
-    pending: Math.max(0, stats.pendingCount - stats.currentLateCount),
-    vacant: Math.max(0, stats.vacantCount),
-  };
-  const occupancySlots = (Object.keys(occupancyCounts) as OccupancyState[])
-    .flatMap(state => Array.from({ length: occupancyCounts[state] }, () => state))
-    .slice(0, Math.max(0, stats.apartmentCount));
+  // Calculée logement par logement côté serveur : la somme des états
+  // correspond donc toujours exactement au nombre de créneaux affichés.
+  const occupancy = stats.occupancy;
 
   return (
     <div className={styles.container}>
@@ -564,11 +569,11 @@ export default async function Home() {
             <span style={{ fontSize: 24, color: 'var(--text-muted)' }}>%</span>
           </div>
           <div className={styles.occupancySub}>
-            {stats.apartmentCount - stats.vacantCount} LOUÉS · {stats.vacantCount} VACANT{stats.vacantCount !== 1 ? 'S' : ''}
+            {occupancy.total - occupancy.vacant} LOUÉS · {occupancy.vacant} VACANT{occupancy.vacant !== 1 ? 'S' : ''}
           </div>
           {/* Un créneau par logement, coloré selon l'état réel du loyer du mois. */}
           <div className={styles.occupancyBar}>
-            {occupancySlots.map((state, i) => (
+            {occupancy.slots.map((state, i) => (
               <div
                 key={i}
                 className={styles.occupancySlot}
@@ -578,10 +583,11 @@ export default async function Home() {
             ))}
           </div>
           <div className={styles.occupancyLegend}>
-            {occupancyCounts.ok > 0 && <span style={{ color: STATUS_COLORS.ok }}>PAYÉ {occupancyCounts.ok}</span>}
-            {occupancyCounts.late > 0 && <span style={{ color: STATUS_COLORS.late }}>RETARD {occupancyCounts.late}</span>}
-            {occupancyCounts.pending > 0 && <span style={{ color: STATUS_COLORS.pending }}>ATTENTE {occupancyCounts.pending}</span>}
-            {occupancyCounts.vacant > 0 && <span style={{ color: STATUS_COLORS.vacant }}>VACANT {occupancyCounts.vacant}</span>}
+            {occupancy.ok > 0 && <span style={{ color: STATUS_COLORS.ok }}>PAYÉ {occupancy.ok}</span>}
+            {occupancy.late > 0 && <span style={{ color: STATUS_COLORS.late }}>RETARD {occupancy.late}</span>}
+            {occupancy.pending > 0 && <span style={{ color: STATUS_COLORS.pending }}>ATTENTE {occupancy.pending}</span>}
+            {occupancy.soon > 0 && <span style={{ color: STATUS_COLORS.soon }}>À VENIR {occupancy.soon}</span>}
+            {occupancy.vacant > 0 && <span style={{ color: STATUS_COLORS.vacant }}>VACANT {occupancy.vacant}</span>}
           </div>
         </div>
       </div>

@@ -5,13 +5,8 @@ import styles from "./page.module.css";
 import DeleteApartmentButton from "@/components/DeleteApartmentButton";
 import SearchBar from "@/components/SearchBar";
 import ViewToggle from "@/components/ViewToggle";
-import {
-    expectedRentForPeriod,
-    isRentSettled,
-    isRentLate,
-    unsettledPastRents,
-    PAST_MONTHS_SCANNED,
-} from "@/lib/rent-period";
+import { PAST_MONTHS_SCANNED } from "@/lib/rent-period";
+import { apartmentState } from "@/lib/apartment-state";
 
 // Palette de statut, alignée sur celle du tableau de bord.
 const STATUS_COLORS = {
@@ -94,35 +89,8 @@ export default async function ApartmentsPage({ searchParams }: { searchParams: P
         return new Date(l.startDate) > today;
     });
 
-    // État du loyer d'un logement : alimente la pastille ÉTAT et le tri.
-    type RentState =
-        | { code: 'ok' }
-        | { code: 'pending' }
-        | { code: 'late'; days: number }
-        | { code: 'vacant' }
-        | { code: 'soon' };
-
-    const getRentState = (apt: typeof allApartments[0]): RentState => {
-        const lease = getCurrentLease(apt);
-        if (!lease) return getFutureLease(apt) ? { code: 'soon' } : { code: 'vacant' };
-
-        const dueDay = lease.tenant.paymentDay || 5;
-        const expected = expectedRentForPeriod(lease, currentPeriod);
-        const current = lease.payments.find(p => new Date(p.period).getTime() === currentPeriod.getTime()) ?? null;
-        const currentSettled = isRentSettled(current, expected);
-
-        // Un mois passé jamais soldé prime : le retard se compte depuis le plus ancien.
-        const past = unsettledPastRents([lease], currentPeriod);
-        const oldestUnpaid = past.length > 0 ? new Date(past[0].period) : currentSettled ? null : currentPeriod;
-        if (!oldestUnpaid) return { code: 'ok' };
-
-        const late = past.length > 0 || isRentLate(currentPeriod, dueDay, lease.startDate);
-        if (!late) return { code: 'pending' };
-
-        const dueDate = new Date(oldestUnpaid.getUTCFullYear(), oldestUnpaid.getUTCMonth(), dueDay);
-        const days = Math.max(1, Math.floor((today.getTime() - dueDate.getTime()) / 86400000));
-        return { code: 'late', days };
-    };
+    // Même logique que la barre d'occupation du tableau de bord (source unique).
+    const getRentState = (apt: typeof allApartments[0]) => apartmentState(apt, currentPeriod, today);
 
     // Dernier loyer effectivement encaissé (paiements triés du plus récent au plus ancien).
     const getLastPaidPeriod = (apt: typeof allApartments[0]): Date | null => {
