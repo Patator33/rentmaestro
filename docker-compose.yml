@@ -19,6 +19,13 @@ services:
       # ou vide : aucun secret par défaut n'est embarqué dans l'image.
       - CRON_SECRET=${CRON_SECRET:?CRON_SECRET doit être défini (secret aléatoire)}
       - N8N_WEBHOOK_URL=${N8N_WEBHOOK_URL:-http://n8n.votredomaine.com/webhook/rentmaestro}
+      # Rapprochement automatique des virements bancaires. Optionnels : laissés
+      # vides, les routes /api/automation et le webhook Telegram restent fermés.
+      #   AUTOMATION_SECRET      : partagé avec n8n (en-tête x-automation-secret)
+      #   TELEGRAM_WEBHOOK_SECRET: renvoyé par Telegram à chaque clic sur un bouton
+      # 16 caractères minimum chacun, différents l'un de l'autre.
+      - AUTOMATION_SECRET=${AUTOMATION_SECRET:-}
+      - TELEGRAM_WEBHOOK_SECRET=${TELEGRAM_WEBHOOK_SECRET:-}
       # Session secret for iron-session — générer avec :
       #   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
       - SESSION_SECRET=${SESSION_SECRET:?SESSION_SECRET doit être défini (>= 32 caractères aléatoires)}
