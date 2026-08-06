@@ -14,7 +14,9 @@ export interface TransferCandidate {
     matchedName: string;
     isCoTenant: boolean;
     bankLabelKnown: boolean;
-    /** null quand plus rien n'est dû : virement en avance ou doublon. */
+    /** true quand le bail est déjà à jour : la cible est le mois suivant, payé en avance. */
+    isAdvance: boolean;
+    /** null uniquement si le bail se termine avant le mois suivant. */
     period: string | null;
     periodLabel: string | null;
     expected: number | null;
@@ -73,12 +75,30 @@ function oldestUnsettled(lease: LeaseWithRelations) {
     return null;
 }
 
+/**
+ * Mois à créditer pour ce bail : le plus ancien impayé s'il y en a un, sinon
+ * le mois suivant, payé en avance. Garantit qu'un choix manuel (liste complète
+ * des locataires) propose toujours une cible valide, même pour un bail à jour —
+ * sans cette bascule, un locataire qui ne doit rien disparaîtrait des options.
+ */
+function resolveTarget(lease: LeaseWithRelations): { period: Date; expected: number; alreadyPaid: number; isAdvance: boolean } | null {
+    const unsettled = oldestUnsettled(lease);
+    if (unsettled) return { ...unsettled, isAdvance: false };
+
+    const now = new Date();
+    const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+    if (lease.endDate && new Date(lease.endDate) < next) return null;
+    const expected = expectedRentForPeriod(lease, next);
+    if (expected <= 0) return null;
+    return { period: next, expected, alreadyPaid: 0, isAdvance: true };
+}
+
 function toCandidate(
     lease: LeaseWithRelations,
     match: { confidence: MatchConfidence; matchedName: string; isCoTenant: boolean },
     amount: number
 ): TransferCandidate {
-    const target = oldestUnsettled(lease);
+    const target = resolveTarget(lease);
     const remaining = target ? Math.max(0, target.expected - target.alreadyPaid) : 0;
 
     return {
@@ -90,6 +110,7 @@ function toCandidate(
         matchedName: match.matchedName,
         isCoTenant: match.isCoTenant,
         bankLabelKnown: !!lease.tenant.bankLabel,
+        isAdvance: target?.isAdvance ?? false,
         period: target ? target.period.toISOString().slice(0, 10) : null,
         periodLabel: target ? monthLabel(target.period) : null,
         expected: target ? round2(target.expected) : null,
@@ -105,7 +126,7 @@ export interface TransferMatch {
     best: TransferCandidate | null;
     candidates: TransferCandidate[];
     ambiguous: boolean;
-    /** Loyers non soldés proposés quand l'expéditeur n'est reconnu de personne. */
+    /** Liste complète des locataires actifs, proposée quand l'expéditeur n'est reconnu de personne. */
     fallback: TransferCandidate[];
 }
 
@@ -128,13 +149,14 @@ export async function matchTransfer(sender: string, amount: number): Promise<Tra
         return { matched: true, best: candidates[0], candidates, ambiguous, fallback: [] };
     }
 
-    // Aucun nom ne correspond : proposer les loyers non soldés, le montant le
-    // plus proche en premier.
+    // Aucun nom ne correspond : proposer la liste complète des locataires actifs
+    // (triée alphabétiquement, comme un annuaire) pour un choix manuel dans
+    // Telegram. resolveTarget() garantit une cible même pour un bail à jour
+    // (mois suivant en avance) : personne ne disparaît de la liste.
     const fallback = leases
         .map(lease => toCandidate(lease, { confidence: 'none', matchedName: '', isCoTenant: false }, amount))
         .filter(c => c.period !== null)
-        .sort((a, b) => Math.abs(a.remaining - amount) - Math.abs(b.remaining - amount))
-        .slice(0, 6);
+        .sort((a, b) => a.tenantName.localeCompare(b.tenantName, 'fr'));
 
     return { matched: false, best: null, candidates: [], ambiguous: false, fallback };
 }

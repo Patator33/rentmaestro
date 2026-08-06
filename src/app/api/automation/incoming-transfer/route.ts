@@ -19,7 +19,10 @@ interface StoredOption {
 const fmt = (n: number) => n.toFixed(2).replace('.', ',');
 
 function describe(c: TransferCandidate, amount: number): string {
-    const lines = [`${c.tenantName} — ${c.apartment}`, `${c.periodLabel} : ${fmt(c.remaining)} € attendus`];
+    const periodLine = c.isAdvance
+        ? `${c.periodLabel} (avance, bail à jour) : ${fmt(c.remaining)} € attendus`
+        : `${c.periodLabel} : ${fmt(c.remaining)} € attendus`;
+    const lines = [`${c.tenantName} — ${c.apartment}`, periodLine];
     if (c.difference !== null && Math.abs(c.difference) >= 0.01) {
         lines.push(c.difference > 0
             ? `Trop-perçu de ${fmt(c.difference)} €`
@@ -89,7 +92,10 @@ export async function POST(request: Request) {
     let buttons: InlineButton[] = [];
 
     if (usable.length === 0) {
-        text = `${header}\n\nAucun loyer en attente ne correspond. À traiter manuellement.`;
+        // N'arrive plus qu'en l'absence totale de bail actif dans l'application :
+        // resolveTarget() propose désormais toujours une cible (mois suivant en
+        // avance si le bail est à jour), y compris dans la liste complète.
+        text = `${header}\n\nAucun locataire actif dans l'application. À traiter manuellement.`;
     } else if (match.matched && !match.ambiguous) {
         const best = usable[0];
         text = `${header}\n\n${describe(best, amount)}\n\nCréditer ce loyer ?`;
@@ -100,10 +106,10 @@ export async function POST(request: Request) {
     } else {
         const intro = match.matched
             ? 'Plusieurs locataires correspondent. Lequel créditer ?'
-            : 'Expéditeur non reconnu. Loyers en attente les plus proches :';
+            : 'Expéditeur non reconnu. Sélectionnez le locataire :';
         text = `${header}\n\n${intro}`;
         buttons = usable.map((c, i) => ({
-            text: `${c.tenantName} — ${c.periodLabel} (${fmt(c.remaining)} €)`,
+            text: `${c.tenantName} — ${c.periodLabel}${c.isAdvance ? ' (avance)' : ''} (${fmt(c.remaining)} €)`,
             callback_data: `p:${shortId}:${i}`,
         }));
         buttons.push({ text: '❌ Aucun', callback_data: `p:${shortId}:x` });
