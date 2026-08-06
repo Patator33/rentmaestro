@@ -25,7 +25,14 @@ function describe(c: TransferCandidate, amount: number): string {
             ? `Trop-perçu de ${fmt(c.difference)} €`
             : `Il manquerait ${fmt(Math.abs(c.difference))} € — enregistré en paiement partiel`);
     }
-    lines.push(`Rapprochement : ${c.confidence === 'exact' ? 'libellé bancaire connu' : c.confidence === 'high' ? 'nom et prénom' : c.confidence === 'medium' ? 'nom de famille' : 'prénom seul'}`);
+    const via = c.confidence === 'exact' ? 'libellé bancaire connu'
+        : c.confidence === 'high' ? 'nom et prénom'
+        : c.confidence === 'medium' ? 'nom de famille'
+        : 'prénom seul';
+    // Préciser le colocataire : le virement vient d'un nom absent du bail au
+    // premier coup d'œil, autant éviter le doute.
+    const who = c.isCoTenant && c.matchedName ? ` — via le colocataire ${c.matchedName}` : '';
+    lines.push(`Rapprochement : ${via}${who}`);
     return lines.join('\n');
 }
 

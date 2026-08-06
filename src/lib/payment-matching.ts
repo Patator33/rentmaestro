@@ -40,49 +40,87 @@ export interface NameCandidate {
     coTenantLastName?: string | null;
 }
 
+export interface SenderMatch {
+    confidence: MatchConfidence;
+    /** Personne reconnue : le titulaire ou le colocataire. Vide si aucune. */
+    matchedName: string;
+    isCoTenant: boolean;
+}
+
+export const CONFIDENCE_ORDER: Record<MatchConfidence, number> = {
+    none: 0, low: 1, medium: 2, high: 3, exact: 4,
+};
+
+// Un jeton court (« LE », « DE », initiale) est trop banal pour valoir
+// rapprochement à lui seul.
+const MIN_TOKEN_LENGTH = 3;
+
 /**
- * Compare l'expéditeur d'un virement à un locataire.
+ * Compare l'expéditeur d'un virement au titulaire du bail et à son colocataire.
  *
  * `exact`  : le libellé bancaire mémorisé correspond
- * `high`   : nom et prénom retrouvés (locataire ou colocataire)
- * `medium` : nom de famille seul
+ * `high`   : nom et prénom retrouvés
+ * `medium` : nom de famille seul, même partiellement
  * `low`    : prénom seul — trop faible pour décider sans confirmation
+ *
+ * Les noms composés comptent dès qu'une de leurs parties significatives est
+ * présente : une banque n'affiche souvent qu'un seul élément du nom, et un
+ * prénom d'usage differe fréquemment de l'état civil.
  */
-export function scoreSenderAgainstTenant(sender: string, tenant: NameCandidate): MatchConfidence {
+export function scoreSenderAgainstTenant(sender: string, tenant: NameCandidate): SenderMatch {
+    const none: SenderMatch = { confidence: 'none', matchedName: '', isCoTenant: false };
+
     const senderTokens = tokens(sender);
-    if (senderTokens.length === 0) return 'none';
+    if (senderTokens.length === 0) return none;
     const senderSet = new Set(senderTokens);
 
+    const fullName = (first: string, last: string) => `${first} ${last}`.trim();
+
     if (tenant.bankLabel && normalizeName(tenant.bankLabel) === normalizeName(sender)) {
-        return 'exact';
+        return {
+            confidence: 'exact',
+            matchedName: fullName(tenant.firstName, tenant.lastName),
+            isCoTenant: false,
+        };
     }
 
-    const people: Array<{ first: string; last: string }> = [
-        { first: tenant.firstName, last: tenant.lastName },
+    const people = [
+        { first: tenant.firstName, last: tenant.lastName, isCo: false },
     ];
     if (tenant.coTenantFirstName || tenant.coTenantLastName) {
         people.push({
             first: tenant.coTenantFirstName ?? '',
             last: tenant.coTenantLastName ?? '',
+            isCo: true,
         });
     }
 
-    let best: MatchConfidence = 'none';
-    const rank: Record<MatchConfidence, number> = { none: 0, low: 1, medium: 2, high: 3, exact: 4 };
+    let best = none;
 
     for (const person of people) {
-        const firstTokens = tokens(person.first);
-        const lastTokens = tokens(person.last);
-        // Un nom composé ne compte que si toutes ses parties sont présentes.
-        const hasLast = lastTokens.length > 0 && lastTokens.every(t => senderSet.has(t));
-        const hasFirst = firstTokens.length > 0 && firstTokens.every(t => senderSet.has(t));
+        const firstTokens = tokens(person.first).filter(t => t.length >= MIN_TOKEN_LENGTH);
+        const lastTokens = tokens(person.last).filter(t => t.length >= MIN_TOKEN_LENGTH);
 
-        let score: MatchConfidence = 'none';
-        if (hasLast && hasFirst) score = 'high';
-        else if (hasLast) score = 'medium';
-        else if (hasFirst) score = 'low';
+        const lastHits = lastTokens.filter(t => senderSet.has(t)).length;
+        const firstHits = firstTokens.filter(t => senderSet.has(t)).length;
 
-        if (rank[score] > rank[best]) best = score;
+        const lastComplete = lastTokens.length > 0 && lastHits === lastTokens.length;
+        const lastPartial = lastHits > 0;
+        const firstAny = firstHits > 0;
+
+        let confidence: MatchConfidence = 'none';
+        if (lastComplete && firstAny) confidence = 'high';
+        else if (lastPartial && firstAny) confidence = 'high';
+        else if (lastPartial) confidence = 'medium';
+        else if (firstAny) confidence = 'low';
+
+        if (CONFIDENCE_ORDER[confidence] > CONFIDENCE_ORDER[best.confidence]) {
+            best = {
+                confidence,
+                matchedName: fullName(person.first, person.last),
+                isCoTenant: person.isCo,
+            };
+        }
     }
 
     return best;

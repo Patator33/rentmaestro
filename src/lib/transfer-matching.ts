@@ -1,10 +1,8 @@
 import { prisma } from '@/lib/prisma';
 import { expectedRentForPeriod, isRentSettled, PAST_MONTHS_SCANNED } from '@/lib/rent-period';
-import { scoreSenderAgainstTenant, type MatchConfidence } from '@/lib/payment-matching';
+import { scoreSenderAgainstTenant, CONFIDENCE_ORDER, type MatchConfidence } from '@/lib/payment-matching';
 
-export const CONFIDENCE_RANK: Record<MatchConfidence, number> = {
-    none: 0, low: 1, medium: 2, high: 3, exact: 4,
-};
+export const CONFIDENCE_RANK = CONFIDENCE_ORDER;
 
 export interface TransferCandidate {
     leaseId: string;
@@ -12,6 +10,9 @@ export interface TransferCandidate {
     tenantName: string;
     apartment: string;
     confidence: MatchConfidence;
+    /** Personne reconnue dans le libellé : titulaire ou colocataire. */
+    matchedName: string;
+    isCoTenant: boolean;
     bankLabelKnown: boolean;
     /** null quand plus rien n'est dû : virement en avance ou doublon. */
     period: string | null;
@@ -72,7 +73,11 @@ function oldestUnsettled(lease: LeaseWithRelations) {
     return null;
 }
 
-function toCandidate(lease: LeaseWithRelations, confidence: MatchConfidence, amount: number): TransferCandidate {
+function toCandidate(
+    lease: LeaseWithRelations,
+    match: { confidence: MatchConfidence; matchedName: string; isCoTenant: boolean },
+    amount: number
+): TransferCandidate {
     const target = oldestUnsettled(lease);
     const remaining = target ? Math.max(0, target.expected - target.alreadyPaid) : 0;
 
@@ -81,7 +86,9 @@ function toCandidate(lease: LeaseWithRelations, confidence: MatchConfidence, amo
         tenantId: lease.tenant.id,
         tenantName: `${lease.tenant.firstName} ${lease.tenant.lastName}`,
         apartment: lease.apartment.name || lease.apartment.address,
-        confidence,
+        confidence: match.confidence,
+        matchedName: match.matchedName,
+        isCoTenant: match.isCoTenant,
         bankLabelKnown: !!lease.tenant.bankLabel,
         period: target ? target.period.toISOString().slice(0, 10) : null,
         periodLabel: target ? monthLabel(target.period) : null,
@@ -110,12 +117,12 @@ export async function matchTransfer(sender: string, amount: number): Promise<Tra
     const leases = await loadLeases();
 
     const scored = leases
-        .map(lease => ({ lease, confidence: scoreSenderAgainstTenant(sender, lease.tenant) }))
-        .filter(c => c.confidence !== 'none')
-        .sort((a, b) => CONFIDENCE_RANK[b.confidence] - CONFIDENCE_RANK[a.confidence]);
+        .map(lease => ({ lease, match: scoreSenderAgainstTenant(sender, lease.tenant) }))
+        .filter(c => c.match.confidence !== 'none')
+        .sort((a, b) => CONFIDENCE_RANK[b.match.confidence] - CONFIDENCE_RANK[a.match.confidence]);
 
     if (scored.length > 0) {
-        const candidates = scored.slice(0, 5).map(({ lease, confidence }) => toCandidate(lease, confidence, amount));
+        const candidates = scored.slice(0, 5).map(({ lease, match }) => toCandidate(lease, match, amount));
         const ambiguous = candidates.length > 1
             && CONFIDENCE_RANK[candidates[1].confidence] === CONFIDENCE_RANK[candidates[0].confidence];
         return { matched: true, best: candidates[0], candidates, ambiguous, fallback: [] };
@@ -124,7 +131,7 @@ export async function matchTransfer(sender: string, amount: number): Promise<Tra
     // Aucun nom ne correspond : proposer les loyers non soldés, le montant le
     // plus proche en premier.
     const fallback = leases
-        .map(lease => toCandidate(lease, 'none', amount))
+        .map(lease => toCandidate(lease, { confidence: 'none', matchedName: '', isCoTenant: false }, amount))
         .filter(c => c.period !== null)
         .sort((a, b) => Math.abs(a.remaining - amount) - Math.abs(b.remaining - amount))
         .slice(0, 6);
