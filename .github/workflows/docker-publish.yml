@@ -6,6 +6,9 @@ on:
     paths-ignore:
       - '.gemini/**'
       - '*.md'
+  # Permet de relancer une construction depuis l'onglet Actions sans avoir à
+  # produire un commit vide.
+  workflow_dispatch:
 
 concurrency:
   group: docker-build
