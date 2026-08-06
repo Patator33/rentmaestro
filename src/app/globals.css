@@ -404,21 +404,22 @@ input, select, textarea {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 14px;
-  font-size: 12px;
-  font-weight: 500;
-  border-radius: var(--radius-md);
+  padding: 7px 16px;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: inherit;
+  border-radius: 999px;
   cursor: pointer;
-  background: var(--primary-color);
-  color: var(--btn-text);
-  border: none;
+  background: var(--pill-ok-bg);
+  color: var(--pill-ok-color);
+  border: 1px solid var(--pill-ok-border);
   text-decoration: none;
   transition: all 0.15s ease;
   white-space: nowrap;
 }
 .std-add-button:hover {
-  background: var(--primary-hover);
-  box-shadow: var(--primary-glow);
+  background: color-mix(in srgb, var(--pill-ok-color) 20%, transparent);
+  border-color: color-mix(in srgb, var(--pill-ok-color) 55%, transparent);
 }
 
 /* Cards */
@@ -514,31 +515,70 @@ input, select, textarea {
   text-transform: uppercase;
   font-weight: 500;
 }
-.pill-ok    { background: var(--pill-ok-bg);   border: 1px solid var(--pill-ok-border);   color: var(--pill-ok-color); }
-.pill-warn  { background: rgba(251,191,36,.10);  border: 1px solid rgba(251,191,36,.35);  color: #fbbf24; }
-.pill-err   { background: rgba(248,113,113,.10); border: 1px solid rgba(248,113,113,.40); color: #f87171; }
-.pill-info  { background: var(--pill-info-bg);  border: 1px solid var(--pill-info-border); color: var(--pill-info-color); }
-.pill-muted { background: rgba(122,128,144,.10); border: 1px solid rgba(122,128,144,.30); color: #a8aebc; }
+.pill-ok    { background: var(--pill-ok-bg);    border: 1px solid var(--pill-ok-border);    color: var(--pill-ok-color); }
+.pill-warn  { background: var(--pill-warn-bg);  border: 1px solid var(--pill-warn-border);  color: var(--pill-warn-color); }
+.pill-err   { background: var(--pill-err-bg);   border: 1px solid var(--pill-err-border);   color: var(--pill-err-color); }
+.pill-info  { background: var(--pill-info-bg);  border: 1px solid var(--pill-info-border);  color: var(--pill-info-color); }
+.pill-muted { background: var(--pill-muted-bg); border: 1px solid var(--pill-muted-border); color: var(--pill-muted-color); }
+
+/* ---- Boutons pilule ----
+   Même traitement visuel que les pastilles de statut ci-dessus (fond teinté
+   10 %, bordure teintée 35-40 %, texte en couleur pleine) mais dimensionnés
+   pour être cliquables. Système partagé : toute la refonte des boutons de
+   l'appli passe par ces classes plutôt que par des styles bespoke par page. */
+.pill-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.pill-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.pill-btn-primary   { background: var(--pill-ok-bg);    border: 1px solid var(--pill-ok-border);    color: var(--pill-ok-color); }
+.pill-btn-danger    { background: var(--pill-err-bg);   border: 1px solid var(--pill-err-border);   color: var(--pill-err-color); }
+.pill-btn-secondary { background: var(--pill-muted-bg); border: 1px solid var(--pill-muted-border); color: var(--pill-muted-color); }
+
+.pill-btn-primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--pill-ok-color) 20%, transparent);
+  border-color: color-mix(in srgb, var(--pill-ok-color) 55%, transparent);
+}
+.pill-btn-danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--pill-err-color) 20%, transparent);
+  border-color: color-mix(in srgb, var(--pill-err-color) 55%, transparent);
+}
+.pill-btn-secondary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--pill-muted-color) 20%, transparent);
+  border-color: color-mix(in srgb, var(--pill-muted-color) 55%, transparent);
+}
 
 /* Misc helpers */
 .mono { font-family: var(--font-mono); }
 .tabnum { font-variant-numeric: tabular-nums; }
 
 .terminate-btn {
-  background: rgba(248, 113, 113, .10);
-  color: var(--error);
-  border: 1px solid rgba(248, 113, 113, .30);
-  padding: 4px 12px;
-  border-radius: var(--radius-md);
-  font-size: 12px;
-  font-weight: 500;
+  background: var(--pill-err-bg);
+  color: var(--pill-err-color);
+  border: 1px solid var(--pill-err-border);
+  padding: 7px 16px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
   font-family: inherit;
 }
 .terminate-btn:hover {
-  background: rgba(248, 113, 113, .20);
-  border-color: rgba(248, 113, 113, .5);
+  background: color-mix(in srgb, var(--pill-err-color) 20%, transparent);
+  border-color: color-mix(in srgb, var(--pill-err-color) 55%, transparent);
 }
 
 /* Form inputs */

@@ -35,14 +35,20 @@ export default function DeleteButton({
             onClick={handleClick}
             disabled={loading}
             style={{
-                background: 'rgba(239,68,68,0.1)',
-                color: '#ef4444',
-                border: '1px solid rgba(239,68,68,0.3)',
-                borderRadius: '8px',
-                padding: '0.5rem 1.25rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+                background: 'var(--pill-err-bg)',
+                color: 'var(--pill-err-color)',
+                border: '1px solid var(--pill-err-border)',
+                borderRadius: '999px',
+                padding: '7px 16px',
                 cursor: 'pointer',
                 fontWeight: 600,
-                fontSize: '0.9rem',
+                fontSize: '12.5px',
+                fontFamily: 'inherit',
+                whiteSpace: 'nowrap',
                 opacity: loading ? 0.6 : 1,
             }}
         >

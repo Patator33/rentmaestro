@@ -35,4 +35,13 @@
   --pill-info-bg:     rgba(6, 182, 212, 0.10);
   --pill-info-border: rgba(6, 182, 212, 0.35);
   --pill-info-color:  #06b6d4;
+  --pill-warn-bg:      rgba(245, 158, 11, 0.10);
+  --pill-warn-border:  rgba(245, 158, 11, 0.35);
+  --pill-warn-color:   #f59e0b;
+  --pill-err-bg:       rgba(239, 68, 68, 0.10);
+  --pill-err-border:   rgba(239, 68, 68, 0.35);
+  --pill-err-color:    #ef4444;
+  --pill-muted-bg:     rgba(148, 163, 184, 0.10);
+  --pill-muted-border: rgba(148, 163, 184, 0.30);
+  --pill-muted-color:  #94a3b8;
 }
