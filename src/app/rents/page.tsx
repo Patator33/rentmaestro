@@ -177,10 +177,10 @@ export default async function RentsPage({
                         <span className={styles.statusPaid}>✓ Payé {formatDate(payment.paidAt)}</span>
                     ) : payment?.status === 'PARTIAL' ? (
                         <span>
-                            <span style={{ display: 'inline-block', background: 'rgba(245,158,11,0.15)', color: '#f59e0b', fontWeight: 700, fontSize: '0.8rem', padding: '0.15rem 0.4rem', borderRadius: '4px' }}>💰 Partiel</span>
+                            <span className={styles.statusPartial}>Partiel</span>
                             {payment.paidAmount != null && (
-                                <span style={{ display: 'block', fontSize: '0.8em', color: '#f59e0b', marginTop: '0.15rem' }}>
-                                    Reçu : {(payment.paidAmount as number).toFixed(2)} € — Solde : {Math.max(0, fallbackAmount - (payment.paidAmount as number)).toFixed(2)} €
+                                <span className={styles.statusDetail}>
+                                    Reçu {(payment.paidAmount as number).toFixed(2)} € · solde {Math.max(0, fallbackAmount - (payment.paidAmount as number)).toFixed(2)} €
                                 </span>
                             )}
                         </span>
@@ -379,7 +379,7 @@ export default async function RentsPage({
             )}
 
             <div className="table-container">
-                <table className="std-table">
+                <table className={`std-table ${styles.rentsTable}`}>
                     <thead>
                         <tr>
                             {Th('apartment', 'Appartement')}

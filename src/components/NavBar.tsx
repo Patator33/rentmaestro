@@ -64,14 +64,43 @@ const NAV_ITEMS = [
   },
 ];
 
+// Icônes au même gabarit que NAV_ITEMS : sans elles, les libellés de cette
+// section démarraient plus à gauche que ceux du haut.
+const icon = (paths: React.ReactNode) => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+    {paths}
+  </svg>
+);
+
 const MORE_ITEMS = [
-  { href: '/leases',               label: 'Baux' },
-  { href: '/buildings',            label: 'Immeubles' },
-  { href: '/travaux',              label: 'Travaux' },
-  { href: '/reconciliation',       label: 'Banque' },
-  { href: '/global-ged',           label: 'GED' },
-  { href: '/companies',            label: 'Sociétés' },
-  { href: '/gestion/parametres',   label: 'Paramètres' },
+  {
+    href: '/leases', label: 'Baux',
+    icon: icon(<><path d="M6 3h9l4 4v14H6z" /><path d="M14 3v5h5" /><path d="M9 13h7M9 17h5" /></>),
+  },
+  {
+    href: '/buildings', label: 'Immeubles',
+    icon: icon(<><rect x="3" y="7" width="8" height="14" rx="1" /><rect x="13" y="3" width="8" height="18" rx="1" /><path d="M6 11h2M6 15h2M16 7h2M16 11h2M16 15h2" /></>),
+  },
+  {
+    href: '/travaux', label: 'Travaux',
+    icon: icon(<><path d="M14.7 6.3a4 4 0 0 1-5 5L5 16v3h3l4.7-4.7a4 4 0 0 0 5-5z" /></>),
+  },
+  {
+    href: '/reconciliation', label: 'Banque',
+    icon: icon(<><path d="M3 10 12 4l9 6" /><path d="M5 10v9M19 10v9M9 10v9M15 10v9" /><path d="M3 21h18" /></>),
+  },
+  {
+    href: '/global-ged', label: 'GED',
+    icon: icon(<><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></>),
+  },
+  {
+    href: '/companies', label: 'Sociétés',
+    icon: icon(<><rect x="4" y="4" width="16" height="16" rx="1.5" /><path d="M8 9h3M13 9h3M8 13h3M13 13h3M10 20v-3h4v3" /></>),
+  },
+  {
+    href: '/gestion/parametres', label: 'Paramètres',
+    icon: icon(<><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1" /></>),
+  },
 ];
 
 export default function NavBar() {
@@ -120,8 +149,8 @@ export default function NavBar() {
               key={item.href}
               href={item.href}
               className={`sidebar-item${isActive(item.href) ? ' active' : ''}`}
-              style={{ fontSize: 12.5 }}
             >
+              {item.icon}
               <span>{item.label}</span>
             </Link>
           ))}
@@ -173,8 +202,8 @@ export default function NavBar() {
             href={item.href}
             className={`mobile-nav-link${isActive(item.href) ? ' active' : ''}`}
             onClick={() => setMobileOpen(false)}
-            style={{ fontSize: 12 }}
           >
+            {item.icon}
             <span>{item.label}</span>
           </Link>
         ))}

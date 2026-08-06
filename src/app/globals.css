@@ -193,6 +193,20 @@ input, select, textarea {
   font-weight: 600;
 }
 
+/* Repère latéral : la pilule teintée seule se remarque peu quand plusieurs
+   items se suivent. */
+.sidebar-item.active::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  border-radius: 999px;
+  background: var(--pill-ok-color);
+}
+
 /* La pilule teintée porte déjà l'état actif : le point n'est plus nécessaire. */
 .sidebar-dot {
   display: none;

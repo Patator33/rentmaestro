@@ -75,7 +75,13 @@ export default function GlobalSearch() {
     return (
         <div ref={ref} style={{ position: 'relative' }}>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                <span style={{ position: 'absolute', left: '0.6rem', color: 'var(--text-muted)', fontSize: '0.85rem', pointerEvents: 'none' }}>
+                {/* Largeur fixe : un emoji est plus large que son font-size et
+                    débordait sur le texte saisi. */}
+                <span style={{
+                    position: 'absolute', left: '0.5rem', width: '1.1rem',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: 'var(--text-muted)', fontSize: '0.8rem', pointerEvents: 'none',
+                }}>
                     {loading ? '⏳' : '🔍'}
                 </span>
                 <input
@@ -86,7 +92,7 @@ export default function GlobalSearch() {
                     onKeyDown={e => e.key === 'Escape' && (setOpen(false))}
                     placeholder="Rechercher…"
                     style={{
-                        paddingLeft: '2rem', paddingRight: '0.75rem',
+                        paddingLeft: '2.1rem', paddingRight: '0.75rem',
                         paddingTop: '0.35rem', paddingBottom: '0.35rem',
                         background: 'var(--surface)', border: '1px solid var(--border-color)',
                         borderRadius: 'var(--radius-full)', color: 'var(--text-main)',

@@ -80,27 +80,39 @@
     margin-bottom: 16px;
 }
 
-.table {
-    width: 100%;
-    border-collapse: collapse;
-    min-width: 600px;
+/* Table des loyers uniquement : la classe globale std-table sert a d'autres
+   pages, aux colonnes differentes. */
+.rentsTable {
+    /* Colonnes de largeur fixe : sans cela chaque ligne se recale sur la
+       longueur de son propre texte et les colonnes ne s'alignent plus. */
+    table-layout: fixed;
+    min-width: 760px;
 }
 
-.table th,
-.table td {
-    padding: 14px 20px;
-    text-align: left;
-    border-bottom: 1px solid var(--border-color);
+.rentsTable th,
+.rentsTable td {
+    vertical-align: middle;
 }
 
-.table th {
-    background: transparent;
-    font-family: var(--font-mono);
-    font-weight: 500;
-    color: var(--text-muted);
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.14em;
+.rentsTable th:nth-child(1), .rentsTable td:nth-child(1) { width: 24%; }
+.rentsTable th:nth-child(2), .rentsTable td:nth-child(2) { width: 20%; }
+.rentsTable th:nth-child(3), .rentsTable td:nth-child(3) { width: 13%; }
+.rentsTable th:nth-child(4), .rentsTable td:nth-child(4) { width: 21%; }
+.rentsTable th:nth-child(5), .rentsTable td:nth-child(5) { width: 22%; }
+
+/* Un nom trop long est tronque plutot que de pousser la colonne suivante. */
+.rentsTable td:nth-child(1),
+.rentsTable td:nth-child(2) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Les montants se comparent a l'oeil : alignes a droite, chiffres de meme
+   largeur pour que les decimales tombent les unes sous les autres. */
+.rentsTable th:nth-child(3), .rentsTable td:nth-child(3) {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
 }
 
 .table tr:hover td { background: var(--surface-hover); }
@@ -152,6 +164,33 @@
     background: rgba(248,113,113,.10);
     border: 1px solid rgba(248,113,113,.35);
     color: #f87171;
+}
+
+/* Même pilule que les autres statuts : « Partiel » était le seul écrit en
+   style en ligne et jurait avec le reste du tableau. */
+.statusPartial {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px 3px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-family: var(--font-mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 500;
+    background: rgba(251,146,60,.10);
+    border: 1px solid rgba(251,146,60,.35);
+    color: #fb923c;
+}
+
+/* Détail sous la pilule (reçu / solde), aligné sur le libellé du statut. */
+.statusDetail {
+    display: block;
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
 }
 
 .actionButton {
