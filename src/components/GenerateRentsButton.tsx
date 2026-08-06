@@ -31,15 +31,16 @@ export default function GenerateRentsButton() {
             disabled={loading}
             style={{
                 padding: '0.5rem 1.25rem',
-                background: loading ? 'rgba(43,140,238,0.3)' : 'var(--primary-color)',
-                color: 'white',
-                border: 'none',
-                borderRadius: 'var(--radius-md)',
+                background: 'var(--pill-ok-bg)',
+                color: 'var(--pill-ok-color)',
+                border: '1px solid var(--pill-ok-border)',
+                borderRadius: '999px',
                 cursor: loading ? 'wait' : 'pointer',
                 fontSize: '0.85rem',
                 fontWeight: 600,
                 fontFamily: 'inherit',
-                transition: 'all 0.3s ease',
+                transition: 'all 0.15s ease',
+                opacity: loading ? 0.6 : 1,
             }}
         >
             {loading ? '⏳ Génération...' : '⚡ Générer les loyers du mois'}

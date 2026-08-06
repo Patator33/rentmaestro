@@ -26,21 +26,21 @@ export default function ViewToggle({ currentView }: { currentView: 'grid' | 'lis
 
     const btnBase: CSSProperties = {
         padding: '0.35rem 0.65rem',
-        border: 'none',
-        borderRadius: 'var(--radius-sm)',
+        border: '1px solid transparent',
+        borderRadius: 999,
         cursor: 'pointer',
         fontSize: '1.1rem',
         lineHeight: 1,
-        transition: 'background 0.15s, color 0.15s',
+        transition: 'all 0.15s ease',
         opacity: isPending ? 0.6 : 1,
     };
 
     return (
         <div style={{
             display: 'flex',
-            gap: '0.2rem',
+            gap: '0.3rem',
             border: '1px solid var(--border-color)',
-            borderRadius: 'var(--radius-md)',
+            borderRadius: 999,
             padding: '0.2rem',
             background: 'var(--surface)',
         }}>
@@ -49,8 +49,9 @@ export default function ViewToggle({ currentView }: { currentView: 'grid' | 'lis
                 title="Vue cartes"
                 style={{
                     ...btnBase,
-                    background: currentView === 'grid' ? 'var(--primary-color)' : 'transparent',
-                    color: currentView === 'grid' ? 'var(--btn-text)' : 'var(--text-muted)',
+                    background: currentView === 'grid' ? 'var(--pill-ok-bg)' : 'transparent',
+                    borderColor: currentView === 'grid' ? 'var(--pill-ok-border)' : 'transparent',
+                    color: currentView === 'grid' ? 'var(--pill-ok-color)' : 'var(--text-muted)',
                 }}
             >
                 ⊞
@@ -60,8 +61,9 @@ export default function ViewToggle({ currentView }: { currentView: 'grid' | 'lis
                 title="Vue liste"
                 style={{
                     ...btnBase,
-                    background: currentView === 'list' ? 'var(--primary-color)' : 'transparent',
-                    color: currentView === 'list' ? 'var(--btn-text)' : 'var(--text-muted)',
+                    background: currentView === 'list' ? 'var(--pill-ok-bg)' : 'transparent',
+                    borderColor: currentView === 'list' ? 'var(--pill-ok-border)' : 'transparent',
+                    color: currentView === 'list' ? 'var(--pill-ok-color)' : 'var(--text-muted)',
                 }}
             >
                 ☰

@@ -69,49 +69,51 @@
 
 .cancelButton {
     padding: 0.625rem 1.25rem;
-    border-radius: var(--radius-md);
+    border-radius: 999px;
     font-size: 0.9rem;
     font-weight: 600;
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--text-main);
-    border: 1px solid var(--border-color);
+    background: var(--pill-muted-bg);
+    color: var(--pill-muted-color);
+    border: 1px solid var(--pill-muted-border);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.15s ease;
 }
 
 .cancelButton:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: color-mix(in srgb, var(--pill-muted-color) 20%, transparent);
+    border-color: color-mix(in srgb, var(--pill-muted-color) 55%, transparent);
 }
 
 .confirmButton {
     padding: 0.625rem 1.25rem;
-    border-radius: var(--radius-md);
+    border-radius: 999px;
     font-size: 0.9rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
-    border: none;
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
 }
 
 .confirmDanger {
-    background: var(--error);
-    color: white;
+    background: var(--pill-err-bg);
+    color: var(--pill-err-color);
+    border-color: var(--pill-err-border);
 }
 
 .confirmDanger:hover {
-    background: #dc2626;
-    box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+    background: color-mix(in srgb, var(--pill-err-color) 20%, transparent);
+    border-color: color-mix(in srgb, var(--pill-err-color) 55%, transparent);
 }
 
 .confirmWarning {
-    background: var(--warning);
-    color: #1a1a1a;
+    background: var(--pill-warn-bg);
+    color: var(--pill-warn-color);
+    border-color: var(--pill-warn-border);
 }
 
 .confirmWarning:hover {
-    background: #d97706;
-    box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+    background: color-mix(in srgb, var(--pill-warn-color) 20%, transparent);
+    border-color: color-mix(in srgb, var(--pill-warn-color) 55%, transparent);
 }
 
 @keyframes modalFadeIn {

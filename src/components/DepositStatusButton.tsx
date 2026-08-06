@@ -75,7 +75,7 @@ export default function DepositStatusButton({ leaseId, currentStatus, amount, de
                     background: `${current.color}20`,
                     color: current.color,
                     border: `1px solid ${current.color}40`,
-                    borderRadius: 'var(--radius-sm)',
+                    borderRadius: '999px',
                     cursor: 'pointer',
                     fontSize: '0.8rem',
                     fontWeight: 600,

@@ -59,7 +59,13 @@ export default function MarkRentPaidButton({ leaseId, periodStr, defaultAmount, 
                         onClick={handleConfirm}
                         disabled={isPending}
                         className={buttonStyle}
-                        style={{ background: isPartial ? 'rgba(245,158,11,0.15)' : 'rgba(16,185,129,0.15)', color: isPartial ? '#f59e0b' : 'var(--success)', fontWeight: 700, padding: '0.25rem 0.5rem', opacity: isPending ? 0.6 : 1 }}
+                        style={{
+                            background: isPartial ? 'var(--pill-warn-bg)' : 'var(--pill-ok-bg)',
+                            borderColor: isPartial ? 'var(--pill-warn-border)' : 'var(--pill-ok-border)',
+                            color: isPartial ? 'var(--pill-warn-color)' : 'var(--pill-ok-color)',
+                            padding: '7px 12px',
+                            opacity: isPending ? 0.6 : 1,
+                        }}
                         title="Confirmer"
                     >
                         ✓
@@ -68,7 +74,12 @@ export default function MarkRentPaidButton({ leaseId, periodStr, defaultAmount, 
                         onClick={() => setShowForm(false)}
                         disabled={isPending}
                         className={buttonStyle}
-                        style={{ padding: '0.25rem 0.5rem' }}
+                        style={{
+                            background: 'var(--pill-muted-bg)',
+                            borderColor: 'var(--pill-muted-border)',
+                            color: 'var(--pill-muted-color)',
+                            padding: '7px 12px',
+                        }}
                         title="Annuler"
                     >
                         ✕
@@ -84,7 +95,9 @@ export default function MarkRentPaidButton({ leaseId, periodStr, defaultAmount, 
     }
 
     return (
-        <button onClick={handleOpen} className={buttonStyle} style={{ background: 'rgba(16,185,129,0.12)', color: 'var(--success)' }}>
+        // Les couleurs viennent de .paidButton (toujours composé dans buttonStyle
+        // par les appelants) : plus besoin de les répéter ici en inline.
+        <button onClick={handleOpen} className={buttonStyle}>
             {existingPaidAmount != null ? 'Compléter' : 'Marquer Payé'}
         </button>
     );

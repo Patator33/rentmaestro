@@ -251,7 +251,7 @@ export default async function RentsPage({
                                 href={`/api/quittance/${payment.id}/pdf`}
                                 download
                                 className={`${styles.actionButton}`}
-                                style={{ textDecoration: 'none', background: 'rgba(34,197,94,0.15)', color: '#22c55e' }}
+                                style={{ textDecoration: 'none', background: 'var(--pill-ok-bg)', borderColor: 'var(--pill-ok-border)', color: 'var(--pill-ok-color)' }}
                             >
                                 📄 Quittance
                             </a>

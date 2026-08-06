@@ -53,7 +53,7 @@ export default function PaymentEmailActions({ paymentId, leaseId, periodStr, isP
                     onClick={handleSendReceipt}
                     disabled={loading}
                     className={buttonStyle}
-                    style={{ background: 'rgba(56,189,248,0.15)', color: '#0ea5e9', border: 'none', marginLeft: '0.5rem' }}
+                    style={{ background: 'var(--pill-info-bg)', borderColor: 'var(--pill-info-border)', color: 'var(--pill-info-color)', marginLeft: '0.5rem' }}
                 >
                     {loading ? '⏳ Envoi...' : '📧 Envoyer Quittance'}
                 </button>
@@ -62,7 +62,7 @@ export default function PaymentEmailActions({ paymentId, leaseId, periodStr, isP
                     onClick={handleSendReminder}
                     disabled={loading}
                     className={buttonStyle}
-                    style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', border: 'none', marginLeft: '0.5rem' }}
+                    style={{ background: 'var(--pill-err-bg)', borderColor: 'var(--pill-err-border)', color: 'var(--pill-err-color)', marginLeft: '0.5rem' }}
                 >
                     {loading ? '⏳ Envoi...' : '⚠️ Relance par Email'}
                 </button>

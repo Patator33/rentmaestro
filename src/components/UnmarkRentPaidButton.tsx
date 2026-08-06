@@ -23,7 +23,12 @@ export default function UnmarkRentPaidButton({ paymentId, buttonStyle }: Props) 
             onClick={handleClick}
             disabled={isPending}
             className={buttonStyle}
-            style={{ background: 'rgba(239,68,68,0.08)', color: 'var(--error)', opacity: isPending ? 0.6 : 1 }}
+            style={{
+                background: 'var(--pill-err-bg)',
+                borderColor: 'var(--pill-err-border)',
+                color: 'var(--pill-err-color)',
+                opacity: isPending ? 0.6 : 1,
+            }}
             title="Annuler le paiement"
         >
             ↩

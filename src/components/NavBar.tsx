@@ -102,6 +102,7 @@ export default function NavBar() {
         </div>
 
         <nav className="sidebar-nav">
+          <div className="sidebar-section-label">Principal</div>
           {NAV_ITEMS.map((item) => (
             <Link
               key={item.href}
@@ -110,21 +111,18 @@ export default function NavBar() {
             >
               {item.icon}
               <span>{item.label}</span>
-              <span className="sidebar-dot" />
             </Link>
           ))}
 
-          <div className="sidebar-divider" />
-
+          <div className="sidebar-section-label">Gestion</div>
           {MORE_ITEMS.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               className={`sidebar-item${isActive(item.href) ? ' active' : ''}`}
-              style={{ fontSize: 12, color: 'var(--text-muted)' }}
+              style={{ fontSize: 12.5 }}
             >
               <span>{item.label}</span>
-              <span className="sidebar-dot" />
             </Link>
           ))}
         </nav>

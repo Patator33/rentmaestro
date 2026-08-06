@@ -29,7 +29,7 @@ export default function DeleteBuildingButton({ id, name, hasApartments }: { id: 
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowConfirm(true); }}
                 disabled={isDeleting || hasApartments}
                 title={hasApartments ? "Dissociez d'abord les appartements" : "Supprimer"}
-                style={{ padding: '0.35rem 0.75rem', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 'var(--radius-sm)', color: '#ef4444', fontSize: '0.8rem', cursor: hasApartments ? 'not-allowed' : 'pointer', opacity: hasApartments ? 0.4 : 1, fontFamily: 'inherit' }}
+                style={{ padding: '0.35rem 0.75rem', background: 'var(--pill-err-bg)', border: '1px solid var(--pill-err-border)', borderRadius: '999px', color: 'var(--pill-err-color)', fontSize: '0.8rem', fontWeight: 600, cursor: hasApartments ? 'not-allowed' : 'pointer', opacity: hasApartments ? 0.4 : 1, fontFamily: 'inherit' }}
             >
                 {isDeleting ? '...' : '🗑'}
             </button>

@@ -70,7 +70,7 @@ export default function TenantPortalLink({ tenantId, existingToken, isArchived }
                     <button
                         onClick={handleGenerate}
                         disabled={loading}
-                        style={{ padding: '0.6rem 1.2rem', background: '#2b8cee', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 500, cursor: 'pointer' }}
+                        style={{ padding: '0.6rem 1.2rem', background: 'var(--pill-ok-bg)', color: 'var(--pill-ok-color)', border: '1px solid var(--pill-ok-border)', borderRadius: '999px', fontWeight: 600, cursor: 'pointer' }}
                     >
                         {loading ? 'Génération...' : 'Générer le lien magique'}
                     </button>
@@ -84,13 +84,13 @@ export default function TenantPortalLink({ tenantId, existingToken, isArchived }
                         />
                         <button
                             onClick={handleCopy}
-                            style={{ padding: '0.6rem 1.2rem', background: '#10b981', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 500, cursor: 'pointer' }}
+                            style={{ padding: '0.6rem 1.2rem', background: 'var(--pill-info-bg)', color: 'var(--pill-info-color)', border: '1px solid var(--pill-info-border)', borderRadius: '999px', fontWeight: 600, cursor: 'pointer' }}
                         >
                             Copier lien
                         </button>
                         <button
                             onClick={handleCopyToken}
-                            style={{ padding: '0.6rem 1.2rem', background: '#8b5cf6', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 500, cursor: 'pointer' }}
+                            style={{ padding: '0.6rem 1.2rem', background: 'var(--pill-info-bg)', color: 'var(--pill-info-color)', border: '1px solid var(--pill-info-border)', borderRadius: '999px', fontWeight: 600, cursor: 'pointer' }}
                             title="Copier le code pour l'app mobile"
                         >
                             📱 Copier code mobile
@@ -98,14 +98,14 @@ export default function TenantPortalLink({ tenantId, existingToken, isArchived }
                         <button
                             onClick={handleSendEmail}
                             disabled={sending}
-                            style={{ padding: '0.6rem 1.2rem', background: '#2b8cee', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 500, cursor: 'pointer', opacity: sending ? 0.7 : 1 }}
+                            style={{ padding: '0.6rem 1.2rem', background: 'var(--pill-ok-bg)', color: 'var(--pill-ok-color)', border: '1px solid var(--pill-ok-border)', borderRadius: '999px', fontWeight: 600, cursor: 'pointer', opacity: sending ? 0.7 : 1 }}
                         >
                             {sending ? 'Envoi...' : sent ? '✓ Email envoyé !' : '✉️ Envoyer par email'}
                         </button>
                         <button
                             onClick={handleGenerate}
                             disabled={loading}
-                            style={{ padding: '0.6rem 1.2rem', background: 'var(--surface-active)', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', borderRadius: '6px', fontWeight: 500, cursor: 'pointer' }}
+                            style={{ padding: '0.6rem 1.2rem', background: 'var(--pill-muted-bg)', color: 'var(--pill-muted-color)', border: '1px solid var(--pill-muted-border)', borderRadius: '999px', fontWeight: 600, cursor: 'pointer' }}
                             title="Régénérer et révoquer l'ancien lien"
                         >
                             {loading ? '...' : 'Régénérer'}
@@ -128,7 +128,7 @@ export default function TenantPortalLink({ tenantId, existingToken, isArchived }
                 <a
                     href="/downloads/rentmaestro-tenant.apk"
                     download="RentMaestro.apk"
-                    style={{ display: 'inline-block', padding: '0.6rem 1.2rem', background: '#10b981', color: 'white', textDecoration: 'none', borderRadius: '6px', fontWeight: 500, fontSize: '0.9rem' }}
+                    style={{ display: 'inline-block', padding: '0.6rem 1.2rem', background: 'var(--pill-ok-bg)', color: 'var(--pill-ok-color)', border: '1px solid var(--pill-ok-border)', textDecoration: 'none', borderRadius: '999px', fontWeight: 600, fontSize: '0.9rem' }}
                 >
                     ⬇️ Télécharger l'APK Android
                 </a>

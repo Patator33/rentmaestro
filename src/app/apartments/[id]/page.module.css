@@ -21,41 +21,43 @@
 
 .editButton {
     margin-left: auto;
-    padding: 0.5rem 1rem;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: var(--radius-md);
+    padding: 0.5rem 1.1rem;
+    background: var(--pill-muted-bg);
+    border-radius: 999px;
     text-decoration: none;
-    color: var(--text-main);
+    color: var(--pill-muted-color);
     font-size: 0.9rem;
-    border: 1px solid var(--border-color);
+    font-weight: 600;
+    border: 1px solid var(--pill-muted-border);
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    transition: all 0.2s;
+    transition: all 0.15s ease;
 }
 
 .editButton:hover {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: var(--text-secondary);
+    background: color-mix(in srgb, var(--pill-muted-color) 20%, transparent);
+    border-color: color-mix(in srgb, var(--pill-muted-color) 55%, transparent);
 }
 
 .tableEditButton {
-    padding: 0.35rem 0.75rem;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: var(--radius-md);
-    color: var(--text-main);
+    padding: 0.35rem 0.85rem;
+    background: var(--pill-muted-bg);
+    border-radius: 999px;
+    color: var(--pill-muted-color);
     font-size: 0.8rem;
-    border: 1px solid var(--border-color);
+    font-weight: 600;
+    border: 1px solid var(--pill-muted-border);
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    transition: all 0.2s;
+    transition: all 0.15s ease;
     cursor: pointer;
 }
 
 .tableEditButton:hover {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: var(--text-secondary);
+    background: color-mix(in srgb, var(--pill-muted-color) 20%, transparent);
+    border-color: color-mix(in srgb, var(--pill-muted-color) 55%, transparent);
 }
 
 .subtitle {
@@ -188,17 +190,18 @@
 
 .uploadButton {
     padding: 0.75rem 1.5rem;
-    background: var(--primary-color);
-    color: white;
-    border: none;
-    border-radius: var(--radius-md);
+    background: var(--pill-ok-bg);
+    color: var(--pill-ok-color);
+    border: 1px solid var(--pill-ok-border);
+    border-radius: 999px;
     cursor: pointer;
-    font-weight: 500;
-    transition: background 0.2s;
+    font-weight: 600;
+    transition: all 0.15s ease;
 }
 
 .uploadButton:hover {
-    background: var(--primary-hover);
+    background: color-mix(in srgb, var(--pill-ok-color) 20%, transparent);
+    border-color: color-mix(in srgb, var(--pill-ok-color) 55%, transparent);
 }
 
 .emptyState {
@@ -257,16 +260,16 @@
 }
 
 .deleteButton {
-    background: none;
-    border: none;
-    padding: 0.5rem;
+    background: var(--pill-err-bg);
+    border: 1px solid var(--pill-err-border);
+    color: var(--pill-err-color);
+    padding: 0.4rem 0.6rem;
     cursor: pointer;
-    border-radius: var(--radius-md);
-    transition: background 0.2s;
-    opacity: 0.5;
+    border-radius: 999px;
+    transition: all 0.15s ease;
 }
 
 .deleteButton:hover {
-    background: rgba(239, 68, 68, 0.1);
-    opacity: 1;
+    background: color-mix(in srgb, var(--pill-err-color) 20%, transparent);
+    border-color: color-mix(in srgb, var(--pill-err-color) 55%, transparent);
 }

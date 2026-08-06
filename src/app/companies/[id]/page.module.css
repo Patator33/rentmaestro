@@ -38,21 +38,23 @@
 }
 
 .editButton {
-    background-color: var(--surface-hover);
-    color: var(--text-main);
-    padding: 0.5rem 1rem;
-    border-radius: var(--radius-md);
+    background: var(--pill-muted-bg);
+    color: var(--pill-muted-color);
+    padding: 0.5rem 1.1rem;
+    border-radius: 999px;
     text-decoration: none;
     font-size: 0.9rem;
-    border: 1px solid var(--border-color);
+    font-weight: 600;
+    border: 1px solid var(--pill-muted-border);
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    transition: all 0.2s;
+    transition: all 0.15s ease;
 }
 
 .editButton:hover {
-    background-color: var(--border-color);
+    background: color-mix(in srgb, var(--pill-muted-color) 20%, transparent);
+    border-color: color-mix(in srgb, var(--pill-muted-color) 55%, transparent);
 }
 
 .section {

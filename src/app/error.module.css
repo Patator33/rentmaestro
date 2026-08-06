@@ -38,20 +38,19 @@
 
 .button {
     padding: 0.75rem 2rem;
-    background: var(--primary-color);
-    color: white;
-    border: none;
-    border-radius: var(--radius-md);
+    background: var(--pill-ok-bg);
+    color: var(--pill-ok-color);
+    border: 1px solid var(--pill-ok-border);
+    border-radius: 999px;
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.15s ease;
 }
 
 .button:hover {
-    background: var(--primary-hover);
-    transform: translateY(-2px);
-    box-shadow: 0 0 20px rgba(163, 230, 53, 0.15);
+    background: color-mix(in srgb, var(--pill-ok-color) 20%, transparent);
+    border-color: color-mix(in srgb, var(--pill-ok-color) 55%, transparent);
 }
 
 .homeLink {
