@@ -119,6 +119,7 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
             <TerminateLeaseButton
                 leaseId={lease.id}
                 currentEndDate={lease.endDate ? lease.endDate.toISOString().split('T')[0] : undefined}
+                isActive={lease.isActive}
                 className="std-add-button"
                 style={{ fontSize: '0.8rem', padding: '0.3rem 0.6rem' }}
                 label={lease.endDate ? "Modifier fin" : "🚪"}
@@ -377,6 +378,7 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                                 <TerminateLeaseButton
                                                     leaseId={lease.id}
                                                     currentEndDate={lease.endDate ? lease.endDate.toISOString().split('T')[0] : undefined}
+                                                    isActive={lease.isActive}
                                                     label="Dates"
                                                     className="std-add-button"
                                                     style={{ fontSize: '0.85rem', padding: '0.4rem 0.75rem' }}
@@ -475,6 +477,7 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                             <TerminateLeaseButton
                                                 leaseId={lease.id}
                                                 currentEndDate={lease.endDate ? lease.endDate.toISOString().split('T')[0] : undefined}
+                                                isActive={lease.isActive}
                                                 className="std-add-button"
                                                 style={{ fontSize: '0.85rem', padding: '0.4rem 0.75rem' }}
                                                 label={lease.endDate ? "Modifier fin" : "Terminer"}

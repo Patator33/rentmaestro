@@ -70,23 +70,29 @@ export async function createLease(formData: FormData) {
 
 export async function terminateLease(id: string, endDateStr?: string | null) {
     await requireAuth();
-    let endDate: Date | null = new Date();
-
-    if (endDateStr === null) {
-        endDate = null;
-    } else if (endDateStr) {
-        endDate = new Date(endDateStr);
-    }
+    // endDateStr === null : annulation de la fin de bail (bouton "Garder le
+    // locataire"), le bail redevient actif sans date de fin.
+    const isCancellation = endDateStr === null;
+    const endDate: Date | null = isCancellation
+        ? null
+        : endDateStr
+            ? new Date(endDateStr)
+            : new Date();
 
     try {
         await prisma.lease.update({
             where: { id },
             data: {
-                isActive: false,
+                isActive: !isCancellation,
                 endDate: endDate,
             },
         });
-        await logAction({ action: 'TERMINATE_LEASE', entity: 'Lease', entityId: id, details: endDate ? `Fin: ${endDate.toLocaleDateString('fr-FR')}` : 'Sans date de fin' });
+        await logAction({
+            action: isCancellation ? 'REACTIVATE_LEASE' : 'TERMINATE_LEASE',
+            entity: 'Lease',
+            entityId: id,
+            details: isCancellation ? 'Fin de bail annulée' : (endDate ? `Fin: ${endDate.toLocaleDateString('fr-FR')}` : 'Sans date de fin'),
+        });
     } catch (error) {
         console.error("Erreur lors de la terminaison du bail:", error);
         throw new Error("Impossible de modifier le contrat.");

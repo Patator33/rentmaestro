@@ -10,16 +10,21 @@ export default function TerminateLeaseButton({
     className,
     style,
     currentEndDate,
-    label
+    label,
+    isActive
 }: {
     leaseId: string,
     className?: string,
     style?: React.CSSProperties,
     currentEndDate?: string,
-    label?: string
+    label?: string,
+    isActive?: boolean
 }) {
     const [isLoading, setIsLoading] = useState(false);
     const [showDateInput, setShowDateInput] = useState(false);
+    // Un bail déjà terminé sans date de fin (cas résiduel d'un bug de
+    // réactivation) doit quand même proposer l'option "garder le locataire".
+    const isTerminated = !!currentEndDate || isActive === false;
     // Default to current End Date if exists, otherwise today
     const [endDate, setEndDate] = useState(currentEndDate || new Date().toISOString().split('T')[0]);
 
@@ -116,7 +121,7 @@ export default function TerminateLeaseButton({
                     OK
                 </button>
 
-                {currentEndDate && (
+                {isTerminated && (
                     <button
                         onClick={handleCancelTermination}
                         disabled={isLoading}
@@ -154,13 +159,13 @@ export default function TerminateLeaseButton({
 
     // Default view (Button)
 
-    // If we have an end date, show a "Edit" style button
-    if (currentEndDate) {
+    // Bail déjà terminé (date de fin ou isActive=false) : bouton "Modifier"
+    if (isTerminated) {
         return (
             <button
                 onClick={handleInitialClick}
                 className={className}
-                title={`Fin prévue le ${formatDate(currentEndDate)}`}
+                title={currentEndDate ? `Fin prévue le ${formatDate(currentEndDate)}` : 'Bail marqué terminé, sans date de fin'}
                 style={style || {
                     background: 'transparent', // Ensure transparent background
                     color: 'var(--text-main)',

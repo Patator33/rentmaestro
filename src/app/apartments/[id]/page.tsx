@@ -173,11 +173,14 @@ export default async function ApartmentDetailsPage({ params }: { params: Promise
                         ) : (
                             apartment.leases.map(lease => {
                                 const start = new Date(lease.startDate);
-                                const end = lease.endDate ? new Date(lease.endDate) : null;
                                 let status: 'FUTURE' | 'ACTIVE' | 'PAST' = 'PAST';
 
-                                if (start > today) status = 'FUTURE';
-                                else if (!end || end >= today) status = 'ACTIVE';
+                                // isActive fait foi (même source que les pages Immeubles/Biens) :
+                                // un bail terminé ne doit jamais réapparaître "en cours" ici même
+                                // sans date de fin renseignée.
+                                if (lease.isActive) {
+                                    status = start > today ? 'FUTURE' : 'ACTIVE';
+                                }
 
                                 return (
                                     <tr key={lease.id}>
@@ -207,10 +210,11 @@ export default async function ApartmentDetailsPage({ params }: { params: Promise
                                                     <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600 }}>TERMINÉ</span>
                                                 )}
 
-                                                {status !== 'PAST' && (
+                                                {(status !== 'PAST' || !lease.endDate) && (
                                                     <TerminateLeaseButton
                                                         leaseId={lease.id}
                                                         currentEndDate={lease.endDate ? lease.endDate.toISOString().split('T')[0] : undefined}
+                                                        isActive={lease.isActive}
                                                         label={lease.endDate ? "Modifier" : "Terminer"}
                                                         className={lease.endDate ? styles.tableEditButton : undefined}
                                                         style={lease.endDate ? {} : undefined}
