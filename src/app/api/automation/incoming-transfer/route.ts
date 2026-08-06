@@ -19,8 +19,10 @@ interface StoredOption {
 const fmt = (n: number) => n.toFixed(2).replace('.', ',');
 
 function describe(c: TransferCandidate, amount: number): string {
+    // Telegram ne connaît aucune couleur de texte (Markdown/MarkdownV2/HTML) :
+    // le gras + un émoji rouge sont le plus proche possible d'une mise en garde.
     const periodLine = c.isAdvance
-        ? `${c.periodLabel} (avance, bail à jour) : ${fmt(c.remaining)} € attendus`
+        ? `${c.periodLabel} — 🔴 *avance, bail à jour* : ${fmt(c.remaining)} € attendus`
         : `${c.periodLabel} : ${fmt(c.remaining)} € attendus`;
     const lines = [`${c.tenantName} — ${c.apartment}`, periodLine];
     if (c.difference !== null && Math.abs(c.difference) >= 0.01) {
@@ -108,8 +110,10 @@ export async function POST(request: Request) {
             ? 'Plusieurs locataires correspondent. Lequel créditer ?'
             : 'Expéditeur non reconnu. Sélectionnez le locataire :';
         text = `${header}\n\n${intro}`;
+        // Les boutons Telegram n'affichent que du texte brut : ni gras ni
+        // couleur n'y sont rendus, l'émoji est le seul repère visuel possible.
         buttons = usable.map((c, i) => ({
-            text: `${c.tenantName} — ${c.periodLabel}${c.isAdvance ? ' (avance)' : ''} (${fmt(c.remaining)} €)`,
+            text: `${c.tenantName} — ${c.periodLabel}${c.isAdvance ? ' 🔴 avance' : ''} (${fmt(c.remaining)} €)`,
             callback_data: `p:${shortId}:${i}`,
         }));
         buttons.push({ text: '❌ Aucun', callback_data: `p:${shortId}:x` });
