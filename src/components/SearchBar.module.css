@@ -6,7 +6,10 @@
     align-items: center;
 }
 
-.searchInput {
+/* Selecteur double a dessein : la regle globale input[type="text"] impose son
+   propre padding et l'emporte sur une classe simple, ce qui ramenait le texte
+   sous la loupe. */
+.searchWrapper .searchInput {
     flex: 1;
     min-width: 200px;
     padding: 0.75rem 1rem 0.75rem 2.75rem;

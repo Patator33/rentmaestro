@@ -94,8 +94,9 @@ const MORE_ITEMS = [
     icon: icon(<><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></>),
   },
   {
+    // Mallette plutôt qu'un bâtiment : trop proche de l'icône Immeubles.
     href: '/companies', label: 'Sociétés',
-    icon: icon(<><rect x="4" y="4" width="16" height="16" rx="1.5" /><path d="M8 9h3M13 9h3M8 13h3M13 13h3M10 20v-3h4v3" /></>),
+    icon: icon(<><rect x="3" y="7" width="18" height="13" rx="2" /><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" /><path d="M3 12h18" /></>),
   },
   {
     href: '/gestion/parametres', label: 'Paramètres',
