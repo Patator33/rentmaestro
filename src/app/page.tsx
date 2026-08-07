@@ -112,6 +112,7 @@ async function getStats() {
   });
 
   const currentLateCount = leasesForLateCount.filter(lease => {
+    if (lease.endDate && new Date(lease.endDate) < currentMonthStart) return false;
     const payment = lease.payments.find(p => p.period.getTime() === currentMonthStart.getTime()) ?? null;
     if (isRentSettled(payment, expectedRentForPeriod(lease, currentMonthStart))) return false;
     return isRentLate(currentMonthStart, lease.tenant.paymentDay, lease.startDate);
@@ -204,13 +205,17 @@ async function getRecentAlerts() {
 
   const currentMonthLate = leasesForLate
     .map(lease => {
+      // Bail déjà terminé avant ce mois : plus rien dû, même si endDate reste
+      // dans la fenêtre de scan (utile pour les impayés passés uniquement).
+      if (lease.endDate && new Date(lease.endDate) < currentMonthStart) return null;
       const payment = lease.payments.find(p => p.period.getTime() === currentMonthStart.getTime()) ?? null;
       const expected = expectedRentForPeriod(lease, currentMonthStart);
       if (isRentSettled(payment, expected)) return null;
       if (!isRentLate(currentMonthStart, lease.tenant.paymentDay, lease.startDate)) return null;
+      const paid = payment?.status === 'PARTIAL' ? (payment.paidAmount ?? 0) : 0;
       return {
         id: payment?.id ?? lease.id,
-        amount: payment?.amount ?? expected,
+        amount: Math.max(0, expected - paid),
         period: currentMonthStart,
         lease,
       };

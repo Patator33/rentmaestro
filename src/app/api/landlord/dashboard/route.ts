@@ -174,6 +174,9 @@ export async function GET(request: Request) {
 
     const unpaidAll = leasesForUnpaid
         .map(lease => {
+            // Bail déjà terminé avant ce mois : plus rien dû, même si endDate reste
+            // dans la fenêtre de scan (utile pour les impayés passés uniquement).
+            if (lease.endDate && new Date(lease.endDate) < startOfMonth) return null;
             const payment = lease.payments.find(p => p.period.getTime() === startOfMonth.getTime()) ?? null;
             const expected = expectedRentForPeriod(lease, startOfMonth);
             if (isRentSettled(payment, expected)) return null;

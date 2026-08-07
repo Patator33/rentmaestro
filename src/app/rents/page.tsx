@@ -184,31 +184,31 @@ export default async function RentsPage({
                                 </span>
                             )}
                         </span>
-                    ) : payment ? (() => {
+                    ) : (() => {
                         const daysOverdue = now.getDate() - (lease.tenant.paymentDay || 5);
+                        // isRentLate ne dépend pas d'une ligne RentPayment existante : un
+                        // loyer jamais généré mais en retard doit rester rouge, pas "À régler".
                         const isLate = isRentLate(startOfMonth, lease.tenant.paymentDay, lease.startDate, now);
                         return isLate ? (
-                            <span className={styles.statusPending}>
+                            <span className={styles.statusUnpaid}>
                                 ⚠ En retard ({daysOverdue}j)
-                                {payment.sentAt && (
+                                {payment?.sentAt && (
                                     <span style={{ display: 'block', fontSize: '0.8em', fontWeight: 'normal', color: 'var(--warning)' }}>
                                         (Relancé le {formatDate(payment.sentAt)})
                                     </span>
                                 )}
                             </span>
                         ) : (
-                            <span className={styles.statusUnpaid}>
+                            <span className={styles.statusPending}>
                                 À régler
-                                {payment.sentAt && (
+                                {payment?.sentAt && (
                                     <span style={{ display: 'block', fontSize: '0.8em', fontWeight: 'normal', color: 'var(--warning)' }}>
                                         (Relancé le {formatDate(payment.sentAt)})
                                     </span>
                                 )}
                             </span>
                         );
-                    })() : (
-                        <span className={styles.statusUnpaid}>À régler</span>
-                    )}
+                    })()}
                 </td>
                 <td>
                     <div style={{ display: 'flex', alignItems: 'center' }}>
