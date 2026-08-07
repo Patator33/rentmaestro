@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import DeleteBuildingButton from '@/components/DeleteBuildingButton';
+import { buildingExpensesTotal } from '@/lib/building-expenses';
 
 export const dynamic = 'force-dynamic';
 
@@ -50,9 +51,10 @@ export default async function BuildingsPage() {
                         return sum + (lease ? lease.rentAmount + lease.chargesAmount : 0);
                     }, 0);
 
-                    // Monthly costs
+                    // Monthly costs, charges communes de l'immeuble comprises.
+                    const buildingExpenses = buildingExpensesTotal(building);
                     const monthlyCosts = apts.reduce((sum, a) =>
-                        sum + (a.mortgageAmount || 0) + (a.insuranceAmount || 0) + (a.taxAmount || 0), 0);
+                        sum + (a.mortgageAmount || 0) + (a.insuranceAmount || 0) + (a.taxAmount || 0), 0) + buildingExpenses;
 
                     const cashflow = monthlyIncome - monthlyCosts;
 

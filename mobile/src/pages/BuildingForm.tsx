@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api/landlord';
+import { BUILDING_EXPENSE_FIELDS } from '../lib/buildingExpenses';
 
 export default function BuildingForm() {
   const { id } = useParams<{ id: string }>();
@@ -13,6 +14,7 @@ export default function BuildingForm() {
   const [city, setCity] = useState('');
   const [companyId, setCompanyId] = useState('');
   const [companies, setCompanies] = useState<any[]>([]);
+  const [expenses, setExpenses] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -27,6 +29,9 @@ export default function BuildingForm() {
           setZipCode(b.zipCode ?? '');
           setCity(b.city ?? '');
           setCompanyId(b.companyId ?? '');
+          const exp: Record<string, string> = {};
+          for (const f of BUILDING_EXPENSE_FIELDS) exp[f.key] = b[f.key] ? String(b[f.key]) : '';
+          setExpenses(exp);
         }
       }).catch(() => {});
     }
@@ -44,6 +49,7 @@ export default function BuildingForm() {
       if (zipCode.trim()) data.zipCode = zipCode.trim();
       if (city.trim()) data.city = city.trim();
       if (companyId) data.companyId = companyId;
+      for (const f of BUILDING_EXPENSE_FIELDS) data[f.key] = expenses[f.key] || '0';
       if (isEdit) {
         await api.updateBuilding(id!, data);
         navigate(`/buildings/${id}`);
@@ -126,6 +132,27 @@ export default function BuildingForm() {
               </select>
             </div>
           )}
+
+          <div>
+            <p className="text-text-main text-sm font-semibold mb-1">Charges communes mensuelles</p>
+            <p className="text-text-muted text-xs mb-2">Réparties entre les appartements dans le calcul du Cash Flow Net Net.</p>
+            <div className="grid grid-cols-2 gap-2">
+              {BUILDING_EXPENSE_FIELDS.map(f => (
+                <div key={f.key}>
+                  <label className="text-text-muted text-xs block mb-1">{f.label} (€/mois)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={expenses[f.key] ?? ''}
+                    onChange={e => setExpenses(prev => ({ ...prev, [f.key]: e.target.value }))}
+                    placeholder="0"
+                    className="w-full px-3 py-2.5 rounded-xl border border-border bg-surface text-text-main text-sm"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
 
           {error && <p className="text-red-400 text-sm">{error}</p>}
 

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api/landlord';
 import PullToRefresh from '../components/PullToRefresh';
 import TaskDetailPopup, { type TaskForPopup } from '../components/TaskDetailPopup';
+import { buildingExpensesTotal } from '../lib/buildingExpenses';
 
 type Tab = 'infos' | 'payments' | 'tasks';
 
@@ -57,7 +58,12 @@ export default function ApartmentDetail() {
   });
 
   const cc = apt.rent + apt.charges;
-  const costs = (apt.mortgageAmount || 0) + (apt.insuranceAmount || 0) + (apt.taxAmount || 0);
+  // Quote-part des charges communes de l'immeuble : non modifiable ici, elle se
+  // saisit sur la fiche immeuble et se répartit à parts égales entre ses appartements.
+  const buildingExpenseShare = apt.building
+    ? buildingExpensesTotal(apt.building) / Math.max(1, (apt.building.apartments ?? []).length)
+    : 0;
+  const costs = (apt.mortgageAmount || 0) + (apt.insuranceAmount || 0) + (apt.taxAmount || 0) + buildingExpenseShare;
   const cashflow = cc - costs;
 
   const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -146,6 +152,9 @@ export default function ApartmentDetail() {
                   {apt.mortgageAmount != null && <Row label="Mensualité crédit" value={`${Number(apt.mortgageAmount).toFixed(2)} €`} />}
                   {apt.insuranceAmount != null && <Row label="Assurance PNO" value={`${Number(apt.insuranceAmount).toFixed(2)} €`} />}
                   {apt.taxAmount != null && <Row label="Taxe foncière (mens.)" value={`${Number(apt.taxAmount).toFixed(2)} €`} />}
+                  {buildingExpenseShare > 0 && (
+                    <Row label="Charges immeuble (quote-part)" value={`${buildingExpenseShare.toFixed(2)} €`} />
+                  )}
                   {costs > 0 && (
                     <div className="border-t border-border pt-2">
                       <Row label="Cashflow mensuel" value={`${cashflow >= 0 ? '+' : ''}${cashflow.toFixed(2)} €`}

@@ -5,6 +5,7 @@ import { markRentReviewAsSent } from "@/actions/leases";
 import { expectedRentForPeriod, isRentSettled, isRentLate, unsettledPastRents, PAST_MONTHS_SCANNED } from "@/lib/rent-period";
 import { getAgendaEvents } from "@/lib/agenda-events";
 import { occupancyBreakdown, type ApartmentStateCode } from "@/lib/apartment-state";
+import { buildingExpensesTotal } from "@/lib/building-expenses";
 import { RentPayment, Expense, Apartment } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -26,6 +27,8 @@ async function getCashflowData() {
     where: { period: { gte: startDate, lte: endDate } }
   });
   const apartments = await prisma.apartment.findMany();
+  const buildings = await prisma.building.findMany();
+  const buildingsFixedExp = buildings.reduce((s, b) => s + buildingExpensesTotal(b), 0);
 
   const months = ['JAN','FÉV','MAR','AVR','MAI','JUI','JUI','AOÛ','SEP','OCT','NOV','DÉC'];
   const monthlyData = [];
@@ -43,7 +46,7 @@ async function getCashflowData() {
     const varExp = expenses
       .filter((e: Expense) => e.date >= monthStart && e.date <= monthEnd)
       .reduce((s: number, e: Expense) => s + e.amount, 0);
-    let fixedExp = 0;
+    let fixedExp = buildingsFixedExp;
     apartments.forEach((apt: Apartment) => {
       if (new Date(apt.createdAt) <= monthEnd)
         fixedExp += (apt.mortgageAmount || 0) + (apt.insuranceAmount || 0) + (apt.taxAmount || 0);

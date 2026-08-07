@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyMobileToken, unauthorized } from '@/lib/mobile-auth';
+import { parseExpenseFieldsFromRecord } from '@/lib/building-expenses';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,9 +31,12 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
     if (!verifyMobileToken(request)) return unauthorized();
-    const { name, address, zipCode, city, companyId } = await request.json();
+    const body = await request.json();
+    const { name, address, zipCode, city, companyId } = body;
     if (!name || !address) return NextResponse.json({ error: 'Nom et adresse requis.' }, { status: 400 });
-    const building = await prisma.building.create({ data: { name, address, zipCode: zipCode || null, city: city || null, companyId: companyId || null } });
+    const building = await prisma.building.create({
+        data: { name, address, zipCode: zipCode || null, city: city || null, companyId: companyId || null, ...parseExpenseFieldsFromRecord(body) },
+    });
     return NextResponse.json(building, { status: 201 });
 }
 

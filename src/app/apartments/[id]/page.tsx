@@ -8,6 +8,7 @@ import ExpenseForm from "@/components/ExpenseForm";
 import TaskBoard from "@/components/TaskBoard";
 import InspectionBoard from "@/components/InspectionBoard";
 import ApartmentDocumentUpload from "@/components/ApartmentDocumentUpload";
+import { buildingExpensesTotal } from "@/lib/building-expenses";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,9 @@ export default async function ApartmentDetailsPage({ params }: { params: Promise
         where: { id },
         include: {
             company: true,
+            building: {
+                include: { apartments: { select: { id: true } } }
+            },
             leases: {
                 include: {
                     tenant: true,
@@ -49,6 +53,13 @@ export default async function ApartmentDetailsPage({ params }: { params: Promise
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
+    // Quote-part des charges communes de l'immeuble : non modifiable ici, elle
+    // se saisit sur la fiche immeuble et se répartit à parts égales entre ses
+    // appartements.
+    const buildingExpenseShare = apartment.building
+        ? buildingExpensesTotal(apartment.building) / Math.max(1, apartment.building.apartments.length)
+        : 0;
 
     return (
         <div className={styles.container}>
@@ -127,11 +138,19 @@ export default async function ApartmentDetailsPage({ params }: { params: Promise
                         </span>
                     </div>
                 )}
-                {(apartment.mortgageAmount || apartment.insuranceAmount || apartment.taxAmount) ? (
+                {buildingExpenseShare > 0 && (
+                    <div className={styles.detailItem}>
+                        <span className={styles.label}>Charges immeuble (quote-part)</span>
+                        <span className={styles.value} style={{ color: 'var(--error)' }} title="Calculé depuis les charges communes de l'immeuble, non modifiable ici">
+                            -{buildingExpenseShare.toFixed(2)} €
+                        </span>
+                    </div>
+                )}
+                {(apartment.mortgageAmount || apartment.insuranceAmount || apartment.taxAmount || buildingExpenseShare > 0) ? (
                     <div className={styles.detailItem}>
                         <span className={styles.label}>Cash Flow Net Net</span>
-                        <span className={styles.value} style={{ color: (apartment.rent - (apartment.mortgageAmount || 0) - (apartment.insuranceAmount || 0) - (apartment.taxAmount || 0)) >= 0 ? 'var(--success)' : 'var(--error)' }}>
-                            {(apartment.rent - (apartment.mortgageAmount || 0) - (apartment.insuranceAmount || 0) - (apartment.taxAmount || 0)).toFixed(2)} €
+                        <span className={styles.value} style={{ color: (apartment.rent - (apartment.mortgageAmount || 0) - (apartment.insuranceAmount || 0) - (apartment.taxAmount || 0) - buildingExpenseShare) >= 0 ? 'var(--success)' : 'var(--error)' }}>
+                            {(apartment.rent - (apartment.mortgageAmount || 0) - (apartment.insuranceAmount || 0) - (apartment.taxAmount || 0) - buildingExpenseShare).toFixed(2)} €
                         </span>
                     </div>
                 ) : null}

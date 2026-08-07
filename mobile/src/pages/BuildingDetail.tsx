@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api/landlord';
 import PullToRefresh from '../components/PullToRefresh';
+import { buildingExpensesTotal } from '../lib/buildingExpenses';
 
 export default function BuildingDetail() {
   const { id } = useParams<{ id: string }>();
@@ -58,8 +59,9 @@ export default function BuildingDetail() {
     const lease = a.leases?.[0];
     return sum + (lease ? lease.rentAmount + lease.chargesAmount : 0);
   }, 0);
+  const buildingExpenses = buildingExpensesTotal(building);
   const monthlyCosts = apts.reduce((sum: number, a: any) =>
-    sum + (a.mortgageAmount || 0) + (a.insuranceAmount || 0) + (a.taxAmount || 0), 0);
+    sum + (a.mortgageAmount || 0) + (a.insuranceAmount || 0) + (a.taxAmount || 0), 0) + buildingExpenses;
   const cashflow = monthlyIncome - monthlyCosts;
 
   const fullAddress = [building.address, building.complement, building.zipCode && building.city ? `${building.zipCode} ${building.city}` : (building.city || building.zipCode)].filter(Boolean).join(', ');
