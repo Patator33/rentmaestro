@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api/landlord';
 import PullToRefresh from '../components/PullToRefresh';
 import TaskDetailPopup, { type TaskForPopup } from '../components/TaskDetailPopup';
-import { buildingExpensesTotal, apartmentFixedCosts } from '../lib/buildingExpenses';
+import { ALL_COST_FIELDS, isFieldInherited, inheritedFieldValue, apartmentEffectiveCosts } from '../lib/buildingExpenses';
 
 type Tab = 'infos' | 'payments' | 'tasks';
 
@@ -58,17 +58,13 @@ export default function ApartmentDetail() {
   });
 
   const cc = apt.rent + apt.charges;
-  // Quote-part des charges communes et coûts fixes de l'immeuble : non
-  // modifiables ici, ils se saisissent sur la fiche immeuble et se
-  // répartissent à parts égales entre ses appartements. Un appartement sans
-  // immeuble garde ses propres champs.
-  const buildingAptCount = apt.building ? Math.max(1, (apt.building.apartments ?? []).length) : 1;
-  const buildingExpenseShare = apt.building ? buildingExpensesTotal(apt.building) / buildingAptCount : 0;
-  const inheritsFixedCosts = !!apt.building;
-  const effectiveMortgage = inheritsFixedCosts ? (apt.building.mortgageAmount || 0) / buildingAptCount : (apt.mortgageAmount || 0);
-  const effectiveInsurance = inheritsFixedCosts ? (apt.building.insuranceAmount || 0) / buildingAptCount : (apt.insuranceAmount || 0);
-  const effectiveTax = inheritsFixedCosts ? (apt.building.taxAmount || 0) / buildingAptCount : (apt.taxAmount || 0);
-  const costs = apartmentFixedCosts(apt, apt.building) + buildingExpenseShare;
+  // Chaque poste (crédit, assurance, taxe, charges communes) est mixte :
+  // hérité de l'immeuble (quote-part) s'il le renseigne, sinon la valeur
+  // propre de l'appartement — non modifiable ici quand hérité.
+  const costRows = ALL_COST_FIELDS
+    .map(f => ({ key: f.key, label: f.label, value: inheritedFieldValue(f.key, apt, apt.building), inherited: isFieldInherited(f.key, apt.building) }))
+    .filter(r => r.value > 0);
+  const costs = apartmentEffectiveCosts(apt, apt.building);
   const cashflow = cc - costs;
 
   const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -154,12 +150,9 @@ export default function ApartmentDetail() {
                     <Row label="Loyer CC" value={`${cc.toFixed(2)} €`} bold />
                   </div>
                   {apt.defaultDeposit != null && <Row label="Caution par défaut" value={`${Number(apt.defaultDeposit).toFixed(2)} €`} />}
-                  {effectiveMortgage > 0 && <Row label={`Mensualité crédit${inheritsFixedCosts ? ' (quote-part immeuble)' : ''}`} value={`${effectiveMortgage.toFixed(2)} €`} />}
-                  {effectiveInsurance > 0 && <Row label={`Assurance PNO${inheritsFixedCosts ? ' (quote-part immeuble)' : ''}`} value={`${effectiveInsurance.toFixed(2)} €`} />}
-                  {effectiveTax > 0 && <Row label={`Taxe foncière (mens.)${inheritsFixedCosts ? ' (quote-part immeuble)' : ''}`} value={`${effectiveTax.toFixed(2)} €`} />}
-                  {buildingExpenseShare > 0 && (
-                    <Row label="Charges immeuble (quote-part)" value={`${buildingExpenseShare.toFixed(2)} €`} />
-                  )}
+                  {costRows.map(r => (
+                    <Row key={r.key} label={`${r.label}${r.inherited ? ' (hérité immeuble)' : ''}`} value={`${r.value.toFixed(2)} €`} />
+                  ))}
                   {costs > 0 && (
                     <div className="border-t border-border pt-2">
                       <Row label="Cashflow mensuel" value={`${cashflow >= 0 ? '+' : ''}${cashflow.toFixed(2)} €`}

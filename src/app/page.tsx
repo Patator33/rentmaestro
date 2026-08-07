@@ -5,8 +5,8 @@ import { markRentReviewAsSent } from "@/actions/leases";
 import { expectedRentForPeriod, isRentSettled, isRentLate, unsettledPastRents, PAST_MONTHS_SCANNED } from "@/lib/rent-period";
 import { getAgendaEvents } from "@/lib/agenda-events";
 import { occupancyBreakdown, type ApartmentStateCode } from "@/lib/apartment-state";
-import { buildingExpensesTotal, buildingFixedCostsTotal } from "@/lib/building-expenses";
-import { RentPayment, Expense, Apartment } from "@prisma/client";
+import { apartmentEffectiveCosts } from "@/lib/building-expenses";
+import { RentPayment, Expense } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
@@ -26,12 +26,9 @@ async function getCashflowData() {
   const payments = await prisma.rentPayment.findMany({
     where: { period: { gte: startDate, lte: endDate } }
   });
-  const apartments = await prisma.apartment.findMany();
-  const buildings = await prisma.building.findMany();
-  // Crédit/assurance/taxe et charges communes des immeubles comptés une fois
-  // chacun ; les appartements qui y sont rattachés ne réutilisent plus leurs
-  // propres champs (repris uniquement par un appartement sans immeuble).
-  const buildingsFixedExp = buildings.reduce((s, b) => s + buildingFixedCostsTotal(b) + buildingExpensesTotal(b), 0);
+  const apartments = await prisma.apartment.findMany({
+    include: { building: { include: { apartments: { select: { id: true } } } } }
+  });
 
   const months = ['JAN','FÉV','MAR','AVR','MAI','JUI','JUI','AOÛ','SEP','OCT','NOV','DÉC'];
   const monthlyData = [];
@@ -49,11 +46,13 @@ async function getCashflowData() {
     const varExp = expenses
       .filter((e: Expense) => e.date >= monthStart && e.date <= monthEnd)
       .reduce((s: number, e: Expense) => s + e.amount, 0);
-    let fixedExp = buildingsFixedExp;
-    apartments.forEach((apt: Apartment) => {
-      if (apt.buildingId) return; // coûts déjà comptés via buildingsFixedExp
+    let fixedExp = 0;
+    apartments.forEach((apt) => {
+      // Chaque poste est mixte (hérité de l'immeuble ou propre à l'appartement) :
+      // la somme par appartement évite tout double comptage entre colocataires
+      // du même immeuble.
       if (new Date(apt.createdAt) <= monthEnd)
-        fixedExp += (apt.mortgageAmount || 0) + (apt.insuranceAmount || 0) + (apt.taxAmount || 0);
+        fixedExp += apartmentEffectiveCosts(apt, apt.building);
     });
     // Valeur réelle, y compris négative : la plafonner à 0 affichait un cash
     // flow nul là où les charges dépassent les encaissements.

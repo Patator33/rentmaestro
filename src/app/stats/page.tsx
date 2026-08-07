@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import DateFilters from "@/components/DateFilters";
 import RevenueChart from "@/components/RevenueChart";
+import { inheritedFieldValue } from "@/lib/building-expenses";
 import styles from "./page.module.css";
 
 export const dynamic = "force-dynamic";
@@ -136,12 +137,11 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
 
         totalVacancyDays += (daysInPeriod - occupiedDays);
 
-        // Add mortgage, insurance, and tax expenses per month — hérités de
-        // l'immeuble (quote-part) s'il y en a un, sinon les champs de l'appartement.
-        const buildingAptCount = apt.building ? Math.max(1, apt.building.apartments.length) : 1;
-        const aptMortgage = apt.building ? (apt.building.mortgageAmount || 0) / buildingAptCount : (apt.mortgageAmount || 0);
-        const aptInsurance = apt.building ? (apt.building.insuranceAmount || 0) / buildingAptCount : (apt.insuranceAmount || 0);
-        const aptTax = apt.building ? (apt.building.taxAmount || 0) / buildingAptCount : (apt.taxAmount || 0);
+        // Add mortgage, insurance, and tax expenses per month — poste par poste,
+        // hérité de l'immeuble s'il le renseigne, sinon le champ de l'appartement.
+        const aptMortgage = inheritedFieldValue('mortgageAmount', apt, apt.building);
+        const aptInsurance = inheritedFieldValue('insuranceAmount', apt, apt.building);
+        const aptTax = inheritedFieldValue('taxAmount', apt, apt.building);
         const fixedCosts = aptMortgage + aptInsurance + aptTax;
 
         if (fixedCosts > 0) {

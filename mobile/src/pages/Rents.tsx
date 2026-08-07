@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../api/landlord';
 import PullToRefresh from '../components/PullToRefresh';
 import { useAutoRefresh } from '../hooks/useAutoRefresh';
-import { apartmentFixedCosts } from '../lib/buildingExpenses';
+import { apartmentEffectiveCosts } from '../lib/buildingExpenses';
 
 interface RentItem {
   leaseId: string;
@@ -126,7 +126,7 @@ export default function Rents() {
   for (const r of monthRents) {
     if (!seenApts.has(r.apartment.address + (r.apartment.name ?? ''))) {
       seenApts.add(r.apartment.address + (r.apartment.name ?? ''));
-      totalMonthlyCosts += apartmentFixedCosts(r.apartment, r.apartment.building);
+      totalMonthlyCosts += apartmentEffectiveCosts(r.apartment, r.apartment.building);
     }
   }
   const netCashflow = totalReceived - totalMonthlyCosts;

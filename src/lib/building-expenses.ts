@@ -10,63 +10,99 @@ export const BUILDING_EXPENSE_FIELDS = [
     { key: 'expenseOther', label: 'Autres' },
 ] as const;
 
-/** Coûts fixes de l'immeuble entier (crédit, assurance, taxe foncière). */
+/** Coûts fixes (crédit, assurance, taxe foncière). */
 export const BUILDING_FIXED_COST_FIELDS = [
     { key: 'mortgageAmount', label: 'Mensualité crédit' },
     { key: 'insuranceAmount', label: 'Assurance PNO' },
     { key: 'taxAmount', label: 'Taxe foncière (mensuelle)' },
 ] as const;
 
+/** Les 12 postes, communs à Building et Apartment (mêmes clés sur les deux modèles). */
+export const ALL_COST_FIELDS = [...BUILDING_EXPENSE_FIELDS, ...BUILDING_FIXED_COST_FIELDS] as const;
+
 export type BuildingExpenseKey = typeof BUILDING_EXPENSE_FIELDS[number]['key'];
 export type BuildingFixedCostKey = typeof BUILDING_FIXED_COST_FIELDS[number]['key'];
+export type CostFieldKey = typeof ALL_COST_FIELDS[number]['key'];
 
-type BuildingWithExpenses = { [K in BuildingExpenseKey]?: number | null };
-type BuildingWithFixedCosts = { [K in BuildingFixedCostKey]?: number | null };
+type CostFields = { [K in CostFieldKey]?: number | null };
+type BuildingWithApartments = CostFields & { apartments: { id: string }[] };
 
-export function buildingExpensesTotal(building: BuildingWithExpenses): number {
+export function buildingExpensesTotal(building: CostFields): number {
     return BUILDING_EXPENSE_FIELDS.reduce((sum, f) => sum + (building[f.key] ?? 0), 0);
 }
 
-export function buildingFixedCostsTotal(building: BuildingWithFixedCosts): number {
+export function buildingFixedCostsTotal(building: CostFields): number {
     return BUILDING_FIXED_COST_FIELDS.reduce((sum, f) => sum + (building[f.key] ?? 0), 0);
 }
 
-/** Lit les 9 champs depuis un objet JSON (API mobile), en ignorant les valeurs absentes/invalides. */
-export function parseExpenseFieldsFromRecord(body: Record<string, unknown>): Record<BuildingExpenseKey, number> {
-    const out = {} as Record<BuildingExpenseKey, number>;
-    for (const f of BUILDING_EXPENSE_FIELDS) {
+function parseFieldsFromRecord<K extends string>(body: Record<string, unknown>, fields: ReadonlyArray<{ key: K }>): Record<K, number> {
+    const out = {} as Record<K, number>;
+    for (const f of fields) {
         const raw = body[f.key];
         const n = typeof raw === 'number' ? raw : parseFloat(raw as string);
         out[f.key] = isNaN(n) ? 0 : n;
     }
     return out;
+}
+
+/** Lit les 9 champs de charges depuis un objet JSON (API mobile). */
+export function parseExpenseFieldsFromRecord(body: Record<string, unknown>): Record<BuildingExpenseKey, number> {
+    return parseFieldsFromRecord(body, BUILDING_EXPENSE_FIELDS);
 }
 
 /** Lit les 3 champs de coûts fixes depuis un objet JSON (API mobile). */
 export function parseFixedCostFieldsFromRecord(body: Record<string, unknown>): Record<BuildingFixedCostKey, number> {
-    const out = {} as Record<BuildingFixedCostKey, number>;
-    for (const f of BUILDING_FIXED_COST_FIELDS) {
-        const raw = body[f.key];
-        const n = typeof raw === 'number' ? raw : parseFloat(raw as string);
-        out[f.key] = isNaN(n) ? 0 : n;
-    }
-    return out;
+    return parseFieldsFromRecord(body, BUILDING_FIXED_COST_FIELDS);
 }
 
-type ApartmentWithOwnFixedCosts = BuildingWithFixedCosts & { buildingId?: string | null };
-type BuildingForInheritance = BuildingWithFixedCosts & { apartments: { id: string }[] };
+/** Lit les 12 champs depuis un objet JSON (API mobile, appartement). */
+export function parseAllCostFieldsFromRecord(body: Record<string, unknown>): Record<CostFieldKey, number> {
+    return parseFieldsFromRecord(body, ALL_COST_FIELDS);
+}
 
 /**
- * Coûts fixes (crédit/assurance/taxe) réellement imputables à un appartement :
- * hérités de l'immeuble (répartis à parts égales) s'il y est rattaché, sinon
- * ses propres champs — repli pour un bien sans immeuble associé.
+ * Un poste donné est-il piloté par l'immeuble ? C'est le cas dès que
+ * l'immeuble renseigne une valeur non nulle pour ce champ précis — chaque
+ * poste peut être mixte : certains hérités de l'immeuble, d'autres laissés à
+ * la charge de chaque appartement.
  */
-export function apartmentFixedCosts(
-    apartment: ApartmentWithOwnFixedCosts,
-    building: BuildingForInheritance | null | undefined
+export function isFieldInherited(key: CostFieldKey, building: CostFields | null | undefined): boolean {
+    return !!building && (building[key] ?? 0) > 0;
+}
+
+/**
+ * Valeur effective d'un poste pour un appartement donné : quote-part héritée
+ * de l'immeuble si celui-ci a renseigné ce poste, sinon la valeur propre de
+ * l'appartement (repli poste par poste, pas tout ou rien).
+ */
+export function inheritedFieldValue(
+    key: CostFieldKey,
+    apartment: CostFields,
+    building: BuildingWithApartments | null | undefined
 ): number {
-    if (apartment.buildingId && building) {
-        return buildingFixedCostsTotal(building) / Math.max(1, building.apartments.length);
+    if (isFieldInherited(key, building)) {
+        return ((building as BuildingWithApartments)[key] ?? 0) / Math.max(1, (building as BuildingWithApartments).apartments.length);
     }
-    return (apartment.mortgageAmount ?? 0) + (apartment.insuranceAmount ?? 0) + (apartment.taxAmount ?? 0);
+    return apartment[key] ?? 0;
+}
+
+/** Somme des 12 postes réellement imputables à un appartement (mix hérité/propre). */
+export function apartmentEffectiveCosts(
+    apartment: CostFields,
+    building: BuildingWithApartments | null | undefined
+): number {
+    return ALL_COST_FIELDS.reduce((sum, f) => sum + inheritedFieldValue(f.key, apartment, building), 0);
+}
+
+/**
+ * Total affiché au niveau immeuble (carte immeuble, dashboard) : pour un
+ * poste renseigné par l'immeuble, le montant plein compté une fois ; sinon,
+ * la somme des valeurs propres de ses appartements pour ce poste.
+ */
+export function buildingCardCostsTotal(building: CostFields, apartments: CostFields[]): number {
+    return ALL_COST_FIELDS.reduce((sum, f) => {
+        const buildingVal = building[f.key] ?? 0;
+        if (buildingVal > 0) return sum + buildingVal;
+        return sum + apartments.reduce((s, a) => s + (a[f.key] ?? 0), 0);
+    }, 0);
 }

@@ -8,7 +8,7 @@ import ExpenseForm from "@/components/ExpenseForm";
 import TaskBoard from "@/components/TaskBoard";
 import InspectionBoard from "@/components/InspectionBoard";
 import ApartmentDocumentUpload from "@/components/ApartmentDocumentUpload";
-import { buildingExpensesTotal } from "@/lib/building-expenses";
+import { ALL_COST_FIELDS, isFieldInherited, inheritedFieldValue, apartmentEffectiveCosts } from "@/lib/building-expenses";
 
 export const dynamic = "force-dynamic";
 
@@ -54,18 +54,16 @@ export default async function ApartmentDetailsPage({ params }: { params: Promise
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Quote-part des charges communes et coûts fixes de l'immeuble : non
-    // modifiables ici, ils se saisissent sur la fiche immeuble et se
-    // répartissent à parts égales entre ses appartements. Un appartement sans
-    // immeuble garde ses propres champs (mortgageAmount/insuranceAmount/taxAmount).
-    const buildingAptCount = apartment.building ? Math.max(1, apartment.building.apartments.length) : 1;
-    const buildingExpenseShare = apartment.building
-        ? buildingExpensesTotal(apartment.building) / buildingAptCount
-        : 0;
-    const inheritsFixedCosts = !!apartment.building;
-    const effectiveMortgage = inheritsFixedCosts ? (apartment.building!.mortgageAmount ?? 0) / buildingAptCount : (apartment.mortgageAmount ?? 0);
-    const effectiveInsurance = inheritsFixedCosts ? (apartment.building!.insuranceAmount ?? 0) / buildingAptCount : (apartment.insuranceAmount ?? 0);
-    const effectiveTax = inheritsFixedCosts ? (apartment.building!.taxAmount ?? 0) / buildingAptCount : (apartment.taxAmount ?? 0);
+    // Chaque poste (crédit, assurance, taxe, charges communes) est mixte :
+    // hérité de l'immeuble (quote-part) s'il le renseigne, sinon la valeur
+    // propre de l'appartement — non modifiable ici quand hérité.
+    const costRows = ALL_COST_FIELDS.map(f => ({
+        key: f.key,
+        label: f.label,
+        value: inheritedFieldValue(f.key, apartment, apartment.building),
+        inherited: isFieldInherited(f.key, apartment.building),
+    })).filter(r => r.value > 0);
+    const totalCosts = apartmentEffectiveCosts(apartment, apartment.building);
 
     return (
         <div className={styles.container}>
@@ -120,43 +118,19 @@ export default async function ApartmentDetailsPage({ params }: { params: Promise
                     <span className={styles.label}>Loyer brut</span>
                     <span className={styles.value}>{(apartment.rent + apartment.charges).toFixed(2)} €</span>
                 </div>
-                {effectiveMortgage > 0 && (
-                    <div className={styles.detailItem}>
-                        <span className={styles.label}>Mensualité crédit{inheritsFixedCosts ? ' (quote-part immeuble)' : ''}</span>
-                        <span className={styles.value} style={{ color: 'var(--error)' }} title={inheritsFixedCosts ? "Calculé depuis les coûts fixes de l'immeuble, non modifiable ici" : undefined}>
-                            -{effectiveMortgage.toFixed(2)} €
+                {costRows.map(r => (
+                    <div className={styles.detailItem} key={r.key}>
+                        <span className={styles.label}>{r.label}{r.inherited ? ' (hérité immeuble)' : ''}</span>
+                        <span className={styles.value} style={{ color: 'var(--error)' }} title={r.inherited ? "Renseigné sur la fiche immeuble, non modifiable ici" : undefined}>
+                            -{r.value.toFixed(2)} €
                         </span>
                     </div>
-                )}
-                {effectiveInsurance > 0 && (
-                    <div className={styles.detailItem}>
-                        <span className={styles.label}>Assurance PNO{inheritsFixedCosts ? ' (quote-part immeuble)' : ''}</span>
-                        <span className={styles.value} style={{ color: 'var(--error)' }} title={inheritsFixedCosts ? "Calculé depuis les coûts fixes de l'immeuble, non modifiable ici" : undefined}>
-                            -{effectiveInsurance.toFixed(2)} €
-                        </span>
-                    </div>
-                )}
-                {effectiveTax > 0 && (
-                    <div className={styles.detailItem}>
-                        <span className={styles.label}>Taxe Foncière (mensuelle){inheritsFixedCosts ? ' (quote-part immeuble)' : ''}</span>
-                        <span className={styles.value} style={{ color: 'var(--error)' }} title={inheritsFixedCosts ? "Calculé depuis les coûts fixes de l'immeuble, non modifiable ici" : undefined}>
-                            -{effectiveTax.toFixed(2)} €
-                        </span>
-                    </div>
-                )}
-                {buildingExpenseShare > 0 && (
-                    <div className={styles.detailItem}>
-                        <span className={styles.label}>Charges immeuble (quote-part)</span>
-                        <span className={styles.value} style={{ color: 'var(--error)' }} title="Calculé depuis les charges communes de l'immeuble, non modifiable ici">
-                            -{buildingExpenseShare.toFixed(2)} €
-                        </span>
-                    </div>
-                )}
-                {(effectiveMortgage || effectiveInsurance || effectiveTax || buildingExpenseShare > 0) ? (
+                ))}
+                {costRows.length > 0 ? (
                     <div className={styles.detailItem}>
                         <span className={styles.label}>Cash Flow Net Net</span>
-                        <span className={styles.value} style={{ color: (apartment.rent + apartment.charges - effectiveMortgage - effectiveInsurance - effectiveTax - buildingExpenseShare) >= 0 ? 'var(--success)' : 'var(--error)' }}>
-                            {(apartment.rent + apartment.charges - effectiveMortgage - effectiveInsurance - effectiveTax - buildingExpenseShare).toFixed(2)} €
+                        <span className={styles.value} style={{ color: (apartment.rent + apartment.charges - totalCosts) >= 0 ? 'var(--success)' : 'var(--error)' }}>
+                            {(apartment.rent + apartment.charges - totalCosts).toFixed(2)} €
                         </span>
                     </div>
                 ) : null}

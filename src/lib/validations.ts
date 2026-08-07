@@ -31,6 +31,17 @@ export const apartmentSchema = z.object({
     mortgageAmount: z.number().min(0, "La mensualité de crédit doit être positive").optional().nullable(),
     insuranceAmount: z.number().min(0, "L'assurance doit être positive").optional().nullable(),
     taxAmount: z.number().min(0, "Les impôts doivent être positifs").optional().nullable(),
+    // Charges communes propres à l'appartement, prises en compte tant que
+    // l'immeuble ne renseigne pas le même poste.
+    expenseInternet: z.number().min(0).optional(),
+    expenseElectricity: z.number().min(0).optional(),
+    expenseWater: z.number().min(0).optional(),
+    expenseGas: z.number().min(0).optional(),
+    expenseMaintenance: z.number().min(0).optional(),
+    expenseAccountant: z.number().min(0).optional(),
+    expenseBank: z.number().min(0).optional(),
+    expenseCleaning: z.number().min(0).optional(),
+    expenseOther: z.number().min(0).optional(),
     companyId: z.string().optional().nullable(),
     surface: z.number().min(0).optional().nullable(),
     dpe: z.string().optional().nullable(),

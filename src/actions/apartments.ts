@@ -6,6 +6,17 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { logAction } from "@/lib/audit";
 import { requireAuth } from "@/lib/session";
+import { BUILDING_EXPENSE_FIELDS } from "@/lib/building-expenses";
+
+function readOwnExpenseFields(formData: FormData) {
+    const out: Record<string, number> = {};
+    for (const f of BUILDING_EXPENSE_FIELDS) {
+        const raw = formData.get(f.key) as string;
+        const n = parseFloat(raw);
+        out[f.key] = isNaN(n) ? 0 : n;
+    }
+    return out;
+}
 
 export async function createApartment(formData: FormData) {
     await requireAuth();
@@ -22,6 +33,7 @@ export async function createApartment(formData: FormData) {
         mortgageAmount: formData.get("mortgageAmount") ? parseFloat(formData.get("mortgageAmount") as string) : null,
         insuranceAmount: formData.get("insuranceAmount") ? parseFloat(formData.get("insuranceAmount") as string) : null,
         taxAmount: formData.get("taxAmount") ? parseFloat(formData.get("taxAmount") as string) : null,
+        ...readOwnExpenseFields(formData),
         companyId: formData.get("companyId") as string || null,
         buildingId: formData.get("buildingId") as string || null,
         availableFrom: formData.get("availableFrom") ? new Date(formData.get("availableFrom") as string) : null,
@@ -77,6 +89,7 @@ export async function updateApartment(id: string, formData: FormData) {
         mortgageAmount: formData.get("mortgageAmount") ? parseFloat(formData.get("mortgageAmount") as string) : null,
         insuranceAmount: formData.get("insuranceAmount") ? parseFloat(formData.get("insuranceAmount") as string) : null,
         taxAmount: formData.get("taxAmount") ? parseFloat(formData.get("taxAmount") as string) : null,
+        ...readOwnExpenseFields(formData),
         defaultDeposit: formData.get("defaultDeposit") ? parseFloat(formData.get("defaultDeposit") as string) : null,
         companyId: formData.get("companyId") as string || null,
         buildingId: formData.get("buildingId") as string || null,

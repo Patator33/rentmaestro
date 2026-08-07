@@ -57,6 +57,18 @@ model Apartment {
   mortgageAmount  Float?
   insuranceAmount Float?
   taxAmount       Float?
+  /// Charges communes mensuelles propres à l'appartement. Utilisées uniquement
+  /// pour le poste tant que l'immeuble ne renseigne pas ce même champ ; dès
+  /// que l'immeuble le fait, sa quote-part prévaut (voir src/lib/building-expenses.ts).
+  expenseInternet    Float @default(0)
+  expenseElectricity Float @default(0)
+  expenseWater       Float @default(0)
+  expenseGas         Float @default(0)
+  expenseMaintenance Float @default(0)
+  expenseAccountant  Float @default(0)
+  expenseBank        Float @default(0)
+  expenseCleaning    Float @default(0)
+  expenseOther       Float @default(0)
   defaultDeposit  Float?
   availableFrom   DateTime?
   soldAt          DateTime?

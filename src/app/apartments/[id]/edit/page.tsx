@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import BuildingSelectorWithCreate from "@/components/BuildingSelectorWithCreate";
 import DeleteButton from "@/components/DeleteButton";
+import { BUILDING_EXPENSE_FIELDS } from "@/lib/building-expenses";
 
 export default async function EditApartmentPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -126,6 +127,19 @@ export default async function EditApartmentPage({ params }: { params: Promise<{ 
                             ))}
                         </select>
                     </div>
+                </div>
+
+                <h2 style={{ fontSize: '0.95rem', fontWeight: 700, margin: '1.5rem 0 0.25rem' }}>Charges communes mensuelles</h2>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
+                    Prises en compte tant que l'immeuble ne renseigne pas le même poste (sa quote-part prévaut alors).
+                </p>
+                <div className={styles.row} style={{ flexWrap: 'wrap' }}>
+                    {BUILDING_EXPENSE_FIELDS.map(f => (
+                        <div key={f.key} className={styles.formGroup} style={{ minWidth: '140px' }}>
+                            <label htmlFor={f.key} className={styles.label}>{f.label} (€/mois)</label>
+                            <input type="number" step="0.01" min="0" id={f.key} name={f.key} defaultValue={(apartment as any)[f.key] || ''} className={styles.input} placeholder="0" />
+                        </div>
+                    ))}
                 </div>
 
                 <div className={styles.formGroup}>

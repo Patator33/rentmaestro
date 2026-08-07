@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api/landlord';
 import PullToRefresh from '../components/PullToRefresh';
-import { buildingExpensesTotal, buildingFixedCostsTotal } from '../lib/buildingExpenses';
+import { buildingCardCostsTotal } from '../lib/buildingExpenses';
 
 export default function BuildingDetail() {
   const { id } = useParams<{ id: string }>();
@@ -59,10 +59,9 @@ export default function BuildingDetail() {
     const lease = a.leases?.[0];
     return sum + (lease ? lease.rentAmount + lease.chargesAmount : 0);
   }, 0);
-  // Crédit/assurance/taxe et charges communes se saisissent au niveau immeuble
-  // (hérités par tous ses appartements) : les champs propres à chaque
-  // appartement ne sont plus utilisés ici.
-  const monthlyCosts = buildingFixedCostsTotal(building) + buildingExpensesTotal(building);
+  // Chaque poste est mixte : montant plein de l'immeuble s'il le renseigne,
+  // sinon somme des valeurs propres de ses appartements pour ce poste.
+  const monthlyCosts = buildingCardCostsTotal(building, apts);
   const cashflow = monthlyIncome - monthlyCosts;
 
   const fullAddress = [building.address, building.complement, building.zipCode && building.city ? `${building.zipCode} ${building.city}` : (building.city || building.zipCode)].filter(Boolean).join(', ');

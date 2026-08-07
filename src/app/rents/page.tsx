@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import styles from "./page.module.css";
 import { formatDate } from "@/lib/utils";
 import { expectedRentForPeriod, isRentSettled, isRentLate } from "@/lib/rent-period";
-import { apartmentFixedCosts } from "@/lib/building-expenses";
+import { apartmentEffectiveCosts } from "@/lib/building-expenses";
 import { sendRentReminder } from "@/actions/rents";
 import PaymentEmailActions from "@/components/PaymentEmailActions";
 import MarkRentPaidButton from "@/components/MarkRentPaidButton";
@@ -138,7 +138,7 @@ export default async function RentsPage({
         // (quote-part), sinon les champs propres de l'appartement.
         if (!seenApartments.has(lease.apartment.id)) {
             seenApartments.add(lease.apartment.id);
-            totalMonthlyCosts += apartmentFixedCosts(lease.apartment, lease.apartment.building);
+            totalMonthlyCosts += apartmentEffectiveCosts(lease.apartment, lease.apartment.building);
         }
     }
     const netCashflow = totalReceived - totalMonthlyCosts;

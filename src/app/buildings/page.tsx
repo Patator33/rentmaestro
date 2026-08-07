@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import DeleteBuildingButton from '@/components/DeleteBuildingButton';
-import { buildingExpensesTotal, buildingFixedCostsTotal } from '@/lib/building-expenses';
+import { buildingCardCostsTotal } from '@/lib/building-expenses';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,10 +51,10 @@ export default async function BuildingsPage() {
                         return sum + (lease ? lease.rentAmount + lease.chargesAmount : 0);
                     }, 0);
 
-                    // Monthly costs : crédit/assurance/taxe et charges communes se saisissent
-                    // désormais au niveau immeuble (hérités par tous ses appartements), les
-                    // champs propres à chaque appartement ne sont donc plus utilisés ici.
-                    const monthlyCosts = buildingFixedCostsTotal(building) + buildingExpensesTotal(building);
+                    // Monthly costs : chaque poste (crédit/assurance/taxe/charges) est mixte —
+                    // montant plein de l'immeuble s'il le renseigne, sinon somme des valeurs
+                    // propres de ses appartements pour ce poste.
+                    const monthlyCosts = buildingCardCostsTotal(building, apts);
 
                     const cashflow = monthlyIncome - monthlyCosts;
 

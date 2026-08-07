@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api/landlord';
+import { BUILDING_EXPENSE_FIELDS } from '../lib/buildingExpenses';
 
 export default function ApartmentForm() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const isEdit = !!id;
 
-  const [form, setForm] = useState({ name: '', address: '', complement: '', city: '', zipCode: '', rent: '', charges: '', mortgageAmount: '', insuranceAmount: '', taxAmount: '', defaultDeposit: '', buildingId: '', surface: '', dpe: '' });
+  const expenseDefaults = Object.fromEntries(BUILDING_EXPENSE_FIELDS.map(f => [f.key, '']));
+  const [form, setForm] = useState({ name: '', address: '', complement: '', city: '', zipCode: '', rent: '', charges: '', mortgageAmount: '', insuranceAmount: '', taxAmount: '', defaultDeposit: '', buildingId: '', surface: '', dpe: '', ...expenseDefaults });
   const [buildings, setBuildings] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -15,18 +17,22 @@ export default function ApartmentForm() {
   useEffect(() => {
     api.getBuildings().then(setBuildings).catch(() => {});
     if (isEdit) {
-      api.getApartment(id!).then(a => setForm({
-        name: a.name || '', address: a.address || '', complement: a.complement || '',
-        city: a.city || '', zipCode: a.zipCode || '',
-        rent: String(a.rent || ''), charges: String(a.charges || ''),
-        mortgageAmount: a.mortgageAmount != null ? String(a.mortgageAmount) : '',
-        insuranceAmount: a.insuranceAmount != null ? String(a.insuranceAmount) : '',
-        taxAmount: a.taxAmount != null ? String(a.taxAmount) : '',
-        defaultDeposit: a.defaultDeposit != null ? String(a.defaultDeposit) : '',
-        buildingId: a.building?.id || '',
-        surface: a.surface != null ? String(a.surface) : '',
-        dpe: a.dpe || '',
-      }));
+      api.getApartment(id!).then(a => {
+        const expenseValues = Object.fromEntries(BUILDING_EXPENSE_FIELDS.map(f => [f.key, a[f.key] ? String(a[f.key]) : '']));
+        setForm({
+          name: a.name || '', address: a.address || '', complement: a.complement || '',
+          city: a.city || '', zipCode: a.zipCode || '',
+          rent: String(a.rent || ''), charges: String(a.charges || ''),
+          mortgageAmount: a.mortgageAmount != null ? String(a.mortgageAmount) : '',
+          insuranceAmount: a.insuranceAmount != null ? String(a.insuranceAmount) : '',
+          taxAmount: a.taxAmount != null ? String(a.taxAmount) : '',
+          defaultDeposit: a.defaultDeposit != null ? String(a.defaultDeposit) : '',
+          buildingId: a.building?.id || '',
+          surface: a.surface != null ? String(a.surface) : '',
+          dpe: a.dpe || '',
+          ...expenseValues,
+        });
+      });
     }
   }, [id]);
 
@@ -102,6 +108,10 @@ export default function ApartmentForm() {
           <Field label="Crédit immobilier (€/mois)" type="number" value={form.mortgageAmount} onChange={set('mortgageAmount')} />
           <Field label="Assurance (€/an)" type="number" value={form.insuranceAmount} onChange={set('insuranceAmount')} />
           <Field label="Taxe foncière (€/an)" type="number" value={form.taxAmount} onChange={set('taxAmount')} />
+          <p className="text-text-muted text-xs uppercase tracking-wide pt-2">Charges communes (tant que l'immeuble ne les renseigne pas)</p>
+          {BUILDING_EXPENSE_FIELDS.map(f => (
+            <Field key={f.key} label={`${f.label} (€/mois)`} type="number" value={(form as any)[f.key]} onChange={set(f.key)} />
+          ))}
           <p className="text-text-muted text-xs uppercase tracking-wide pt-2">Bail</p>
           <Field label="Caution par défaut (€)" type="number" value={form.defaultDeposit} onChange={set('defaultDeposit')} />
           {error && <p className="text-red-400 text-sm">{error}</p>}

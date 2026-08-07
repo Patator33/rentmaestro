@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyMobileToken, unauthorized } from '@/lib/mobile-auth';
+import { parseExpenseFieldsFromRecord } from '@/lib/building-expenses';
 
 export const dynamic = 'force-dynamic';
 
@@ -63,6 +64,7 @@ export async function PUT(
             companyId: companyId || null,
             surface: surface ? parseFloat(surface) : null,
             dpe: dpe || null,
+            ...parseExpenseFieldsFromRecord(body),
         },
     });
 
