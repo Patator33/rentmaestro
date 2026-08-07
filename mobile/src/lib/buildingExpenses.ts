@@ -48,12 +48,17 @@ export function apartmentEffectiveCosts(apartment: Record<string, any>, building
   return ALL_COST_FIELDS.reduce((sum, f) => sum + inheritedFieldValue(f.key, apartment, building), 0);
 }
 
-/** Total au niveau immeuble : montant plein pour un poste qu'il renseigne,
- * sinon somme des valeurs propres de ses appartements pour ce poste. */
-export function buildingCardCostsTotal(building: Record<string, any>, apartments: Record<string, any>[]): number {
-  return ALL_COST_FIELDS.reduce((sum, f) => {
+/** Détail poste par poste au niveau immeuble : montant plein pour un poste
+ * qu'il renseigne, sinon somme des valeurs propres de ses appartements. */
+export function buildingCardCostsBreakdown(building: Record<string, any>, apartments: Record<string, any>[]): Array<{ key: string; label: string; value: number }> {
+  return ALL_COST_FIELDS.map(f => {
     const buildingVal = building?.[f.key] ?? 0;
-    if (buildingVal > 0) return sum + buildingVal;
-    return sum + apartments.reduce((s, a) => s + (a?.[f.key] ?? 0), 0);
-  }, 0);
+    const value = buildingVal > 0 ? buildingVal : apartments.reduce((s, a) => s + (a?.[f.key] ?? 0), 0);
+    return { key: f.key, label: f.label, value };
+  });
+}
+
+/** Total au niveau immeuble : somme du détail poste par poste. */
+export function buildingCardCostsTotal(building: Record<string, any>, apartments: Record<string, any>[]): number {
+  return buildingCardCostsBreakdown(building, apartments).reduce((sum, r) => sum + r.value, 0);
 }

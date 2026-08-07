@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api/landlord';
 import PullToRefresh from '../components/PullToRefresh';
-import { buildingCardCostsTotal } from '../lib/buildingExpenses';
+import { buildingCardCostsBreakdown } from '../lib/buildingExpenses';
 
 export default function BuildingDetail() {
   const { id } = useParams<{ id: string }>();
@@ -61,7 +61,8 @@ export default function BuildingDetail() {
   }, 0);
   // Chaque poste est mixte : montant plein de l'immeuble s'il le renseigne,
   // sinon somme des valeurs propres de ses appartements pour ce poste.
-  const monthlyCosts = buildingCardCostsTotal(building, apts);
+  const costBreakdown = buildingCardCostsBreakdown(building, apts).filter((r: any) => r.value > 0);
+  const monthlyCosts = costBreakdown.reduce((sum: number, r: any) => sum + r.value, 0);
   const cashflow = monthlyIncome - monthlyCosts;
 
   const fullAddress = [building.address, building.complement, building.zipCode && building.city ? `${building.zipCode} ${building.city}` : (building.city || building.zipCode)].filter(Boolean).join(', ');
@@ -99,6 +100,18 @@ export default function BuildingDetail() {
             <StatCard label="Charges/mois" value={monthlyCosts > 0 ? `${monthlyCosts.toFixed(0)} €` : '—'} color="#f59e0b" />
             <StatCard label="Cashflow net" value={monthlyIncome > 0 || monthlyCosts > 0 ? `${cashflow.toFixed(0)} €` : '—'} color={cashflow >= 0 ? '#22c55e' : '#ef4444'} />
           </div>
+
+          {/* Détail des charges */}
+          {costBreakdown.length > 0 && (
+            <div className="bg-surface rounded-xl border border-border p-3 mb-4">
+              <p className="text-text-muted text-xs uppercase tracking-wide mb-3">Détail des charges</p>
+              <div className="space-y-2">
+                {costBreakdown.map((r: any) => (
+                  <Row key={r.key} label={r.label} value={`${r.value.toFixed(2)} €`} />
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Apartments list */}
           {total > 0 && (
@@ -154,6 +167,15 @@ export default function BuildingDetail() {
           </div>
         </div>
       </PullToRefresh>
+    </div>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-text-muted text-xs">{label}</span>
+      <span className="text-xs font-medium text-text-main">{value}</span>
     </div>
   );
 }

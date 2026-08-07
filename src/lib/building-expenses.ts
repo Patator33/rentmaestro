@@ -95,14 +95,22 @@ export function apartmentEffectiveCosts(
 }
 
 /**
- * Total affiché au niveau immeuble (carte immeuble, dashboard) : pour un
- * poste renseigné par l'immeuble, le montant plein compté une fois ; sinon,
- * la somme des valeurs propres de ses appartements pour ce poste.
+ * Détail poste par poste affiché au niveau immeuble (carte immeuble, fiche
+ * immeuble) : pour un poste qu'il renseigne, son montant plein ; sinon la
+ * somme des valeurs propres de ses appartements pour ce poste.
  */
-export function buildingCardCostsTotal(building: CostFields, apartments: CostFields[]): number {
-    return ALL_COST_FIELDS.reduce((sum, f) => {
+export function buildingCardCostsBreakdown(
+    building: CostFields,
+    apartments: CostFields[]
+): Array<{ key: CostFieldKey; label: string; value: number }> {
+    return ALL_COST_FIELDS.map(f => {
         const buildingVal = building[f.key] ?? 0;
-        if (buildingVal > 0) return sum + buildingVal;
-        return sum + apartments.reduce((s, a) => s + (a[f.key] ?? 0), 0);
-    }, 0);
+        const value = buildingVal > 0 ? buildingVal : apartments.reduce((s, a) => s + (a[f.key] ?? 0), 0);
+        return { key: f.key, label: f.label, value };
+    });
+}
+
+/** Total affiché au niveau immeuble : somme du détail poste par poste. */
+export function buildingCardCostsTotal(building: CostFields, apartments: CostFields[]): number {
+    return buildingCardCostsBreakdown(building, apartments).reduce((sum, r) => sum + r.value, 0);
 }

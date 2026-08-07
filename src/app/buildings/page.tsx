@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import DeleteBuildingButton from '@/components/DeleteBuildingButton';
-import { buildingCardCostsTotal } from '@/lib/building-expenses';
+import { buildingCardCostsBreakdown } from '@/lib/building-expenses';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,10 +51,10 @@ export default async function BuildingsPage() {
                         return sum + (lease ? lease.rentAmount + lease.chargesAmount : 0);
                     }, 0);
 
-                    // Monthly costs : chaque poste (crédit/assurance/taxe/charges) est mixte —
-                    // montant plein de l'immeuble s'il le renseigne, sinon somme des valeurs
-                    // propres de ses appartements pour ce poste.
-                    const monthlyCosts = buildingCardCostsTotal(building, apts);
+                    // Détail poste par poste : montant plein de l'immeuble s'il le renseigne,
+                    // sinon somme des valeurs propres de ses appartements pour ce poste.
+                    const costBreakdown = buildingCardCostsBreakdown(building, apts).filter(r => r.value > 0);
+                    const monthlyCosts = costBreakdown.reduce((sum, r) => sum + r.value, 0);
 
                     const cashflow = monthlyIncome - monthlyCosts;
 
@@ -87,6 +87,22 @@ export default async function BuildingsPage() {
                                 <StatCell label="Charges/mois" value={monthlyCosts > 0 ? `${monthlyCosts.toFixed(0)} €` : '—'} color="#f59e0b" />
                                 <StatCell label="Cashflow net" value={monthlyIncome > 0 || monthlyCosts > 0 ? `${cashflow.toFixed(0)} €` : '—'} color={cashflow >= 0 ? '#22c55e' : '#ef4444'} />
                             </div>
+
+                            {/* Détail des charges : un poste par ligne, plein montant immeuble ou
+                                somme des valeurs propres des appartements selon qui le renseigne. */}
+                            {costBreakdown.length > 0 && (
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginTop: '0.75rem' }}>
+                                    {costBreakdown.map(r => (
+                                        <span key={r.key} style={{
+                                            padding: '0.2rem 0.6rem', background: 'var(--surface-active)',
+                                            border: '1px solid var(--border-color)', borderRadius: '20px',
+                                            fontSize: '0.75rem', color: 'var(--text-secondary)',
+                                        }}>
+                                            {r.label} : <strong style={{ color: 'var(--text-main)' }}>{r.value.toFixed(2)} €</strong>
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
 
                             {/* Apartments list */}
                             {totalApts > 0 && (
