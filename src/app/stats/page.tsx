@@ -109,7 +109,8 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
                     ]
                 },
                 orderBy: { startDate: 'asc' }
-            }
+            },
+            building: { include: { apartments: { select: { id: true } } } }
         }
     });
 
@@ -135,10 +136,12 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
 
         totalVacancyDays += (daysInPeriod - occupiedDays);
 
-        // Add mortgage, insurance, and tax expenses per month
-        const aptMortgage = apt.mortgageAmount || 0;
-        const aptInsurance = apt.insuranceAmount || 0;
-        const aptTax = apt.taxAmount || 0;
+        // Add mortgage, insurance, and tax expenses per month — hérités de
+        // l'immeuble (quote-part) s'il y en a un, sinon les champs de l'appartement.
+        const buildingAptCount = apt.building ? Math.max(1, apt.building.apartments.length) : 1;
+        const aptMortgage = apt.building ? (apt.building.mortgageAmount || 0) / buildingAptCount : (apt.mortgageAmount || 0);
+        const aptInsurance = apt.building ? (apt.building.insuranceAmount || 0) / buildingAptCount : (apt.insuranceAmount || 0);
+        const aptTax = apt.building ? (apt.building.taxAmount || 0) / buildingAptCount : (apt.taxAmount || 0);
         const fixedCosts = aptMortgage + aptInsurance + aptTax;
 
         if (fixedCosts > 0) {

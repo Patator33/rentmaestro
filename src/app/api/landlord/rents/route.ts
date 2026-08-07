@@ -34,7 +34,9 @@ export async function GET(request: Request) {
         },
         include: {
             tenant: true,
-            apartment: true,
+            apartment: {
+                include: { building: { include: { apartments: { select: { id: true } } } } }
+            },
             payments: { where: { period: { in: [prevMonth, startOfMonth] } } },
         },
         orderBy: [{ apartment: { address: 'asc' } }],
@@ -68,7 +70,7 @@ export async function GET(request: Request) {
             isLate,
             carriedOver: false,
             tenant: { id: lease.tenant.id, firstName: lease.tenant.firstName, lastName: lease.tenant.lastName },
-            apartment: { id: lease.apartment.id, address: lease.apartment.address, name: lease.apartment.name, mortgageAmount: lease.apartment.mortgageAmount, insuranceAmount: lease.apartment.insuranceAmount, taxAmount: lease.apartment.taxAmount },
+            apartment: { id: lease.apartment.id, address: lease.apartment.address, name: lease.apartment.name, buildingId: lease.apartment.buildingId, mortgageAmount: lease.apartment.mortgageAmount, insuranceAmount: lease.apartment.insuranceAmount, taxAmount: lease.apartment.taxAmount, building: lease.apartment.building },
         };
     });
 
@@ -99,7 +101,7 @@ export async function GET(request: Request) {
                 isLate: true,
                 carriedOver: true,
                 tenant: { id: lease.tenant.id, firstName: lease.tenant.firstName, lastName: lease.tenant.lastName },
-                apartment: { id: lease.apartment.id, address: lease.apartment.address, name: lease.apartment.name, mortgageAmount: lease.apartment.mortgageAmount, insuranceAmount: lease.apartment.insuranceAmount, taxAmount: lease.apartment.taxAmount },
+                apartment: { id: lease.apartment.id, address: lease.apartment.address, name: lease.apartment.name, buildingId: lease.apartment.buildingId, mortgageAmount: lease.apartment.mortgageAmount, insuranceAmount: lease.apartment.insuranceAmount, taxAmount: lease.apartment.taxAmount, building: lease.apartment.building },
             };
         })
         .filter((r): r is NonNullable<typeof r> => r !== null);

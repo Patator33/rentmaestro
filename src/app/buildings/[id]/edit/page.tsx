@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { updateBuilding } from '@/actions/buildings';
-import { BUILDING_EXPENSE_FIELDS } from '@/lib/building-expenses';
+import { BUILDING_EXPENSE_FIELDS, BUILDING_FIXED_COST_FIELDS } from '@/lib/building-expenses';
 import styles from '../../../apartments/new/page.module.css';
 
 export default async function EditBuildingPage({ params }: { params: Promise<{ id: string }> }) {
@@ -56,6 +56,19 @@ export default async function EditBuildingPage({ params }: { params: Promise<{ i
                             <option key={c.id} value={c.id}>{c.name} ({c.type})</option>
                         ))}
                     </select>
+                </div>
+
+                <h2 style={{ fontSize: '0.95rem', fontWeight: 700, margin: '1.5rem 0 0.25rem' }}>Coûts fixes de l'immeuble</h2>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
+                    Répartis entre les appartements de l'immeuble. Un appartement sans immeuble garde ses propres champs.
+                </p>
+                <div className={styles.row} style={{ flexWrap: 'wrap' }}>
+                    {BUILDING_FIXED_COST_FIELDS.map(f => (
+                        <div key={f.key} className={styles.formGroup} style={{ minWidth: '160px' }}>
+                            <label htmlFor={f.key} className={styles.label}>{f.label} (€/mois)</label>
+                            <input type="number" step="0.01" min="0" id={f.key} name={f.key} defaultValue={(building as any)[f.key] ?? 0} className={styles.input} />
+                        </div>
+                    ))}
                 </div>
 
                 <h2 style={{ fontSize: '0.95rem', fontWeight: 700, margin: '1.5rem 0 0.25rem' }}>Charges communes mensuelles</h2>

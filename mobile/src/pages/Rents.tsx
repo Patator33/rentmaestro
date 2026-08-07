@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../api/landlord';
 import PullToRefresh from '../components/PullToRefresh';
 import { useAutoRefresh } from '../hooks/useAutoRefresh';
+import { apartmentFixedCosts } from '../lib/buildingExpenses';
 
 interface RentItem {
   leaseId: string;
@@ -15,7 +16,7 @@ interface RentItem {
   /** Impayé du mois précédent, affiché en plus et exclu des totaux du mois. */
   carriedOver?: boolean;
   tenant: { id: string; firstName: string; lastName: string };
-  apartment: { address: string; name: string | null; mortgageAmount?: number | null; insuranceAmount?: number | null; taxAmount?: number | null };
+  apartment: { address: string; name: string | null; buildingId?: string | null; mortgageAmount?: number | null; insuranceAmount?: number | null; taxAmount?: number | null; building?: any };
 }
 
 function getMonthStr(offset: number): string {
@@ -125,7 +126,7 @@ export default function Rents() {
   for (const r of monthRents) {
     if (!seenApts.has(r.apartment.address + (r.apartment.name ?? ''))) {
       seenApts.add(r.apartment.address + (r.apartment.name ?? ''));
-      totalMonthlyCosts += (r.apartment.mortgageAmount ?? 0) + (r.apartment.insuranceAmount ?? 0) + (r.apartment.taxAmount ?? 0);
+      totalMonthlyCosts += apartmentFixedCosts(r.apartment, r.apartment.building);
     }
   }
   const netCashflow = totalReceived - totalMonthlyCosts;

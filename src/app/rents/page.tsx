@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import styles from "./page.module.css";
 import { formatDate } from "@/lib/utils";
 import { expectedRentForPeriod, isRentSettled, isRentLate } from "@/lib/rent-period";
+import { apartmentFixedCosts } from "@/lib/building-expenses";
 import { sendRentReminder } from "@/actions/rents";
 import PaymentEmailActions from "@/components/PaymentEmailActions";
 import MarkRentPaidButton from "@/components/MarkRentPaidButton";
@@ -56,7 +57,9 @@ export default async function RentsPage({
             ]
         },
         include: {
-            apartment: true,
+            apartment: {
+                include: { building: { include: { apartments: { select: { id: true } } } } }
+            },
             tenant: true,
             payments: {
                 where: {
@@ -131,13 +134,11 @@ export default async function RentsPage({
         totalExpected += payment ? payment.amount : fallbackAmount;
         if (payment?.status === 'PAID') totalReceived += payment.amount;
         else if (payment?.status === 'PARTIAL' && (payment as any).paidAmount != null) totalReceived += (payment as any).paidAmount;
-        // Charges fixes par appartement, déjà saisies mensuellement dans le formulaire
+        // Charges fixes par appartement : héritées de l'immeuble s'il y en a un
+        // (quote-part), sinon les champs propres de l'appartement.
         if (!seenApartments.has(lease.apartment.id)) {
             seenApartments.add(lease.apartment.id);
-            totalMonthlyCosts +=
-                (lease.apartment.mortgageAmount ?? 0) +
-                (lease.apartment.insuranceAmount ?? 0) +
-                (lease.apartment.taxAmount ?? 0);
+            totalMonthlyCosts += apartmentFixedCosts(lease.apartment, lease.apartment.building);
         }
     }
     const netCashflow = totalReceived - totalMonthlyCosts;

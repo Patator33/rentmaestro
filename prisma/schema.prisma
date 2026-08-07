@@ -31,6 +31,12 @@ model Building {
   expenseBank        Float @default(0)
   expenseCleaning    Float @default(0)
   expenseOther       Float @default(0)
+  /// Coûts fixes de l'immeuble entier (crédit/assurance/taxe foncière),
+  /// répartis à parts égales entre ses appartements. Un appartement sans
+  /// immeuble garde ses propres champs (voir Apartment) comme repli.
+  mortgageAmount  Float @default(0)
+  insuranceAmount Float @default(0)
+  taxAmount       Float @default(0)
 }
 
 model Apartment {

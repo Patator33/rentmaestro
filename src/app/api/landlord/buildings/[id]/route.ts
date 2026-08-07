@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyMobileToken, unauthorized } from '@/lib/mobile-auth';
-import { parseExpenseFieldsFromRecord } from '@/lib/building-expenses';
+import { parseExpenseFieldsFromRecord, parseFixedCostFieldsFromRecord } from '@/lib/building-expenses';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,7 +13,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     if (!name || !address) return NextResponse.json({ error: 'Nom et adresse requis.' }, { status: 400 });
     const building = await prisma.building.update({
         where: { id },
-        data: { name, address, zipCode: zipCode || null, city: city || null, companyId: companyId || null, ...parseExpenseFieldsFromRecord(body) },
+        data: { name, address, zipCode: zipCode || null, city: city || null, companyId: companyId || null, ...parseExpenseFieldsFromRecord(body), ...parseFixedCostFieldsFromRecord(body) },
     });
     return NextResponse.json(building);
 }
