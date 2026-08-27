@@ -52,6 +52,14 @@ export async function sendMessageWithButtons(text: string, buttons: InlineButton
         : { ok: false as const, error: res.error };
 }
 
+/** Message texte simple, sans bouton — réponse à une réponse rapide ambiguë. */
+export async function sendPlainMessage(chatId: string, text: string) {
+    const cfg = await getTelegramConfig();
+    const payload: Record<string, unknown> = { chat_id: chatId, text };
+    if (cfg.parseMode && cfg.parseMode !== 'none') payload.parse_mode = cfg.parseMode;
+    return callTelegram('sendMessage', payload, cfg);
+}
+
 /** Retire les boutons après décision pour empêcher un second clic. */
 export async function editMessageText(chatId: string, messageId: string, text: string) {
     const cfg = await getTelegramConfig();
@@ -112,7 +120,12 @@ export async function registerWebhook(baseUrl: string): Promise<{ ok: boolean; u
     const res = await callTelegram('setWebhook', {
         url,
         secret_token: secret,
-        allowed_updates: ['callback_query'],
+        // 'message' en plus de 'callback_query' : certains clients Telegram
+        // (montres connectées notamment) n'affichent pas les vrais boutons
+        // inline et proposent à la place des réponses rapides ("Oui"/"Non"/
+        // "Ok") qui envoient un simple message texte — sans ça, Telegram ne
+        // livrait même pas ces messages au webhook.
+        allowed_updates: ['callback_query', 'message'],
     });
     return res.ok ? { ok: true, url } : { ok: false, error: res.error };
 }
