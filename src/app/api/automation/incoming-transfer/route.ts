@@ -74,7 +74,15 @@ export async function POST(request: Request) {
     const chosen = match.matched ? match.candidates : match.fallback;
     const usable = chosen.filter(c => c.period !== null);
 
-    const options: StoredOption[] = usable.map(c => ({
+    // Les options mémorisées doivent correspondre exactement à ce qui est
+    // proposé (boutons ET réponse texte de secours des montres connectées) :
+    // stocker tout `usable` même quand un seul bouton "Valider" est affiché
+    // faisait croire à un choix ambigu côté réponse texte alors qu'un seul
+    // candidat avait réellement été offert.
+    const singleMatch = usable.length > 0 && match.matched && !match.ambiguous;
+    const offered = singleMatch ? [usable[0]] : usable;
+
+    const options: StoredOption[] = offered.map(c => ({
         leaseId: c.leaseId,
         period: c.period!,
         tenantName: c.tenantName,
@@ -98,8 +106,8 @@ export async function POST(request: Request) {
         // resolveTarget() propose désormais toujours une cible (mois suivant en
         // avance si le bail est à jour), y compris dans la liste complète.
         text = `${header}\n\nAucun locataire actif dans l'application. À traiter manuellement.`;
-    } else if (match.matched && !match.ambiguous) {
-        const best = usable[0];
+    } else if (singleMatch) {
+        const best = offered[0];
         text = `${header}\n\n${describe(best, amount)}\n\nCréditer ce loyer ?`;
         buttons = [
             { text: '✅ Valider', callback_data: `p:${shortId}:0` },
@@ -112,7 +120,7 @@ export async function POST(request: Request) {
         text = `${header}\n\n${intro}`;
         // Les boutons Telegram n'affichent que du texte brut : ni gras ni
         // couleur n'y sont rendus, l'émoji est le seul repère visuel possible.
-        buttons = usable.map((c, i) => ({
+        buttons = offered.map((c, i) => ({
             text: `${c.tenantName} — ${c.periodLabel}${c.isAdvance ? ' 🔴 avance' : ''} (${fmt(c.remaining)} €)`,
             callback_data: `p:${shortId}:${i}`,
         }));
