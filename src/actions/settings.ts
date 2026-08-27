@@ -36,6 +36,41 @@ export async function getTelegramTokenHint(): Promise<{ configured: boolean; hin
     return { configured: true, hint: `…${token.slice(-4)}` };
 }
 
+/**
+ * Enregistre uniquement le token du bot, indépendamment du reste des réglages
+ * Telegram — confirmation immédiate et isolée que la valeur saisie est bien
+ * celle prise en compte, sans dépendre de l'état "dirty" des autres champs.
+ */
+export async function saveTelegramToken(token: string): Promise<{ success: boolean; hint?: string; error?: string }> {
+    await requireAuth();
+    const trimmed = token.trim();
+    if (!trimmed) return { success: false, error: 'Token vide.' };
+    await prisma.setting.upsert({
+        where: { key: 'telegram_bot_token' },
+        update: { value: trimmed },
+        create: { key: 'telegram_bot_token', value: trimmed },
+    });
+    revalidatePath('/gestion/parametres');
+    return { success: true, hint: `…${trimmed.slice(-4)}` };
+}
+
+/**
+ * Révèle le token en clair, à la demande explicite de l'utilisateur — jamais
+ * inclus dans le rendu initial de la page. Utile pour vérifier caractère par
+ * caractère face à @BotFather quand l'app dit "configuré" mais que Telegram
+ * répond "not found" (jeton périmé/regénéré côté BotFather, ou saisi avec un
+ * espace ou un caractère invisible).
+ */
+export async function revealTelegramToken(): Promise<{ token: string | null; source: 'settings' | 'env' | null }> {
+    await requireAuth();
+    const row = await prisma.setting.findUnique({ where: { key: 'telegram_bot_token' } });
+    const fromDb = row?.value?.trim();
+    if (fromDb) return { token: fromDb, source: 'settings' };
+    const fromEnv = (process.env.TELEGRAM_BOT_TOKEN ?? '').trim();
+    if (fromEnv) return { token: fromEnv, source: 'env' };
+    return { token: null, source: null };
+}
+
 export async function sendTelegramTest(): Promise<{ success: boolean; error?: string }> {
     await requireAuth();
     return sendTelegramMessage('✅ RentMaestro — message de test. La configuration Telegram fonctionne.');

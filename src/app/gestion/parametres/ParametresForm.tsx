@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { saveSetting, sendTelegramTest, registerTelegramWebhook } from '@/actions/settings';
+import { saveSetting, sendTelegramTest, registerTelegramWebhook, saveTelegramToken, revealTelegramToken } from '@/actions/settings';
 import { setTheme } from '@/actions/theme';
 import { THEMES, type ThemeId } from '@/themes/index';
 import { EVENT_LABELS, EVENT_VARIABLES } from '@/lib/n8n';
@@ -166,6 +166,52 @@ export default function ParametresForm({
     const [telegramTestError, setTelegramTestError] = useState('');
     const [webhookState, setWebhookState] = useState<'idle' | 'working' | 'ok' | 'error'>('idle');
     const [webhookMessage, setWebhookMessage] = useState('');
+
+    // Sauvegarde et révélation du token indépendantes du bloc "Enregistrer"
+    // global : confirmation immédiate que la valeur saisie est bien prise en
+    // compte, et moyen de vérifier caractère par caractère ce qui est
+    // réellement stocké quand Telegram répond "not found" malgré un token
+    // "configuré".
+    const [tokenSaveState, setTokenSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+    const [tokenSaveError, setTokenSaveError] = useState('');
+    const [tokenHintOverride, setTokenHintOverride] = useState<string | null>(null);
+    const [revealState, setRevealState] = useState<'idle' | 'loading' | 'shown' | 'error'>('idle');
+    const [revealedToken, setRevealedToken] = useState<string | null>(null);
+    const [revealSource, setRevealSource] = useState<'settings' | 'env' | null>(null);
+
+    const handleSaveTokenOnly = async () => {
+        if (!telegramToken.trim()) return;
+        setTokenSaveState('saving');
+        setTokenSaveError('');
+        const res = await saveTelegramToken(telegramToken.trim());
+        if (res.success) {
+            setTokenSaveState('saved');
+            setTokenHintOverride(res.hint ?? null);
+            setTelegramToken('');
+            setRevealState('idle');
+            setRevealedToken(null);
+        } else {
+            setTokenSaveState('error');
+            setTokenSaveError(res.error ?? 'Échec de l\'enregistrement.');
+        }
+    };
+
+    const handleRevealToken = async () => {
+        if (revealState === 'shown') {
+            setRevealState('idle');
+            setRevealedToken(null);
+            return;
+        }
+        setRevealState('loading');
+        const res = await revealTelegramToken();
+        if (res.token) {
+            setRevealedToken(res.token);
+            setRevealSource(res.source);
+            setRevealState('shown');
+        } else {
+            setRevealState('error');
+        }
+    };
 
     const handleRegisterWebhook = async () => {
         setWebhookState('working');
@@ -409,14 +455,56 @@ export default function ParametresForm({
 
                         <div>
                             <label style={fieldLabelStyle}>Token du bot</label>
-                            <input
-                                type="password"
-                                value={telegramToken}
-                                onChange={e => { setTelegramToken(e.target.value); setTelegramSaveState('dirty'); }}
-                                placeholder={telegramTokenConfigured ? `Enregistré (${telegramTokenHint}) — laisser vide pour conserver` : '123456789:AA...'}
-                                autoComplete="off"
-                                style={fieldInputStyle}
-                            />
+                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                <input
+                                    type="password"
+                                    value={telegramToken}
+                                    onChange={e => {
+                                        setTelegramToken(e.target.value);
+                                        setTelegramSaveState('dirty');
+                                        setTokenSaveState('idle');
+                                    }}
+                                    placeholder={
+                                        (tokenHintOverride ?? telegramTokenHint) && (tokenHintOverride || telegramTokenConfigured)
+                                            ? `Enregistré (${tokenHintOverride ?? telegramTokenHint}) — laisser vide pour conserver`
+                                            : '123456789:AA...'
+                                    }
+                                    autoComplete="off"
+                                    style={{ ...fieldInputStyle, flex: 1 }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={handleSaveTokenOnly}
+                                    disabled={!telegramToken.trim() || tokenSaveState === 'saving'}
+                                    className="std-add-button"
+                                    style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
+                                    title="Enregistre uniquement le token, indépendamment du reste"
+                                >
+                                    {tokenSaveState === 'saving' ? '⏳' : tokenSaveState === 'saved' ? '✓ Enregistré' : '💾 Enregistrer ce token'}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleRevealToken}
+                                    disabled={revealState === 'loading'}
+                                    className="std-add-button"
+                                    style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
+                                    title="Afficher le token actuellement enregistré, en clair"
+                                >
+                                    {revealState === 'loading' ? '⏳' : revealState === 'shown' ? '🙈 Masquer' : '👁 Afficher'}
+                                </button>
+                            </div>
+                            {tokenSaveState === 'error' && (
+                                <p style={{ ...fieldHintStyle, color: '#ef4444' }}>⚠ {tokenSaveError}</p>
+                            )}
+                            {revealState === 'shown' && (
+                                <p style={{ ...fieldHintStyle, fontFamily: 'monospace', userSelect: 'all', color: 'var(--text-main)', wordBreak: 'break-all' }}>
+                                    {revealedToken}
+                                    {revealSource === 'env' && ' (depuis la variable d\'environnement TELEGRAM_BOT_TOKEN, pas les Réglages)'}
+                                </p>
+                            )}
+                            {revealState === 'error' && (
+                                <p style={{ ...fieldHintStyle, color: '#ef4444' }}>⚠ Aucun token trouvé (ni Réglages, ni variable d'environnement).</p>
+                            )}
                             <p style={fieldHintStyle}>
                                 Fourni par @BotFather. Laissez vide pour garder celui déjà enregistré.
                             </p>
