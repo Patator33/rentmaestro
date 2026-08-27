@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import DateFilters from "@/components/DateFilters";
 import RevenueChart from "@/components/RevenueChart";
 import { inheritedFieldValue } from "@/lib/building-expenses";
+import { computeApartmentVacancy, type VacancyPeriod } from "@/lib/vacancy";
+import VacancyKpiCard from "@/components/VacancyKpiCard";
 import styles from "./page.module.css";
 
 export const dynamic = "force-dynamic";
@@ -117,25 +119,16 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
 
     let totalVacancyDays = 0;
     let totalPossibleDays = 0;
+    const vacancyPeriods: VacancyPeriod[] = [];
 
     apartments.forEach(apt => {
-        const aptStart = startDate > new Date(apt.createdAt) ? startDate : new Date(apt.createdAt);
-        const aptEnd = endDate;
-        const daysInPeriod = Math.ceil((aptEnd.getTime() - aptStart.getTime()) / (1000 * 60 * 60 * 24));
-        totalPossibleDays += daysInPeriod;
-
-        let occupiedDays = 0;
-        apt.leases.forEach(lease => {
-            const leaseStart = new Date(lease.startDate) > aptStart ? new Date(lease.startDate) : aptStart;
-            const leaseEnd = lease.endDate ? (new Date(lease.endDate) < aptEnd ? new Date(lease.endDate) : aptEnd) : aptEnd;
-
-            if (leaseStart <= leaseEnd) {
-                const days = Math.ceil((leaseEnd.getTime() - leaseStart.getTime()) / (1000 * 60 * 60 * 24));
-                occupiedDays += days;
-            }
-        });
-
-        totalVacancyDays += (daysInPeriod - occupiedDays);
+        // Bornée à la disponibilité réelle du bien : avant sa mise en location
+        // (availableFrom / création) ou après une vente (soldAt), il n'était
+        // pas louable et ne doit pas gonfler le taux de vacance.
+        const { possibleDays, vacantDays, periods } = computeApartmentVacancy(apt, startDate, endDate);
+        totalPossibleDays += possibleDays;
+        totalVacancyDays += vacantDays;
+        vacancyPeriods.push(...periods);
 
         // Add mortgage, insurance, and tax expenses per month — poste par poste,
         // hérité de l'immeuble s'il le renseigne, sinon le champ de l'appartement.
@@ -164,6 +157,9 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
     });
 
     const vacancyRate = totalPossibleDays > 0 ? ((totalVacancyDays / totalPossibleDays) * 100).toFixed(1) : 0;
+    const vacancyPeriodsDTO = vacancyPeriods
+        .sort((a, b) => b.start.getTime() - a.start.getTime())
+        .map(p => ({ apartmentLabel: p.apartmentLabel, start: p.start.toISOString(), end: p.end.toISOString(), days: p.days, lostAmount: p.lostAmount }));
     const totalExpenses = totalVarExpenses + totalMortgage + totalInsurance + totalTax;
 
     // Average rent
@@ -228,11 +224,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
                     <div className={styles.kpiTitle}>Loyer Moyen</div>
                     <div className={styles.kpiValue}>{averageRent} €</div>
                 </div>
-                <div className={styles.kpiCard}>
-                    <div className={styles.kpiTitle}>🏖️ Taux de Vacance</div>
-                    <div className={styles.kpiValue}>{vacancyRate}%</div>
-                    <div className={styles.kpiSubtext}>{totalVacancyDays} jours non loués</div>
-                </div>
+                <VacancyKpiCard rate={vacancyRate} totalDays={totalVacancyDays} periods={vacancyPeriodsDTO} />
             </div>
 
             <h2 className={styles.sectionTitle}>Évolution des Revenus vs Dépenses</h2>

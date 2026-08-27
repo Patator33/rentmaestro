@@ -20,15 +20,14 @@ export async function markRentAsPaid(leaseId: string, periodStr: string, paidAmo
             where: { leaseId, period }
         });
 
-        // Determine expected amount (prorated for first month if tenant starts mid-month)
-        let expectedAmount: number;
-        if (existing) {
-            expectedAmount = existing.amount;
-        } else {
-            const lease = await prisma.lease.findUnique({ where: { id: leaseId } });
-            if (!lease) throw new Error("Bail introuvable.");
-            expectedAmount = expectedRentForPeriod(lease, period);
-        }
+        // Recalculé à chaque fois depuis le bail plutôt que réutilisé depuis la
+        // ligne existante : une ligne générée en début de mois, avant qu'un
+        // départ ne soit enregistré, restait figée au loyer plein même après
+        // la saisie de la date de fin — le prorata de sortie n'était jamais
+        // repris.
+        const lease = await prisma.lease.findUnique({ where: { id: leaseId } });
+        if (!lease) throw new Error("Bail introuvable.");
+        const expectedAmount = expectedRentForPeriod(lease, period);
 
         // Accumulate with any prior partial payment
         const alreadyPaid = (existing?.status === 'PARTIAL' && existing?.paidAmount != null)
@@ -40,6 +39,7 @@ export async function markRentAsPaid(leaseId: string, periodStr: string, paidAmo
             await prisma.rentPayment.update({
                 where: { id: existing.id },
                 data: {
+                    amount: expectedAmount,
                     status: isPartial ? "PARTIAL" : "PAID",
                     paidAt: new Date(),
                     paidAmount: isPartial ? totalPaid : null,

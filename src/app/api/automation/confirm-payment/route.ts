@@ -42,7 +42,10 @@ export async function POST(request: Request) {
     if (!lease) return NextResponse.json({ error: 'Bail introuvable' }, { status: 404 });
 
     const existing = await prisma.rentPayment.findFirst({ where: { leaseId, period } });
-    const expected = existing?.amount ?? expectedRentForPeriod(lease, period);
+    // Recalculé depuis le bail plutôt que réutilisé depuis la ligne existante :
+    // une ligne générée avant l'enregistrement d'un départ restait figée au
+    // loyer plein, le prorata de sortie n'était jamais repris.
+    const expected = expectedRentForPeriod(lease, period);
 
     // Cumul avec un éventuel acompte déjà enregistré sur cette période.
     const alreadyPaid = existing?.status === 'PARTIAL' && existing.paidAmount != null ? existing.paidAmount : 0;
@@ -50,6 +53,7 @@ export async function POST(request: Request) {
     const isPartial = totalPaid < expected - 0.01;
 
     const data = {
+        amount: expected,
         status: isPartial ? 'PARTIAL' : 'PAID',
         paidAt: new Date(),
         paidAmount: isPartial ? totalPaid : null,
@@ -57,7 +61,7 @@ export async function POST(request: Request) {
 
     const payment = existing
         ? await prisma.rentPayment.update({ where: { id: existing.id }, data })
-        : await prisma.rentPayment.create({ data: { leaseId, period, amount: expected, ...data } });
+        : await prisma.rentPayment.create({ data: { leaseId, period, ...data } });
 
     // Le libellé bancaire mémorisé rend les rapprochements suivants certains.
     let labelSaved = false;

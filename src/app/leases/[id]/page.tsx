@@ -8,6 +8,7 @@ import { markDepositReceived, markDepositReturned, setDepositAmount, setGuaranto
 import RentRevision from "@/components/RentRevision";
 import { DEFAULT_IRL_INDICES, type IrlIndex } from "@/lib/irl";
 import { getSetting } from "@/actions/settings";
+import LeaseQuittancesList from "@/components/LeaseQuittancesList";
 
 export const dynamic = "force-dynamic";
 
@@ -51,6 +52,7 @@ export default async function LeaseDetailPage({ params }: { params: Promise<{ id
                 },
                 tenant: true,
                 documents: { orderBy: { createdAt: 'desc' } },
+                payments: { where: { status: 'PAID' }, orderBy: { period: 'desc' } },
             }
         }),
         prisma.globalDocument.findMany({ orderBy: { createdAt: 'asc' } }),
@@ -127,6 +129,11 @@ export default async function LeaseDetailPage({ params }: { params: Promise<{ id
     }));
     const hasBailType = lease.apartment.documents.some((d: any) => d.docType === 'BAIL_TYPE');
     const hasEdl = lease.apartment.documents.some((d: any) => d.docType === 'ETAT_DES_LIEUX');
+    const quittances = lease.payments.map(p => ({
+        paymentId: p.id,
+        period: p.period.toISOString(),
+        amount: p.amount,
+    }));
 
     return (
         <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>
@@ -329,6 +336,11 @@ export default async function LeaseDetailPage({ params }: { params: Promise<{ id
                     />
                 </div>
                 <LeaseDocumentUpload leaseId={lease.id} initialDocuments={lease.documents} guarantorType={guarantorType} />
+            </section>
+
+            <section style={{ background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '1.25rem', marginBottom: '1.5rem' }}>
+                <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '1rem' }}>🧾 Quittances</h2>
+                <LeaseQuittancesList quittances={quittances} />
             </section>
 
             <div style={{ marginTop: '1.5rem', display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
