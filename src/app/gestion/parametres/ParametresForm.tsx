@@ -398,7 +398,10 @@ export default function ParametresForm({
                     </button>
                 }
             >
-                {telegramEnabled && (
+                {/* Connexion (token, chat, boutons de validation) : toujours visible, même
+                    Telegram désactivé — sinon impossible de saisir/mettre à jour le token
+                    ou de déclarer le webhook tant que le bascule n'est pas activé. Seules
+                    les notifications par événement, en dessous, dépendent du bascule. */}
                     <div style={{ border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '1rem', marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                         <h3 style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
                             Connexion
@@ -516,7 +519,6 @@ export default function ParametresForm({
                             </div>
                         </div>
                     </div>
-                )}
 
                 {telegramEnabled && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1rem' }}>
