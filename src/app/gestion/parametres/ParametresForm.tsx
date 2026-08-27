@@ -457,7 +457,16 @@ export default function ParametresForm({
                             <label style={fieldLabelStyle}>Token du bot</label>
                             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                                 <input
-                                    type="password"
+                                    // type="text" volontaire : un champ type="password" est une cible
+                                    // privilégiée pour l'autofill des gestionnaires de mots de passe, qui
+                                    // ignorent souvent autocomplete="off" sur ce type précis. Un
+                                    // gestionnaire a fini par y injecter un mot de passe enregistré sans
+                                    // action explicite de l'utilisateur, écrasant le vrai token à chaque
+                                    // sauvegarde (dont celle déclenchée par "Envoyer un message de test").
+                                    // Le bouton "Afficher" permet déjà de relire la valeur en clair, la
+                                    // saisie masquée n'apportait donc rien.
+                                    type="text"
+                                    name="telegram-bot-token-field"
                                     value={telegramToken}
                                     onChange={e => {
                                         setTelegramToken(e.target.value);
@@ -469,7 +478,14 @@ export default function ParametresForm({
                                             ? `Enregistré (${tokenHintOverride ?? telegramTokenHint}) — laisser vide pour conserver`
                                             : '123456789:AA...'
                                     }
-                                    autoComplete="off"
+                                    autoComplete="new-password"
+                                    autoCorrect="off"
+                                    autoCapitalize="off"
+                                    spellCheck={false}
+                                    data-lpignore="true"
+                                    data-1p-ignore="true"
+                                    data-bwignore="true"
+                                    data-form-type="other"
                                     style={{ ...fieldInputStyle, flex: 1 }}
                                 />
                                 <button
