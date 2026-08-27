@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyMobileToken, unauthorized } from '@/lib/mobile-auth';
 import { notifyN8n } from '@/lib/n8n';
-import { calculateFutureProrata } from '@/lib/utils';
+import { expectedRentForPeriod } from '@/lib/rent-period';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,21 +18,13 @@ export async function POST(request: Request) {
     const period = new Date(periodStr);
     const existing = await prisma.rentPayment.findFirst({ where: { leaseId, period } });
 
-    let expectedAmount: number;
-    if (existing) {
-        expectedAmount = existing.amount;
-    } else {
-        const lease = await prisma.lease.findUnique({ where: { id: leaseId } });
-        if (!lease) return NextResponse.json({ error: 'Bail introuvable.' }, { status: 404 });
-        const totalAmount = lease.rentAmount + lease.chargesAmount;
-        const leaseStart = new Date(lease.startDate);
-        const period = new Date(periodStr);
-        const periodStart = new Date(Date.UTC(period.getFullYear(), period.getMonth(), 1));
-        const periodEnd = new Date(Date.UTC(period.getFullYear(), period.getMonth() + 1, 1));
-        const isFirstMonth = leaseStart >= periodStart && leaseStart < periodEnd;
-        const prorata = isFirstMonth ? calculateFutureProrata(totalAmount, leaseStart) : null;
-        expectedAmount = prorata ? Math.round(prorata.amount * 100) / 100 : totalAmount;
-    }
+    const lease = await prisma.lease.findUnique({ where: { id: leaseId } });
+    if (!lease) return NextResponse.json({ error: 'Bail introuvable.' }, { status: 404 });
+    // Recalculé depuis le bail plutôt que réutilisé depuis la ligne existante :
+    // une ligne générée avant l'enregistrement d'un départ restait figée au
+    // loyer plein, le prorata de sortie n'était jamais repris. Gère aussi bien
+    // l'entrée que la sortie mi-mois (contrairement à l'ancien calcul local).
+    const expectedAmount = expectedRentForPeriod(lease, period);
 
     // Accumulate with any prior partial payment
     const alreadyPaid = (existing?.status === 'PARTIAL' && existing?.paidAmount != null)
@@ -43,7 +35,7 @@ export async function POST(request: Request) {
     if (existing) {
         await prisma.rentPayment.update({
             where: { id: existing.id },
-            data: { status: isPartial ? 'PARTIAL' : 'PAID', paidAt: new Date(), paidAmount: isPartial ? totalPaid : null } as any,
+            data: { amount: expectedAmount, status: isPartial ? 'PARTIAL' : 'PAID', paidAt: new Date(), paidAmount: isPartial ? totalPaid : null } as any,
         });
     } else {
         await prisma.rentPayment.create({

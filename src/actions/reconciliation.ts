@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/lib/session";
+import { expectedRentForPeriod } from "@/lib/rent-period";
 
 // Fetches pending/late rents to match against incoming bank credits
 export async function getExpectedRents() {
@@ -41,10 +42,16 @@ export async function matchRentPayment(rentPaymentId: string, paidDateStr: strin
             return { success: false, error: "Paiement introuvable" };
         }
 
+        // Recalculé depuis le bail plutôt que réutilisé depuis la ligne
+        // existante : une ligne générée avant l'enregistrement d'un départ
+        // restait figée au loyer plein, le prorata de sortie n'était jamais repris.
+        const expectedAmount = expectedRentForPeriod(payment.lease, payment.period);
+
         // Optional: you could do partial payments, but for now we mark as PAID
         await prisma.rentPayment.update({
             where: { id: rentPaymentId },
             data: {
+                amount: expectedAmount,
                 status: "PAID",
                 paidAt: new Date(paidDateStr)
             }

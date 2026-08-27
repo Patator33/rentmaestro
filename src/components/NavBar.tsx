@@ -46,7 +46,7 @@ const NAV_ITEMS = [
   },
   {
     href: '/stats',
-    label: 'Charges',
+    label: 'Statistiques',
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
         <path d="M5 3h14v18l-2.5-1.5L14 21l-2.5-1.5L9 21l-2.5-1.5L4 21V3"/><path d="M8 8h8M8 12h8M8 16h5"/>
