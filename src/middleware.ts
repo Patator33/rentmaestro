@@ -54,6 +54,13 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/login/totp', request.url));
     }
 
+    // Contenu authentifié et dynamique : jamais de mise en cache, ni par le
+    // navigateur ni par un reverse proxy intermédiaire (ex. Nginx Proxy
+    // Manager) — qu'il soit correctement configuré ou non. Un réglage
+    // enregistré ici (ex. Server Action sur /gestion/parametres) ne doit
+    // jamais pouvoir être « rejoué » depuis un cache intermédiaire.
+    res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+
     return res;
 }
 
