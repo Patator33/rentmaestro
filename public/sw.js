@@ -1,16 +1,22 @@
 // ============================================================
-// Rentmaestro Service Worker — v3
+// Rentmaestro Service Worker — v4
 // Strategies:
 //   App shell (HTML + icons + manifest) → Cache on install
 //   Navigation (HTML pages)            → Network-first, cache fallback
 //   _next/static assets                → Cache-first (immutable hashes)
 //   API routes                         → Network only (cookies must flow natively)
+//   Server Actions & other mutations   → Network only, never cached (v4 :
+//     un POST vers l'URL d'une page — comment Next.js appelle une Server
+//     Action — tombait dans le cache-first du bloc 4 faute de méthode
+//     exclue, renvoyant parfois la réponse d'une AUTRE action plus
+//     ancienne sur la même page. Bump de version pour purger les entrées
+//     déjà mises en cache par erreur.)
 //   Push notifications                 → Show notification with click handler
 // ============================================================
 
-const SHELL_CACHE  = 'rentmaestro-shell-v3';
-const PAGES_CACHE  = 'rentmaestro-pages-v3';
-const STATIC_CACHE = 'rentmaestro-static-v3';
+const SHELL_CACHE  = 'rentmaestro-shell-v4';
+const PAGES_CACHE  = 'rentmaestro-pages-v4';
+const STATIC_CACHE = 'rentmaestro-static-v4';
 
 const SHELL_URLS = [
     '/',
@@ -51,6 +57,16 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
     const { request } = event;
     const url = new URL(request.url);
+
+    // 0. Jamais de cache pour une méthode qui mute quelque chose — sans ce
+    //    garde-fou, une Server Action Next.js (POST vers l'URL de la page
+    //    elle-même, ex. /gestion/parametres, pas /api/...) tombait dans le
+    //    cacheFirst du bloc 4 ci-dessous. Le Cache Storage matche par
+    //    URL+méthode, pas par le corps de requête ni l'en-tête Next-Action :
+    //    un clic pouvait donc recevoir la réponse mise en cache d'une AUTRE
+    //    Server Action précédente sur la même page (ex. « Afficher » le
+    //    token renvoyait la réponse d'un « Enregistrer » plus ancien).
+    if (request.method !== 'GET') return;
 
     // 1. API routes → browser handles natively (cookies, Set-Cookie preserved)
     if (url.pathname.startsWith('/api/')) return;
