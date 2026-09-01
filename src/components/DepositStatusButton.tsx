@@ -39,6 +39,11 @@ export default function DepositStatusButton({ leaseId, currentStatus, amount, de
 
     const current = STATUS_LABELS[currentStatus || 'PENDING'];
 
+    // Caution restituée de façon incomplète : afficher le montant rendu, pas la caution totale.
+    const isReturned = currentStatus === 'RETURNED' || currentStatus === 'DEDUCTED';
+    const partialReturn = isReturned && depositReturnedAmount != null && depositReturnedAmount < amount - 0.005;
+    const badgeAmount = partialReturn ? (depositReturnedAmount as number) : amount;
+
     // Info-bulle au survol : montant restitué + annotation, pour l'historique des baux.
     let tooltip: string | undefined;
     if ((currentStatus === 'RETURNED' || currentStatus === 'DEDUCTED') && depositReturnedAmount != null) {
@@ -161,7 +166,7 @@ export default function DepositStatusButton({ leaseId, currentStatus, amount, de
                     fontFamily: 'inherit',
                 }}
             >
-                {current.icon} {current.label} ({amount.toFixed(0)}€)
+                {current.icon} {current.label} ({badgeAmount.toFixed(0)}€)
             </button>
 
             {partialMode && (
