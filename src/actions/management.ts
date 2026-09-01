@@ -6,9 +6,10 @@ import { requireAuth } from "@/lib/session";
 
 export async function updateDepositStatus(leaseId: string, status: string) {
     await requireAuth();
-    const validStatuses = ['PENDING', 'PARTIAL_RECEIVED', 'RECEIVED', 'TO_RETURN', 'RETURNED', 'DEDUCTED'];
+    // RETURNED / DEDUCTED passent par `returnDeposit` (montant restitué + annotation + email).
+    const validStatuses = ['PENDING', 'PARTIAL_RECEIVED', 'RECEIVED', 'TO_RETURN'];
     if (!validStatuses.includes(status)) {
-        throw new Error('Statut de dépôt invalide.');
+        throw new Error('Statut de dépôt invalide (la restitution se fait via « Restituer la caution »).');
     }
 
     try {
@@ -16,7 +17,7 @@ export async function updateDepositStatus(leaseId: string, status: string) {
             where: { id: leaseId },
             data: {
                 depositStatus: status,
-                depositReturnedAt: (status === 'RETURNED' || status === 'DEDUCTED') ? new Date() : null,
+                depositReturnedAt: null,
             }
         });
     } catch (error) {

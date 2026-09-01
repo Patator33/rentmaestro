@@ -175,6 +175,7 @@ input, select, textarea {
 .sidebar-item svg {
   flex-shrink: 0;
   transition: transform 0.15s ease;
+  color: var(--item-color, currentColor);
 }
 
 .sidebar-item:hover {
@@ -193,6 +194,17 @@ input, select, textarea {
   font-weight: 600;
 }
 
+/* Chaque menu porte sa propre couleur (--item-color) sur l'état actif. */
+.sidebar-item.active[style*="--item-color"] {
+  background: color-mix(in srgb, var(--item-color) 14%, transparent);
+  color: var(--item-color);
+  border-color: color-mix(in srgb, var(--item-color) 30%, transparent);
+}
+
+.sidebar-item.active[style*="--item-color"] svg {
+  color: var(--item-color);
+}
+
 /* Repère latéral : la pilule teintée seule se remarque peu quand plusieurs
    items se suivent. */
 .sidebar-item.active::before {
@@ -204,7 +216,7 @@ input, select, textarea {
   width: 3px;
   height: 60%;
   border-radius: 999px;
-  background: var(--pill-ok-color);
+  background: var(--item-color, var(--pill-ok-color));
 }
 
 /* La pilule teintée porte déjà l'état actif : le point n'est plus nécessaire. */
@@ -425,6 +437,16 @@ input, select, textarea {
   background: var(--surface-hover);
   color: var(--text-main);
   border-color: var(--border-color);
+}
+
+.mobile-nav-link svg {
+  color: var(--item-color, currentColor);
+}
+
+.mobile-nav-link.active[style*="--item-color"] {
+  background: color-mix(in srgb, var(--item-color) 14%, transparent);
+  color: var(--item-color);
+  border-color: color-mix(in srgb, var(--item-color) 30%, transparent);
 }
 
 /* ---- Standard UI components ---- */

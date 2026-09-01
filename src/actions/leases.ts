@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { logAction } from "@/lib/audit";
 import { requireAuth } from "@/lib/session";
 import { applyRentRevisionCore, type RevisionParams } from "@/lib/rent-revision";
+import { sendDepositReturnEmailCore } from "@/lib/deposit-emails";
 
 export async function createLease(formData: FormData) {
     await requireAuth();
@@ -236,14 +237,57 @@ export async function payDepositPartial(leaseId: string, paidAmount: number) {
     revalidatePath(`/leases/${leaseId}`);
 }
 
-export async function markDepositReturned(leaseId: string, amount: number) {
+/**
+ * Restitution (ou retenue totale) du dépôt de garantie.
+ * Enregistre le montant réellement restitué + une annotation, puis déclenche
+ * l'email automatique au locataire. Un échec d'envoi n'annule pas la restitution.
+ */
+export async function returnDeposit(
+    leaseId: string,
+    status: 'RETURNED' | 'DEDUCTED',
+    returnedAmount: number,
+    note: string | null,
+) {
     await requireAuth();
+    if (status !== 'RETURNED' && status !== 'DEDUCTED') {
+        throw new Error('Statut de restitution invalide.');
+    }
+    if (isNaN(returnedAmount) || returnedAmount < 0) {
+        throw new Error('Montant restitué invalide.');
+    }
+
+    const lease = await prisma.lease.findUnique({ where: { id: leaseId } });
+    if (!lease) throw new Error('Bail introuvable');
+
+    const total = lease.depositAmount ?? 0;
+    const cleanNote = note?.trim() || null;
+    if (returnedAmount < total && !cleanNote) {
+        throw new Error('Une annotation est requise pour une restitution incomplète.');
+    }
+
     await prisma.lease.update({
         where: { id: leaseId },
-        data: { depositStatus: 'RETURNED', depositReturnedAt: new Date() },
+        data: {
+            depositStatus: status,
+            depositReturnedAt: new Date(),
+            depositReturnedAmount: returnedAmount,
+            depositReturnNote: cleanNote,
+            depositReturnEmailSentAt: null,
+        },
     });
+
+    let emailError: string | undefined;
+    try {
+        const res = await sendDepositReturnEmailCore(leaseId);
+        if (!res.success) emailError = res.error;
+    } catch (e: any) {
+        emailError = e?.message || "Erreur lors de l'envoi de l'email";
+    }
+
     revalidatePath('/leases');
     revalidatePath(`/leases/${leaseId}`);
+    revalidatePath('/');
+    return { ok: true, emailError };
 }
 
 export async function setGuarantorVisaleOk(leaseId: string, ok: boolean) {

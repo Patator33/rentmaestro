@@ -4,7 +4,7 @@ import Link from "next/link";
 import { formatDate } from "@/lib/utils";
 import LeaseDocumentUpload from "@/components/LeaseDocumentUpload";
 import SendDocumentsModal from "@/components/SendDocumentsModal";
-import { markDepositReceived, markDepositReturned, setDepositAmount, setGuarantorVisaleOk } from "@/actions/leases";
+import { markDepositReceived, returnDeposit, setDepositAmount, setGuarantorVisaleOk } from "@/actions/leases";
 import RentRevision from "@/components/RentRevision";
 import { DEFAULT_IRL_INDICES, type IrlIndex } from "@/lib/irl";
 import { getSetting } from "@/actions/settings";
@@ -100,8 +100,11 @@ export default async function LeaseDetailPage({ params }: { params: Promise<{ id
 
     const markReturnedAction = async (formData: FormData) => {
         'use server';
-        const amount = parseFloat(formData.get('amount') as string);
-        if (!isNaN(amount) && amount >= 0) await markDepositReturned(id, amount);
+        const deduct = formData.get('intent') === 'deduct';
+        const note = (formData.get('note') as string | null)?.trim() || null;
+        const amount = deduct ? 0 : parseFloat(formData.get('amount') as string);
+        if (isNaN(amount) || amount < 0) throw new Error('Montant restitué invalide.');
+        await returnDeposit(id, deduct ? 'DEDUCTED' : 'RETURNED', amount, note);
     };
 
     const setDepositAmountAction = async (formData: FormData) => {
@@ -169,7 +172,18 @@ export default async function LeaseDetailPage({ params }: { params: Promise<{ id
                             Perçu : {depositPaidAmount.toFixed(2)} € · Solde : {depositRemaining?.toFixed(2)} €
                         </div>
                     )}
-                    {lease.depositReturnedAt && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Restituée le {formatDate(lease.depositReturnedAt)}</div>}
+                    {lease.depositReturnedAt && (
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                            {(lease as any).depositReturnedAmount != null
+                                ? `Restituée le ${formatDate(lease.depositReturnedAt)} — ${(lease as any).depositReturnedAmount.toFixed(2)} €${lease.depositAmount && (lease as any).depositReturnedAmount < lease.depositAmount ? ` / ${lease.depositAmount.toFixed(2)} €` : ''}`
+                                : `Restituée le ${formatDate(lease.depositReturnedAt)}`}
+                            {(lease as any).depositReturnNote && (
+                                <div style={{ fontStyle: 'italic', color: '#b45309', whiteSpace: 'pre-wrap' }}>
+                                    Motif : {(lease as any).depositReturnNote}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
                 <div>
                     <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Garant</span>
@@ -256,16 +270,31 @@ export default async function LeaseDetailPage({ params }: { params: Promise<{ id
             {canMarkReturned && (
                 <section style={{ background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '1.25rem', marginBottom: '1.5rem' }}>
                     <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.75rem' }}>↩️ Restituer la caution</h2>
-                    <form action={markReturnedAction} style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end' }}>
+                    <form action={markReturnedAction} style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
                         <div>
                             <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.25rem' }}>Montant restitué (€)</label>
-                            <input type="number" name="amount" step="0.01" defaultValue={lease.depositAmount ?? ''} required
+                            <input type="number" name="amount" step="0.01" min="0" defaultValue={lease.depositAmount ?? ''} required
                                 style={{ background: 'var(--bg)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.5rem 0.75rem', color: 'var(--text-main)', width: '140px' }} />
                         </div>
-                        <button type="submit" style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: '8px', padding: '0.5rem 1rem', cursor: 'pointer', fontWeight: 600 }}>
-                            ↩ Restituer
-                        </button>
+                        <div style={{ flex: 1, minWidth: '240px' }}>
+                            <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.25rem' }}>
+                                Annotation <span style={{ color: 'var(--text-faint)' }}>(obligatoire si &lt; caution — expliquée au locataire)</span>
+                            </label>
+                            <textarea name="note" rows={2} placeholder="Ex : retenue pour remise en état du mur du salon"
+                                style={{ background: 'var(--bg)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.5rem 0.75rem', color: 'var(--text-main)', width: '100%', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end', marginTop: '1.4rem' }}>
+                            <button type="submit" name="intent" value="return" style={{ background: '#8b5cf6', color: '#fff', border: 'none', borderRadius: '8px', padding: '0.5rem 1rem', cursor: 'pointer', fontWeight: 600 }}>
+                                ↩ Restituer
+                            </button>
+                            <button type="submit" name="intent" value="deduct" style={{ background: 'transparent', color: '#ef4444', border: '1px solid rgba(239,68,68,0.4)', borderRadius: '8px', padding: '0.5rem 1rem', cursor: 'pointer', fontWeight: 600 }}>
+                                🚫 Tout retenir
+                            </button>
+                        </div>
                     </form>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                        Un email est automatiquement envoyé au locataire avec le montant restitué et, le cas échéant, l&apos;annotation qui justifie la retenue.
+                    </p>
                 </section>
             )}
 

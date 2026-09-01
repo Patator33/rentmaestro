@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { cookies } from "next/headers";
 import NavBarWrapper from "@/components/NavBarWrapper";
+import PageAccentBar from "@/components/PageAccentBar";
 import { ToastProvider } from "@/components/Toast";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import RefreshOnFocus from "@/components/RefreshOnFocus";
@@ -58,6 +59,7 @@ export default async function RootLayout({
           <div className="app-shell">
             <NavBarWrapper />
             <main className="main-content page-enter">
+              <PageAccentBar />
               {children}
             </main>
           </div>
