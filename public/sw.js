@@ -1,5 +1,5 @@
 // ============================================================
-// Rentmaestro Service Worker — v4
+// Rentmaestro Service Worker — v5
 // Strategies:
 //   App shell (HTML + icons + manifest) → Cache on install
 //   Navigation (HTML pages)            → Network-first, cache fallback
@@ -14,9 +14,9 @@
 //   Push notifications                 → Show notification with click handler
 // ============================================================
 
-const SHELL_CACHE  = 'rentmaestro-shell-v4';
-const PAGES_CACHE  = 'rentmaestro-pages-v4';
-const STATIC_CACHE = 'rentmaestro-static-v4';
+const SHELL_CACHE  = 'rentmaestro-shell-v5';
+const PAGES_CACHE  = 'rentmaestro-pages-v5';
+const STATIC_CACHE = 'rentmaestro-static-v5';
 
 const SHELL_URLS = [
     '/',
