@@ -342,7 +342,7 @@ export default function ParametresForm({
     };
 
     return (
-        <div style={{ maxWidth: 780, margin: '0 auto', padding: '2rem 1rem' }}>
+        <div style={{ maxWidth: 900, padding: '2rem' }}>
             <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.25rem' }}>⚙️ Paramètres</h1>
             <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', fontSize: '0.9rem' }}>
                 Configurez les réglages de l'application.

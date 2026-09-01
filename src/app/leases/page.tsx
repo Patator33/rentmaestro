@@ -8,6 +8,7 @@ import DepositStatusButton from "@/components/DepositStatusButton";
 import ViewToggle from "@/components/ViewToggle";
 import ClickableRow, { ClickableCard } from "@/components/ClickableRow";
 import { formatDate } from "@/lib/utils";
+import PageTitleIcon from "@/components/PageTitleIcon";
 
 export const dynamic = "force-dynamic";
 
@@ -132,7 +133,7 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
     return (
         <div className={styles.container}>
             <header className={styles.header}>
-                <h1 className={styles.title}>Contrats de Location</h1>
+                <h1 className={styles.title}><PageTitleIcon />Contrats de Location</h1>
                 <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
                     <ViewToggle currentView={view} />
                     <Link href="/leases/new" className="std-add-button">

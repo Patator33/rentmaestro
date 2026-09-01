@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import styles from "./page.module.css";
 import { deleteContact } from "@/actions/contacts";
+import PageTitleIcon from "@/components/PageTitleIcon";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,7 @@ export default async function ContactsPage() {
     return (
         <div className={styles.container}>
             <header className={styles.header}>
-                <h1 className={styles.title}>Annuaire des Contacts</h1>
+                <h1 className={styles.title}><PageTitleIcon />Annuaire des Contacts</h1>
                 <Link href="/contacts/new" className="std-add-button">
                     + Nouveau Contact
                 </Link>

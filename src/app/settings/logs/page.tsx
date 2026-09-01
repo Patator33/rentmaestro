@@ -67,7 +67,7 @@ export default async function AuditLogsPage({ searchParams }: { searchParams: Pr
     };
 
     return (
-        <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '2rem' }}>
+        <div style={{ maxWidth: '1400px', padding: '2rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
                 <Link href="/settings/security" style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>← Sécurité</Link>
             </div>

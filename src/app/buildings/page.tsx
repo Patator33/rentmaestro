@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import DeleteBuildingButton from '@/components/DeleteBuildingButton';
 import { buildingCardCostsBreakdown } from '@/lib/building-expenses';
+import PageTitleIcon from '@/components/PageTitleIcon';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,9 +26,9 @@ export default async function BuildingsPage() {
     });
 
     return (
-        <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '1.5rem' }}>
+        <div style={{ maxWidth: '1400px', padding: '2rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-                <h1 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-main)' }}>🏢 Immeubles</h1>
+                <h1 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-main)' }}><PageTitleIcon />Immeubles</h1>
                 <Link href="/buildings/new" className="std-add-button">+ Ajouter un immeuble</Link>
             </div>
 

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { format, differenceInDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { getAgendaEvents, type AgendaEvent } from '@/lib/agenda-events';
+import PageTitleIcon from '@/components/PageTitleIcon';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,11 +32,11 @@ export default async function AgendaPage() {
     };
 
     return (
-        <div style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem' }}>
+        <div style={{ maxWidth: '1400px', padding: '2rem' }}>
             <header style={{ marginBottom: '2rem' }}>
                 <Link href="/" style={{ color: 'var(--text-muted)', fontSize: '0.9rem', textDecoration: 'none' }}>← Accueil</Link>
                 <h1 style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-main)', marginTop: '0.5rem' }}>
-                    📅 Agenda & Échéancier
+                    <PageTitleIcon />Agenda &amp; Échéancier
                 </h1>
                 <p style={{ color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
                     Événements des 6 prochains mois

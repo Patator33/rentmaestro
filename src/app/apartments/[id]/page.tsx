@@ -9,6 +9,7 @@ import TaskBoard from "@/components/TaskBoard";
 import InspectionBoard from "@/components/InspectionBoard";
 import ApartmentDocumentUpload from "@/components/ApartmentDocumentUpload";
 import { ALL_COST_FIELDS, isFieldInherited, inheritedFieldValue, apartmentEffectiveCosts } from "@/lib/building-expenses";
+import PageTitleIcon from "@/components/PageTitleIcon";
 
 export const dynamic = "force-dynamic";
 
@@ -73,7 +74,7 @@ export default async function ApartmentDetailsPage({ params }: { params: Promise
 
             <header className={styles.header}>
                 <div>
-                    <h1 className={styles.title}>{apartment.name || apartment.address}</h1>
+                    <h1 className={styles.title}><PageTitleIcon />{apartment.name || apartment.address}</h1>
                     <p className={styles.subtitle}>
                         {apartment.zipCode} {apartment.city}
                         {apartment.company && (

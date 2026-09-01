@@ -7,6 +7,7 @@ import { getAgendaEvents } from "@/lib/agenda-events";
 import { occupancyBreakdown, type ApartmentStateCode } from "@/lib/apartment-state";
 import { apartmentEffectiveCosts } from "@/lib/building-expenses";
 import { RentPayment, Expense } from "@prisma/client";
+import PageTitleIcon from "@/components/PageTitleIcon";
 
 export const dynamic = "force-dynamic";
 
@@ -318,7 +319,7 @@ export default async function Home() {
         <div className={styles.pageHeaderLeft}>
           <div className={styles.dateLabel}>{monthYear}</div>
           <h1 className={styles.pageTitle}>
-            Tableau de bord
+            <PageTitleIcon />Tableau de bord
             <span className={styles.pageTitleAccent}>—</span>
           </h1>
         </div>

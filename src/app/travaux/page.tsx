@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import TravauxClient from '@/components/TravauxClient';
+import PageTitleIcon from '@/components/PageTitleIcon';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,9 +25,9 @@ export default async function TravauxPage({
     });
 
     return (
-        <div style={{ maxWidth: 900, margin: '0 auto', padding: '1.5rem' }}>
+        <div style={{ maxWidth: 1400, padding: '2rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-                <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-main)' }}>🔧 Travaux & Incidents</h1>
+                <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-main)' }}><PageTitleIcon />Travaux &amp; Incidents</h1>
                 <Link
                     href={showAll ? '/travaux' : '/travaux?all=1'}
                     style={{ fontSize: '0.85rem', padding: '0.35rem 0.8rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', textDecoration: 'none' }}

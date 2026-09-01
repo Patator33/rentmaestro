@@ -9,6 +9,7 @@ import TenantPortalLink from "@/components/TenantPortalLink";
 import { archiveTenant, reactivateTenant } from "@/actions/tenants";
 import TenantMessaging from "@/components/TenantMessaging";
 import SendDocumentsModal from "@/components/SendDocumentsModal";
+import PageTitleIcon from "@/components/PageTitleIcon";
 
 export const dynamic = "force-dynamic";
 
@@ -62,7 +63,7 @@ export default async function TenantDetailsPage({ params }: { params: Promise<{ 
 
             <header className={styles.header}>
                 <div>
-                    <h1 className={styles.title}>{tenant.firstName} {tenant.lastName}</h1>
+                    <h1 className={styles.title}><PageTitleIcon />{tenant.firstName} {tenant.lastName}</h1>
                     <p className={styles.subtitle}>Créé le {formatDate(tenant.createdAt)}</p>
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>

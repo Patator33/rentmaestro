@@ -6,6 +6,7 @@ import { inheritedFieldValue } from "@/lib/building-expenses";
 import { computeApartmentVacancy, type VacancyPeriod } from "@/lib/vacancy";
 import VacancyKpiCard from "@/components/VacancyKpiCard";
 import styles from "./page.module.css";
+import PageTitleIcon from "@/components/PageTitleIcon";
 
 export const dynamic = "force-dynamic";
 
@@ -177,7 +178,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
         <div className={styles.container}>
             <header className={styles.header}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h1 className={styles.title}>Statistiques</h1>
+                    <h1 className={styles.title}><PageTitleIcon />Statistiques</h1>
                     <Link href="/" style={{ color: 'var(--primary-color)' }}>Retour Dashboard</Link>
                 </div>
             </header>

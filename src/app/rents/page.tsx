@@ -9,6 +9,7 @@ import { sendRentReminder } from "@/actions/rents";
 import PaymentEmailActions from "@/components/PaymentEmailActions";
 import MarkRentPaidButton from "@/components/MarkRentPaidButton";
 import UnmarkRentPaidButton from "@/components/UnmarkRentPaidButton";
+import PageTitleIcon from "@/components/PageTitleIcon";
 
 export const dynamic = "force-dynamic";
 
@@ -338,7 +339,7 @@ export default async function RentsPage({
     return (
         <div className={styles.container}>
             <header className={styles.header}>
-                <h1 className={styles.title}>Suivi des Loyers</h1>
+                <h1 className={styles.title}><PageTitleIcon />Suivi des Loyers</h1>
 
                 <div className={styles.periodSelector}>
                     <Link href={`/rents?month=${prevMonthStr}`} className={styles.navButton}>←</Link>

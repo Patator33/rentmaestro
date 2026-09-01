@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import styles from "./page.module.css";
 import { ensurePersonalCompany } from "@/actions/documents";
+import PageTitleIcon from "@/components/PageTitleIcon";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,7 @@ export default async function CompaniesPage() {
     return (
         <div className={styles.container}>
             <header className={styles.header}>
-                <h1 className={styles.title}>Sociétés</h1>
+                <h1 className={styles.title}><PageTitleIcon />Sociétés</h1>
                 <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                     {!hasPersonal && <CreatePersonalCompanyButton />}
                     <Link href="/companies/new" className={styles.newButton}>

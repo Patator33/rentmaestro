@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import ReconciliationBoard from "@/components/ReconciliationBoard";
 import styles from "./page.module.css";
+import PageTitleIcon from "@/components/PageTitleIcon";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,7 @@ export default async function ReconciliationPage() {
         <div className={styles.container}>
             <header className={styles.header}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h1 className={styles.title}>Rapprochement Bancaire</h1>
+                    <h1 className={styles.title}><PageTitleIcon />Rapprochement Bancaire</h1>
                     <Link href="/" style={{ color: "var(--primary-color)" }}>Retour Dashboard</Link>
                 </div>
             </header>

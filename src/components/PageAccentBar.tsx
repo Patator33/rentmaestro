@@ -18,6 +18,12 @@ export function pageAccentVars(color: string): Record<string, string> {
         '--pill-ok-color': color,
         '--pill-ok-bg': `color-mix(in srgb, ${color} 12%, transparent)`,
         '--pill-ok-border': `color-mix(in srgb, ${color} 30%, transparent)`,
+        // Surfaces rendues opaques : la teinte de fond (--page-tint) ne doit pas
+        // transparaître dans les cartes / tableaux (le thème "original" a un
+        // --surface translucide). L'intérieur des cellules reste noir.
+        '--surface': 'color-mix(in srgb, #fff 4.5%, var(--background))',
+        '--surface-hover': 'color-mix(in srgb, #fff 8%, var(--background))',
+        '--surface-active': 'color-mix(in srgb, #fff 12%, var(--background))',
     };
 }
 

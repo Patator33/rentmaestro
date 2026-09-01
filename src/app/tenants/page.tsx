@@ -6,6 +6,7 @@ import SearchBar from "@/components/SearchBar";
 import ViewToggle from "@/components/ViewToggle";
 import { formatDate } from "@/lib/utils";
 import { archiveTenant, reactivateTenant } from "@/actions/tenants";
+import PageTitleIcon from "@/components/PageTitleIcon";
 
 export const dynamic = "force-dynamic";
 
@@ -94,7 +95,7 @@ export default async function TenantsPage({ searchParams }: { searchParams: Prom
     return (
         <div className={styles.container}>
             <header className={styles.header}>
-                <h1 className={styles.title}>Mes Locataires</h1>
+                <h1 className={styles.title}><PageTitleIcon />Mes Locataires</h1>
                 <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
                     <ViewToggle currentView={view} />
                     <Link href="/tenants/new" className="std-add-button">

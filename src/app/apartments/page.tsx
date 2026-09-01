@@ -7,6 +7,7 @@ import SearchBar from "@/components/SearchBar";
 import ViewToggle from "@/components/ViewToggle";
 import { PAST_MONTHS_SCANNED } from "@/lib/rent-period";
 import { apartmentState } from "@/lib/apartment-state";
+import PageTitleIcon from "@/components/PageTitleIcon";
 
 // Palette de statut, alignée sur celle du tableau de bord.
 const STATUS_COLORS = {
@@ -193,7 +194,7 @@ export default async function ApartmentsPage({ searchParams }: { searchParams: P
     return (
         <div className={styles.container}>
             <header className={styles.header}>
-                <h1 className={styles.title}>Mes Appartements</h1>
+                <h1 className={styles.title}><PageTitleIcon />Mes Appartements</h1>
                 <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
                     <ViewToggle currentView={view} />
                     <Link href="/apartments/new" className="std-add-button">

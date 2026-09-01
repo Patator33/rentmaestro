@@ -4,6 +4,7 @@ import Link from "next/link";
 import styles from "./page.module.css";
 import { formatDate } from "@/lib/utils";
 import CompanyDocumentUpload from "@/components/CompanyDocumentUpload";
+import PageTitleIcon from "@/components/PageTitleIcon";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +35,7 @@ export default async function CompanyDetailsPage({ params }: { params: Promise<{
                     )}
                     <div>
                         <h1 className={styles.title}>
-                            {company.name}
+                            <PageTitleIcon />{company.name}
                             <span className={styles.badge} style={{ marginLeft: '1rem' }}>{company.type}</span>
                             {(company as any).isPersonal && (
                                 <span style={{ marginLeft: '0.5rem', fontSize: '0.75rem', background: 'rgba(43,140,238,0.12)', color: 'var(--primary-color)', borderRadius: '12px', padding: '0.2rem 0.6rem', fontWeight: 500 }}>

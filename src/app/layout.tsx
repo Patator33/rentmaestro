@@ -21,7 +21,10 @@ if(c){var r=document.documentElement.style;
 r.setProperty('--page-accent',c);r.setProperty('--page-tint',c);
 r.setProperty('--pill-ok-color',c);
 r.setProperty('--pill-ok-bg','color-mix(in srgb, '+c+' 12%, transparent)');
-r.setProperty('--pill-ok-border','color-mix(in srgb, '+c+' 30%, transparent)');}
+r.setProperty('--pill-ok-border','color-mix(in srgb, '+c+' 30%, transparent)');
+r.setProperty('--surface','color-mix(in srgb, #fff 4.5%, var(--background))');
+r.setProperty('--surface-hover','color-mix(in srgb, #fff 8%, var(--background))');
+r.setProperty('--surface-active','color-mix(in srgb, #fff 12%, var(--background))');}
 }catch(e){}})();`;
 
 const inter = Inter({
