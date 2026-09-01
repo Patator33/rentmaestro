@@ -18,6 +18,12 @@
   --font-mono: var(--font-jetbrains), 'JetBrains Mono', ui-monospace, monospace;
 
   --sidebar-width: 220px;
+
+  /* Coloration par menu — valeurs par défaut ; surchargées à l'exécution sur
+     <html> par PageAccentBar / le script inline de layout.tsx. Déclarées ici
+     pour que le minifieur CSS conserve les références var(). */
+  --page-accent: var(--pill-ok-color);
+  --page-tint: transparent;
 }
 
 * {
@@ -302,6 +308,8 @@ input, select, textarea {
   flex: 1;
   min-width: 0;
   overflow-x: hidden;
+  /* Fond légèrement teinté de la couleur du menu courant (transparent par défaut). */
+  background: color-mix(in srgb, var(--page-tint) 11%, transparent);
 }
 
 @media (max-width: 768px) {

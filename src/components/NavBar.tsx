@@ -110,21 +110,9 @@ const MORE_ITEMS = [
   },
 ];
 
-// Couleur associée à chaque menu — partagée avec la barre d'accent de page.
-export const NAV_COLORS: { href: string; color: string }[] = [
-  ...NAV_ITEMS.map(i => ({ href: i.href, color: i.color })),
-  ...MORE_ITEMS.map(i => ({ href: i.href, color: i.color })),
-];
-
-export function navColorFor(pathname: string): string | null {
-  let best: { href: string; color: string } | null = null;
-  for (const item of NAV_COLORS) {
-    if (item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)) {
-      if (!best || item.href.length > best.href.length) best = item;
-    }
-  }
-  return best?.color ?? null;
-}
+// Les couleurs par item ci-dessus doivent rester synchronisées avec
+// src/lib/nav-colors.ts (source unique réutilisée par PageAccentBar et le
+// script anti-flash de layout.tsx).
 
 export default function NavBar() {
   const pathname = usePathname();
