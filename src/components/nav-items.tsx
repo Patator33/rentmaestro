@@ -30,6 +30,7 @@ export const MORE_ITEMS: NavItem[] = [
     { href: '/buildings', label: 'Immeubles', color: '#0ea5e9', icon: svg(<><rect x="3" y="7" width="8" height="14" rx="1" /><rect x="13" y="3" width="8" height="18" rx="1" /><path d="M6 11h2M6 15h2M16 7h2M16 11h2M16 15h2" /></>) },
     { href: '/travaux', label: 'Travaux', color: '#ef4444', icon: svg(<><path d="M14.7 6.3a4 4 0 0 1-5 5L5 16v3h3l4.7-4.7a4 4 0 0 0 5-5z" /></>) },
     { href: '/reconciliation', label: 'Banque', color: '#10b981', icon: svg(<><path d="M3 10 12 4l9 6" /><path d="M5 10v9M19 10v9M9 10v9M15 10v9" /><path d="M3 21h18" /></>) },
+    { href: '/caf', label: 'CAF', color: '#0891b2', icon: svg(<><path d="M4 4h16v16H4z" /><path d="M8 9h8M8 13h5" /></>) },
     { href: '/global-ged', label: 'GED', color: '#eab308', icon: svg(<><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></>) },
     { href: '/companies', label: 'Sociétés', color: '#8b5cf6', icon: svg(<><rect x="3" y="7" width="18" height="13" rx="2" /><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" /><path d="M3 12h18" /></>) },
     { href: '/gestion/parametres', label: 'Paramètres', color: '#64748b', icon: svg(<><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1" /></>) },

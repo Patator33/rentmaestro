@@ -124,6 +124,7 @@ export async function updateLease(id: string, formData: FormData) {
     const rentAmountStr = formData.get("rentAmount") as string;
     const chargesAmountStr = formData.get("chargesAmount") as string;
     const depositAmountStr = formData.get("depositAmount") as string;
+    const cafMonthlyAmountStr = formData.get("cafMonthlyAmount") as string;
     const rentEffectiveDateStr = formData.get("rentEffectiveDate") as string;
 
     if (!startDateStr) {
@@ -135,6 +136,7 @@ export async function updateLease(id: string, formData: FormData) {
     const rentAmount = parseFloat(rentAmountStr);
     const chargesAmount = parseFloat(chargesAmountStr);
     const depositAmount = depositAmountStr ? parseFloat(depositAmountStr) : null;
+    const cafMonthlyAmount = cafMonthlyAmountStr ? parseFloat(cafMonthlyAmountStr) : null;
     // Force UTC 1st of month to match how periods are stored in generate-rents
     let effectiveDate: Date | null = null;
     if (rentEffectiveDateStr) {
@@ -161,6 +163,7 @@ export async function updateLease(id: string, formData: FormData) {
                 rentAmount,
                 chargesAmount,
                 depositAmount: depositAmount !== null && !isNaN(depositAmount) ? depositAmount : null,
+                cafMonthlyAmount: cafMonthlyAmount !== null && !isNaN(cafMonthlyAmount) ? cafMonthlyAmount : null,
                 ...(effectiveDate ? { lastRentReviewDate: effectiveDate } : {}),
                 guarantorType: guarantorType !== 'NONE' ? guarantorType : null,
                 guarantorFirstName: guarantorType === 'PRIVATE' ? guarantorFirstName : null,

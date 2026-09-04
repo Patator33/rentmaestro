@@ -176,13 +176,21 @@ export default async function RentsPage({
                 </td>
                 <td>
                     {isPaid ? (
-                        <span className={styles.statusPaid}>✓ Payé {formatDate(payment.paidAt)}</span>
+                        <span className={styles.statusPaid}>
+                            ✓ Payé {formatDate(payment.paidAt)}
+                            {(payment as any).cafAmount != null && (
+                                <span className={styles.statusDetail}>
+                                    dont CAF {((payment as any).cafAmount as number).toFixed(2)} € · locataire {Math.max(0, fallbackAmount - ((payment as any).cafAmount as number)).toFixed(2)} €
+                                </span>
+                            )}
+                        </span>
                     ) : payment?.status === 'PARTIAL' ? (
                         <span>
                             <span className={styles.statusPartial}>Partiel</span>
                             {payment.paidAmount != null && (
                                 <span className={styles.statusDetail}>
                                     Reçu {(payment.paidAmount as number).toFixed(2)} € · solde {Math.max(0, fallbackAmount - (payment.paidAmount as number)).toFixed(2)} €
+                                    {(payment as any).cafAmount != null && ` (dont CAF ${((payment as any).cafAmount as number).toFixed(2)} €)`}
                                 </span>
                             )}
                         </span>

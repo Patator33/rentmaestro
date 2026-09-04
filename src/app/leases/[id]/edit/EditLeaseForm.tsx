@@ -103,17 +103,31 @@ export default function EditLeaseForm({ lease }: { lease: LeaseWithRelations }) 
                     </p>
                 </div>
 
-                <div className={styles.formGroup}>
-                    <label htmlFor="depositAmount" className={styles.label}>Dépôt de garantie (€)</label>
-                    <input
-                        type="number"
-                        step="0.01"
-                        id="depositAmount"
-                        name="depositAmount"
-                        defaultValue={lease.depositAmount ?? ''}
-                        className={styles.input}
-                        placeholder="Laisser vide si aucun dépôt"
-                    />
+                <div className={styles.row}>
+                    <div className={styles.formGroup}>
+                        <label htmlFor="depositAmount" className={styles.label}>Dépôt de garantie (€)</label>
+                        <input
+                            type="number"
+                            step="0.01"
+                            id="depositAmount"
+                            name="depositAmount"
+                            defaultValue={lease.depositAmount ?? ''}
+                            className={styles.input}
+                            placeholder="Laisser vide si aucun dépôt"
+                        />
+                    </div>
+                    <div className={styles.formGroup}>
+                        <label htmlFor="cafMonthlyAmount" className={styles.label}>CAF/APL mensuelle (€)</label>
+                        <input
+                            type="number"
+                            step="0.01"
+                            id="cafMonthlyAmount"
+                            name="cafMonthlyAmount"
+                            defaultValue={(lease as any).cafMonthlyAmount ?? ''}
+                            className={styles.input}
+                            placeholder="Laisser vide si pas de CAF"
+                        />
+                    </div>
                 </div>
 
                 {/* ── Garant ──────────────────────────────────────────── */}

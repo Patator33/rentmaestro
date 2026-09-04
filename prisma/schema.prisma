@@ -153,6 +153,7 @@ model Lease {
   guarantorEmail     String?
   guarantorPhone     String?
   guarantorVisaleOk  Boolean       @default(false)
+  cafMonthlyAmount   Float?        // montant CAF/APL attendu chaque mois, null = pas de CAF sur ce bail
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
   apartment          Apartment     @relation(fields: [apartmentId], references: [id])
@@ -172,6 +173,8 @@ model RentPayment {
   paidAt          DateTime?
   sentAt          DateTime? // Used for LATE/PENDING reminders
   receiptSentAt   DateTime? // Used for PAID receipts
+  cafAmount       Float?    // part cumulée de paidAmount reçue de la CAF (reste = part locataire)
+  cafReference    String?   // libellé du virement CAF groupé (ex: date/mois du virement)
   createdAt       DateTime  @default(now())
   lease           Lease     @relation(fields: [leaseId], references: [id], onDelete: Cascade)
 }

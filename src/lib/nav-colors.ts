@@ -14,6 +14,7 @@ export const NAV_COLORS: [string, string][] = [
     ['/buildings', '#0ea5e9'],
     ['/travaux', '#ef4444'],
     ['/reconciliation', '#10b981'],
+    ['/caf', '#0891b2'],
     ['/global-ged', '#eab308'],
     ['/companies', '#8b5cf6'],
     ['/contacts', '#f97316'],
