@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<title>RentMaestro — Réglages</title>
+<link rel="stylesheet" href="options.css" />
+</head>
+<body>
+  <div class="wrap">
+    <h1>🏠 RentMaestro</h1>
+    <p class="muted">Connecte l'extension à ton instance RentMaestro auto-hébergée.</p>
+
+    <div id="connectedBox" class="box" hidden>
+      <p>✓ Connecté à <strong id="connectedUrl"></strong> (<span id="connectedEmail"></span>)</p>
+      <button id="disconnectBtn" class="secondaryBtn">Se déconnecter</button>
+    </div>
+
+    <form id="loginForm" class="box">
+      <label>
+        Adresse du serveur
+        <input type="url" id="baseUrl" placeholder="https://rentmaestro.mondomaine.fr" required />
+      </label>
+      <label>
+        Email
+        <input type="email" id="email" required autocomplete="username" />
+      </label>
+      <label>
+        Mot de passe
+        <input type="password" id="password" required autocomplete="current-password" />
+      </label>
+      <button type="submit" id="loginBtn" class="primaryBtn">Se connecter</button>
+      <p id="errorMsg" class="error" hidden></p>
+    </form>
+
+    <p class="muted small">
+      Le mot de passe n'est utilisé qu'une fois pour obtenir un jeton d'accès (valable 30 jours,
+      renouvelable ici) — il n'est jamais conservé par l'extension.
+    </p>
+  </div>
+
+  <script type="module" src="options.js"></script>
+</body>
+</html>
