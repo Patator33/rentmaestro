@@ -1,7 +1,10 @@
-import SMB2 from '@marsaud/smb2';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
 import { readFile } from 'fs/promises';
 import { prisma } from '@/lib/prisma';
 import { notifyN8n } from '@/lib/n8n';
+
+const execFileAsync = promisify(execFile);
 
 export interface SmbConfig {
     host: string;
@@ -29,22 +32,17 @@ function getDbPath(): string {
     return url.replace(/^file:/, '');
 }
 
+/**
+ * Nettoie le sous-dossier saisi : sépare avec des '/', et retire les
+ * caractères qui casseraient la mini-syntaxe de commandes de smbclient
+ * (guillemets, point-virgule...) — ce sont les propres réglages de
+ * l'utilisateur, pas une entrée hostile, mais autant rester strict.
+ */
 function normalizeFolder(folder: string): string {
-    return folder.trim().replace(/^[\\/]+|[\\/]+$/g, '').replace(/\//g, '\\');
-}
-
-function remotePath(folder: string, fileName: string): string {
-    const clean = normalizeFolder(folder);
-    return clean ? `${clean}\\${fileName}` : fileName;
-}
-
-function makeClient(config: SmbConfig): SMB2 {
-    return new SMB2({
-        share: `\\\\${config.host}\\${config.share}`,
-        domain: config.domain || 'WORKGROUP',
-        username: config.username,
-        password: config.password,
-    });
+    return folder.trim()
+        .replace(/^[\\/]+|[\\/]+$/g, '')
+        .replace(/\\/g, '/')
+        .replace(/["`;|&$<>]/g, '');
 }
 
 function backupFileName(date = new Date()): string {
@@ -52,68 +50,103 @@ function backupFileName(date = new Date()): string {
     return `rentmaestro_${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}_${pad(date.getHours())}${pad(date.getMinutes())}.db`;
 }
 
-const SMB_TIMEOUT_MS = 15000;
+const NT_STATUS_HINTS: Record<string, string> = {
+    NT_STATUS_LOGON_FAILURE: 'Identifiants refusés (utilisateur ou mot de passe incorrect)',
+    NT_STATUS_ACCESS_DENIED: "Accès refusé — l'utilisateur n'a pas les droits sur ce dossier",
+    NT_STATUS_BAD_NETWORK_NAME: 'Partage introuvable sur le serveur (nom de partage incorrect ?)',
+    NT_STATUS_OBJECT_PATH_NOT_FOUND: 'Sous-dossier introuvable',
+    NT_STATUS_CONNECTION_REFUSED: 'Connexion refusée par le serveur',
+    NT_STATUS_HOST_UNREACHABLE: 'Serveur injoignable',
+    NT_STATUS_IO_TIMEOUT: 'Délai réseau dépassé',
+};
+
+/** Cherche une erreur dans la sortie de smbclient, même quand il rend un code 0. */
+function checkSmbOutput(output: string): string | null {
+    const match = output.match(/NT_STATUS_[A-Z_]+/);
+    if (match) {
+        const code = match[0];
+        return NT_STATUS_HINTS[code] ? `${NT_STATUS_HINTS[code]} (${code})` : code;
+    }
+    if (/session setup failed/i.test(output)) return 'Authentification refusée.';
+    if (/Connection to .* failed/i.test(output)) return 'Connexion au serveur impossible.';
+    return null;
+}
+
+const SMB_TIMEOUT_MS = 20000;
 
 /**
- * La librairie SMB2 n'expose pas de délai de connexion : un hôte injoignable
- * (mauvaise IP, pare-feu) bloquerait sinon indéfiniment — dangereux pour le
- * CRON quotidien qui partage sa requête avec l'envoi des quittances/relances.
+ * Exécute smbclient en non-interactif. Le mot de passe passe par la variable
+ * d'environnement PASSWD plutôt que par un argument, pour ne pas apparaître
+ * dans la liste des processus. `execFile` (et non `exec`) : les arguments
+ * sont passés en tableau, jamais interprétés par un shell.
  */
-function withTimeout<T>(promise: Promise<T>, label: string): Promise<T> {
-    return new Promise((resolve, reject) => {
-        const timer = setTimeout(
-            () => reject(new Error(`Délai dépassé (${SMB_TIMEOUT_MS / 1000}s) lors de ${label} — serveur injoignable ou pare-feu.`)),
-            SMB_TIMEOUT_MS
-        );
-        promise.then(
-            v => { clearTimeout(timer); resolve(v); },
-            e => { clearTimeout(timer); reject(e); }
-        );
-    });
+async function runSmbClient(config: SmbConfig, commands: string): Promise<{ stdout: string; stderr: string }> {
+    const args = ['-U', config.username, `//${config.host}/${config.share}`, '-c', commands];
+    if (config.domain) args.push('-W', config.domain);
+
+    try {
+        const { stdout, stderr } = await execFileAsync('smbclient', args, {
+            timeout: SMB_TIMEOUT_MS,
+            env: { ...process.env, PASSWD: config.password },
+        });
+        return { stdout, stderr };
+    } catch (error) {
+        const e = error as NodeJS.ErrnoException & { stdout?: string; stderr?: string; killed?: boolean; signal?: string | null };
+        if (e.killed || e.signal) {
+            throw new Error(`Délai dépassé (${SMB_TIMEOUT_MS / 1000}s) — serveur injoignable ou pare-feu.`);
+        }
+        const output = `${e.stdout ?? ''}${e.stderr ?? ''}`;
+        throw new Error(checkSmbOutput(output) || e.message || 'Erreur smbclient inconnue');
+    }
 }
 
 /** Vérifie que le partage est joignable avec ces identifiants, sans rien écrire. */
 export async function testSmbConnection(config: SmbConfig): Promise<{ success: boolean; error?: string }> {
-    const client = makeClient(config);
     try {
-        await withTimeout(client.readdir(normalizeFolder(config.folder)), 'la lecture du dossier');
+        const folder = normalizeFolder(config.folder);
+        const cmd = folder ? `cd "${folder}"; ls` : 'ls';
+        const { stdout, stderr } = await runSmbClient(config, cmd);
+        const err = checkSmbOutput(stdout + stderr);
+        if (err) return { success: false, error: err };
         return { success: true };
     } catch (error) {
         return { success: false, error: error instanceof Error ? error.message : 'Erreur de connexion' };
-    } finally {
-        client.disconnect();
     }
 }
 
 /** Envoie la base actuelle sur le partage et purge les sauvegardes au-delà de `retention`. */
 async function uploadBackup(config: SmbConfig, retention: number): Promise<{ success: boolean; error?: string; fileName?: string }> {
-    const client = makeClient(config);
     try {
         const folder = normalizeFolder(config.folder);
-        if (folder) await withTimeout(client.mkdir(folder), 'la création du dossier').catch(() => {});
+        const cd = folder ? `cd "${folder}"; ` : '';
 
-        const data = await readFile(getDbPath());
+        // Le dossier existe peut-être déjà : échec ignoré, seul l'envoi compte.
+        if (folder) await runSmbClient(config, `mkdir "${folder}"`).catch(() => {});
+
         const fileName = backupFileName();
-        await withTimeout(client.writeFile(remotePath(config.folder, fileName), data), "l'envoi du fichier");
+        const { stdout, stderr } = await runSmbClient(config, `${cd}put "${getDbPath()}" "${fileName}"`);
+        const err = checkSmbOutput(stdout + stderr);
+        if (err) return { success: false, error: err };
 
         if (retention > 0) {
-            const entries = await withTimeout(
-                client.readdir(folder, { stats: true }),
-                'la liste des sauvegardes existantes'
-            ) as Array<{ name: string; mtime: Date; isDirectory(): boolean }>;
-            const backups = entries
-                .filter(e => !e.isDirectory() && /^rentmaestro_.*\.db$/.test(e.name))
-                .sort((a, b) => b.mtime.getTime() - a.mtime.getTime());
-            for (const old of backups.slice(retention)) {
-                await withTimeout(client.unlink(remotePath(config.folder, old.name)), 'la purge').catch(() => {});
+            const listing = await runSmbClient(config, `${cd}ls rentmaestro_*.db`).catch(() => ({ stdout: '', stderr: '' }));
+            const names = Array.from(
+                listing.stdout.matchAll(/\s(rentmaestro_\d{4}-\d{2}-\d{2}_\d{4}\.db)\s/g),
+                m => m[1]
+            );
+            // Format de nom triable lexicographiquement = triable chronologiquement :
+            // pas besoin de parser les dates de la sortie texte de `ls`.
+            const uniqueSorted = Array.from(new Set(names)).sort().reverse();
+            const toDelete = uniqueSorted.slice(retention);
+            if (toDelete.length > 0) {
+                const delCmd = toDelete.map(n => `del "${n}"`).join('; ');
+                await runSmbClient(config, `${cd}${delCmd}`).catch(() => {});
             }
         }
 
         return { success: true, fileName };
     } catch (error) {
         return { success: false, error: error instanceof Error ? error.message : 'Erreur inconnue' };
-    } finally {
-        client.disconnect();
     }
 }
 

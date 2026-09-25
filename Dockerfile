@@ -36,7 +36,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Install Chromium for Puppeteer
+# Install Chromium for Puppeteer + smbclient (sauvegarde automatique SMB/Samba)
 RUN apk add --no-cache \
     chromium \
     nss \
@@ -46,7 +46,8 @@ RUN apk add --no-cache \
     ttf-freefont \
     dos2unix \
     openssl \
-    curl
+    curl \
+    samba-client
 
 # Tell Puppeteer to use the installed Chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
