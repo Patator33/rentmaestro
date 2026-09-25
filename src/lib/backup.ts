@@ -33,16 +33,18 @@ function getDbPath(): string {
 }
 
 /**
- * Nettoie le sous-dossier saisi : sépare avec des '/', et retire les
- * caractères qui casseraient la mini-syntaxe de commandes de smbclient
- * (guillemets, point-virgule...) — ce sont les propres réglages de
- * l'utilisateur, pas une entrée hostile, mais autant rester strict.
+ * Nettoie le sous-dossier saisi : sépare avec des '/', et liste blanche
+ * stricte (plutôt qu'une liste noire, qui peut toujours laisser passer un
+ * caractère de contrôle imprévu) — cette valeur finit dans la chaîne `-c` de
+ * smbclient pour le `mkdir` initial, jamais interprétée par un shell mais par
+ * la mini-syntaxe de commandes de smbclient, où un `;` ou un saut de ligne
+ * injecterait une commande supplémentaire.
  */
 function normalizeFolder(folder: string): string {
-    return folder.trim()
-        .replace(/^[\\/]+|[\\/]+$/g, '')
+    const cleaned = folder.trim()
         .replace(/\\/g, '/')
-        .replace(/["`;|&$<>]/g, '');
+        .replace(/^\/+|\/+$/g, '');
+    return cleaned.replace(/[^A-Za-z0-9 _./-]/g, '');
 }
 
 function backupFileName(date = new Date()): string {
@@ -78,11 +80,17 @@ const SMB_TIMEOUT_MS = 20000;
  * Exécute smbclient en non-interactif. Le mot de passe passe par la variable
  * d'environnement PASSWD plutôt que par un argument, pour ne pas apparaître
  * dans la liste des processus. `execFile` (et non `exec`) : les arguments
- * sont passés en tableau, jamais interprétés par un shell.
+ * sont passés en tableau, jamais interprétés par un shell. Le sous-dossier,
+ * quand il y en a un, passe par `-D` (son propre argument) plutôt que par un
+ * `cd` inséré dans `commands` : il n'est alors jamais interprété par la
+ * mini-syntaxe de commandes de smbclient, donc aucune valeur qu'il contient
+ * ne peut y injecter une commande supplémentaire.
  */
-async function runSmbClient(config: SmbConfig, commands: string): Promise<{ stdout: string; stderr: string }> {
-    const args = ['-U', config.username, `//${config.host}/${config.share}`, '-c', commands];
+async function runSmbClient(config: SmbConfig, commands: string, folder?: string): Promise<{ stdout: string; stderr: string }> {
+    const args = ['-U', config.username, `//${config.host}/${config.share}`];
+    if (folder) args.push('-D', folder);
     if (config.domain) args.push('-W', config.domain);
+    args.push('-c', commands);
 
     try {
         const { stdout, stderr } = await execFileAsync('smbclient', args, {
@@ -104,8 +112,7 @@ async function runSmbClient(config: SmbConfig, commands: string): Promise<{ stdo
 export async function testSmbConnection(config: SmbConfig): Promise<{ success: boolean; error?: string }> {
     try {
         const folder = normalizeFolder(config.folder);
-        const cmd = folder ? `cd "${folder}"; ls` : 'ls';
-        const { stdout, stderr } = await runSmbClient(config, cmd);
+        const { stdout, stderr } = await runSmbClient(config, 'ls', folder || undefined);
         const err = checkSmbOutput(stdout + stderr);
         if (err) return { success: false, error: err };
         return { success: true };
@@ -118,18 +125,21 @@ export async function testSmbConnection(config: SmbConfig): Promise<{ success: b
 async function uploadBackup(config: SmbConfig, retention: number): Promise<{ success: boolean; error?: string; fileName?: string }> {
     try {
         const folder = normalizeFolder(config.folder);
-        const cd = folder ? `cd "${folder}"; ` : '';
+        const dir = folder || undefined;
 
         // Le dossier existe peut-être déjà : échec ignoré, seul l'envoi compte.
+        // Doit se faire à la racine (le dossier n'existe pas encore, -D ne
+        // peut pas encore y pointer) ; `folder` est déjà passé par la liste
+        // blanche de normalizeFolder, sûr à insérer dans la commande.
         if (folder) await runSmbClient(config, `mkdir "${folder}"`).catch(() => {});
 
         const fileName = backupFileName();
-        const { stdout, stderr } = await runSmbClient(config, `${cd}put "${getDbPath()}" "${fileName}"`);
+        const { stdout, stderr } = await runSmbClient(config, `put "${getDbPath()}" "${fileName}"`, dir);
         const err = checkSmbOutput(stdout + stderr);
         if (err) return { success: false, error: err };
 
         if (retention > 0) {
-            const listing = await runSmbClient(config, `${cd}ls rentmaestro_*.db`).catch(() => ({ stdout: '', stderr: '' }));
+            const listing = await runSmbClient(config, 'ls rentmaestro_*.db', dir).catch(() => ({ stdout: '', stderr: '' }));
             const names = Array.from(
                 listing.stdout.matchAll(/\s(rentmaestro_\d{4}-\d{2}-\d{2}_\d{4}\.db)\s/g),
                 m => m[1]
@@ -140,7 +150,7 @@ async function uploadBackup(config: SmbConfig, retention: number): Promise<{ suc
             const toDelete = uniqueSorted.slice(retention);
             if (toDelete.length > 0) {
                 const delCmd = toDelete.map(n => `del "${n}"`).join('; ');
-                await runSmbClient(config, `${cd}${delCmd}`).catch(() => {});
+                await runSmbClient(config, delCmd, dir).catch(() => {});
             }
         }
 
