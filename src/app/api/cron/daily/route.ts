@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendQuittanceEmailCore, sendReminderEmailCore } from "@/lib/rent-emails";
 import { generateRentsForCurrentMonth } from "@/lib/rent-generation";
+import { runScheduledBackupIfDue } from "@/lib/backup";
 
 export const dynamic = 'force-dynamic';
 
@@ -112,6 +113,12 @@ export async function GET(request: Request) {
             where: { createdAt: { lt: oneYearAgo } },
         });
 
+        // Sauvegarde automatique : ne doit jamais faire échouer le reste du CRON.
+        const backup = await runScheduledBackupIfDue().catch(error => {
+            console.error("[CRON] Backup error:", error);
+            return { ran: false as const };
+        });
+
         return NextResponse.json({
             success: true,
             message: `CRON Job success. Sent ${sentQuittances} quittances and ${sentReminders} reminders.`,
@@ -121,6 +128,7 @@ export async function GET(request: Request) {
                 quittancesSent: sentQuittances,
                 remindersSent: sentReminders,
                 auditLogsPurged: deletedLogs,
+                backup,
             }
         });
 

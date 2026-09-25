@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { saveSetting, sendTelegramTest, registerTelegramWebhook, saveTelegramToken, revealTelegramToken } from '@/actions/settings';
+import { saveSetting, sendTelegramTest, registerTelegramWebhook, saveTelegramToken, revealTelegramToken, testBackupConnection, runBackupNow } from '@/actions/settings';
 import { setTheme } from '@/actions/theme';
 import { THEMES, type ThemeId } from '@/themes/index';
 import { EVENT_LABELS, EVENT_VARIABLES } from '@/lib/n8n';
@@ -122,6 +122,9 @@ export default function ParametresForm({
     telegramTokenConfigured, telegramTokenHint,
     defaultPortalSubject, defaultPortalBody,
     userEmail, userId, totpEnabled, passkeyCount,
+    defaultBackupEnabled, defaultBackupFrequency, defaultBackupHost, defaultBackupShare, defaultBackupFolder,
+    defaultBackupUsername, defaultBackupDomain, defaultBackupRetention, backupPasswordConfigured,
+    backupLastRun, backupLastStatus, backupLastError,
 }: {
     defaultSubject: string;
     defaultBody: string;
@@ -146,6 +149,18 @@ export default function ParametresForm({
     userId: string;
     totpEnabled: boolean;
     passkeyCount: number;
+    defaultBackupEnabled: boolean;
+    defaultBackupFrequency: string;
+    defaultBackupHost: string;
+    defaultBackupShare: string;
+    defaultBackupFolder: string;
+    defaultBackupUsername: string;
+    defaultBackupDomain: string;
+    defaultBackupRetention: number;
+    backupPasswordConfigured: boolean;
+    backupLastRun: string | null;
+    backupLastStatus: string | null;
+    backupLastError: string | null;
 }) {
     const [subject, setSubject] = useState(defaultSubject);
     const [body, setBody] = useState(defaultBody);
@@ -333,6 +348,74 @@ export default function ParametresForm({
         setHaSaveState('dirty');
     };
 
+    // Sauvegarde automatique (SMB)
+    const [backupEnabled, setBackupEnabled] = useState(defaultBackupEnabled);
+    const [backupFrequency, setBackupFrequency] = useState(defaultBackupFrequency);
+    const [backupHost, setBackupHost] = useState(defaultBackupHost);
+    const [backupShare, setBackupShare] = useState(defaultBackupShare);
+    const [backupFolder, setBackupFolder] = useState(defaultBackupFolder);
+    const [backupUsername, setBackupUsername] = useState(defaultBackupUsername);
+    const [backupDomain, setBackupDomain] = useState(defaultBackupDomain);
+    const [backupRetention, setBackupRetention] = useState(defaultBackupRetention);
+    // Vide = on conserve le mot de passe déjà enregistré (jamais renvoyé ici).
+    const [backupPassword, setBackupPassword] = useState('');
+    const [backupSaveState, setBackupSaveState] = useState<SaveState>('idle');
+    const [backupTestState, setBackupTestState] = useState<'idle' | 'testing' | 'ok' | 'error'>('idle');
+    const [backupTestError, setBackupTestError] = useState('');
+    const [backupRunState, setBackupRunState] = useState<'idle' | 'running' | 'ok' | 'error'>('idle');
+    const [backupRunMessage, setBackupRunMessage] = useState('');
+
+    const toggleBackupEnabled = () => {
+        setBackupEnabled(v => !v);
+        setBackupSaveState('dirty');
+    };
+
+    const handleSaveBackup = async () => {
+        setBackupSaveState('saving');
+        await Promise.all([
+            saveSetting('backup_enabled', backupEnabled ? 'true' : 'false'),
+            saveSetting('backup_frequency', backupFrequency),
+            saveSetting('backup_smb_host', backupHost.trim()),
+            saveSetting('backup_smb_share', backupShare.trim()),
+            saveSetting('backup_smb_folder', backupFolder.trim()),
+            saveSetting('backup_smb_username', backupUsername.trim()),
+            saveSetting('backup_smb_domain', backupDomain.trim()),
+            saveSetting('backup_retention', String(Math.max(0, Math.floor(backupRetention) || 0))),
+            ...(backupPassword.trim() ? [saveSetting('backup_smb_password', backupPassword.trim())] : []),
+        ]);
+        setBackupPassword('');
+        setBackupSaveState('saved');
+    };
+
+    const handleTestBackup = async () => {
+        setBackupTestState('testing');
+        setBackupTestError('');
+        const res = await testBackupConnection({
+            host: backupHost, share: backupShare, folder: backupFolder,
+            username: backupUsername, password: backupPassword, domain: backupDomain,
+        });
+        if (res.success) {
+            setBackupTestState('ok');
+        } else {
+            setBackupTestState('error');
+            setBackupTestError(res.error ?? 'Échec inconnu');
+        }
+    };
+
+    const handleRunBackupNow = async () => {
+        setBackupRunState('running');
+        setBackupRunMessage('');
+        // La sauvegarde manuelle porte sur ce qui est enregistré : les champs
+        // modifiés mais pas encore sauvegardés ne sont pas pris en compte.
+        const res = await runBackupNow();
+        if (res.success) {
+            setBackupRunState('ok');
+        } else {
+            setBackupRunState('error');
+            setBackupRunMessage(res.error ?? 'Échec inconnu');
+        }
+    };
+
     const applyTheme = (id: ThemeId) => {
         document.documentElement.setAttribute('data-theme', id);
         startThemeTransition(async () => { await setTheme(id); });
@@ -450,6 +533,177 @@ export default function ParametresForm({
                         {haSaveState === 'saving' ? '⏳' : haSaveState === 'saved' ? '✓ Enregistré' : '💾 Enregistrer'}
                     </button>
                 </div>
+            </Collapsible>
+
+            {/* Sauvegarde automatique */}
+            <Collapsible
+                title="💾 Sauvegarde automatique"
+                subtitle="Copie périodique de la base vers un partage réseau (SMB/Samba)"
+                headerRight={
+                    <button
+                        type="button"
+                        onClick={toggleBackupEnabled}
+                        style={{
+                            flexShrink: 0,
+                            width: 48, height: 26,
+                            borderRadius: 13,
+                            border: 'none',
+                            cursor: 'pointer',
+                            background: backupEnabled ? 'var(--primary-color)' : 'var(--border-color)',
+                            position: 'relative',
+                            transition: 'background 0.2s',
+                        }}
+                        aria-label="Activer/désactiver la sauvegarde automatique"
+                    >
+                        <span style={{
+                            position: 'absolute',
+                            top: 3, left: backupEnabled ? 25 : 3,
+                            width: 20, height: 20,
+                            borderRadius: '50%',
+                            background: '#fff',
+                            transition: 'left 0.2s',
+                        }} />
+                    </button>
+                }
+            >
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                    Seul le protocole SMB/Samba est pris en charge (NFS nécessiterait un montage au niveau du serveur, pas configurable depuis l'application).
+                </p>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        Fréquence
+                        <select
+                            value={backupFrequency}
+                            onChange={e => { setBackupFrequency(e.target.value); setBackupSaveState('dirty'); }}
+                            style={{ padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--bg)', color: 'var(--text-main)', fontSize: '0.9rem' }}
+                        >
+                            <option value="daily">Quotidienne</option>
+                            <option value="weekly">Hebdomadaire</option>
+                            <option value="monthly">Mensuelle</option>
+                        </select>
+                    </label>
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        Sauvegardes conservées avant purge
+                        <input
+                            type="number"
+                            min={0}
+                            value={backupRetention}
+                            onChange={e => { setBackupRetention(parseInt(e.target.value, 10) || 0); setBackupSaveState('dirty'); }}
+                            style={{ padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--bg)', color: 'var(--text-main)', fontSize: '0.9rem' }}
+                        />
+                    </label>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        Serveur (IP ou nom d'hôte)
+                        <input
+                            type="text"
+                            value={backupHost}
+                            onChange={e => { setBackupHost(e.target.value); setBackupSaveState('dirty'); }}
+                            placeholder="192.168.1.10"
+                            style={{ padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--bg)', color: 'var(--text-main)', fontSize: '0.9rem' }}
+                        />
+                    </label>
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        Partage
+                        <input
+                            type="text"
+                            value={backupShare}
+                            onChange={e => { setBackupShare(e.target.value); setBackupSaveState('dirty'); }}
+                            placeholder="backups"
+                            style={{ padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--bg)', color: 'var(--text-main)', fontSize: '0.9rem' }}
+                        />
+                    </label>
+                </div>
+
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
+                    Sous-dossier (facultatif)
+                    <input
+                        type="text"
+                        value={backupFolder}
+                        onChange={e => { setBackupFolder(e.target.value); setBackupSaveState('dirty'); }}
+                        placeholder="rentmaestro"
+                        style={{ padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--bg)', color: 'var(--text-main)', fontSize: '0.9rem' }}
+                    />
+                </label>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        Utilisateur
+                        <input
+                            type="text"
+                            value={backupUsername}
+                            onChange={e => { setBackupUsername(e.target.value); setBackupSaveState('dirty'); }}
+                            style={{ padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--bg)', color: 'var(--text-main)', fontSize: '0.9rem' }}
+                        />
+                    </label>
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        Mot de passe
+                        <input
+                            type="password"
+                            value={backupPassword}
+                            onChange={e => { setBackupPassword(e.target.value); setBackupSaveState('dirty'); }}
+                            placeholder={backupPasswordConfigured ? '•••••• (enregistré)' : ''}
+                            autoComplete="new-password"
+                            style={{ padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--bg)', color: 'var(--text-main)', fontSize: '0.9rem' }}
+                        />
+                    </label>
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        Domaine (facultatif)
+                        <input
+                            type="text"
+                            value={backupDomain}
+                            onChange={e => { setBackupDomain(e.target.value); setBackupSaveState('dirty'); }}
+                            placeholder="WORKGROUP"
+                            style={{ padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--bg)', color: 'var(--text-main)', fontSize: '0.9rem' }}
+                        />
+                    </label>
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '0.75rem' }}>
+                    <button
+                        onClick={handleSaveBackup}
+                        disabled={backupSaveState === 'saving' || backupSaveState === 'idle' || backupSaveState === 'saved'}
+                        className="std-add-button"
+                        style={
+                            backupSaveState === 'saved' ? { background: 'rgba(43,140,238,0.15)', color: '#2b8cee', borderColor: 'rgba(43,140,238,0.3)' } :
+                            backupSaveState === 'dirty' ? { background: 'rgba(34,197,94,0.15)', color: '#22c55e', borderColor: 'rgba(34,197,94,0.3)' } :
+                            {}
+                        }
+                    >
+                        {backupSaveState === 'saving' ? '⏳' : backupSaveState === 'saved' ? '✓ Enregistré' : '💾 Enregistrer'}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleTestBackup}
+                        disabled={backupTestState === 'testing' || !backupHost || !backupShare}
+                        className="std-add-button"
+                    >
+                        {backupTestState === 'testing' ? '⏳ Test…' : '🔌 Tester la connexion'}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleRunBackupNow}
+                        disabled={backupRunState === 'running' || !defaultBackupHost}
+                        className="std-add-button"
+                        title={!defaultBackupHost ? 'Enregistrez la configuration avant de lancer une sauvegarde' : undefined}
+                    >
+                        {backupRunState === 'running' ? '⏳ Sauvegarde…' : '⬆ Sauvegarder maintenant'}
+                    </button>
+                </div>
+
+                {backupTestState === 'ok' && <p style={{ fontSize: '0.85rem', color: '#22c55e', marginBottom: '0.5rem' }}>✓ Connexion réussie.</p>}
+                {backupTestState === 'error' && <p style={{ fontSize: '0.85rem', color: '#ef4444', marginBottom: '0.5rem' }}>✗ {backupTestError}</p>}
+                {backupRunState === 'ok' && <p style={{ fontSize: '0.85rem', color: '#22c55e', marginBottom: '0.5rem' }}>✓ Sauvegarde envoyée.</p>}
+                {backupRunState === 'error' && <p style={{ fontSize: '0.85rem', color: '#ef4444', marginBottom: '0.5rem' }}>✗ {backupRunMessage}</p>}
+
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                    {backupLastRun
+                        ? `Dernière sauvegarde : ${new Date(backupLastRun).toLocaleString('fr-FR')} — ${backupLastStatus === 'error' ? `échec (${backupLastError})` : 'réussie'}`
+                        : 'Aucune sauvegarde automatique effectuée pour le moment.'}
+                </p>
             </Collapsible>
 
             {/* Telegram */}

@@ -6,6 +6,7 @@ import { requireAuth } from '@/lib/session';
 import { sendTelegramMessage } from '@/lib/n8n';
 import { headers } from 'next/headers';
 import { registerWebhook, getWebhookInfo, webhookUrl, type WebhookStatus } from '@/lib/telegram-buttons';
+import { testSmbConnection, runBackupNow as runBackupNowCore } from '@/lib/backup';
 
 export async function getSetting(key: string): Promise<string | null> {
     await requireAuth();
@@ -108,4 +109,42 @@ export async function registerTelegramWebhook(): Promise<{ success: boolean; url
     if (!res.ok) return { success: false, error: res.error };
     revalidatePath('/gestion/parametres');
     return { success: true, url: res.url };
+}
+
+export async function getBackupPasswordConfigured(): Promise<boolean> {
+    await requireAuth();
+    const row = await prisma.setting.findUnique({ where: { key: 'backup_smb_password' } });
+    return !!row?.value;
+}
+
+/**
+ * Teste la connexion avec les valeurs actuellement saisies dans le formulaire,
+ * pas nécessairement encore enregistrées. Un mot de passe vide retombe sur
+ * celui déjà stocké (le champ reste vide tant qu'on ne le change pas).
+ */
+export async function testBackupConnection(input: {
+    host: string; share: string; folder: string; username: string; password: string; domain: string;
+}): Promise<{ success: boolean; error?: string }> {
+    await requireAuth();
+    let password = input.password.trim();
+    if (!password) {
+        const row = await prisma.setting.findUnique({ where: { key: 'backup_smb_password' } });
+        password = row?.value ?? '';
+    }
+    return testSmbConnection({
+        host: input.host.trim(),
+        share: input.share.trim(),
+        folder: input.folder.trim(),
+        username: input.username.trim(),
+        password,
+        domain: input.domain.trim(),
+    });
+}
+
+/** Déclenche une sauvegarde immédiate avec la configuration déjà enregistrée. */
+export async function runBackupNow(): Promise<{ success: boolean; error?: string }> {
+    await requireAuth();
+    const result = await runBackupNowCore();
+    revalidatePath('/gestion/parametres');
+    return result;
 }

@@ -1,4 +1,4 @@
-import { getSetting, getTelegramTokenHint } from '@/actions/settings';
+import { getSetting, getTelegramTokenHint, getBackupPasswordConfigured } from '@/actions/settings';
 import { DEFAULT_PORTAL_INVITE_SUBJECT, DEFAULT_PORTAL_INVITE_BODY } from '@/lib/portal-invite';
 import { cookies } from 'next/headers';
 import { THEME_COOKIE, DEFAULT_THEME, type ThemeId } from '@/themes/index';
@@ -52,7 +52,7 @@ export default async function ParametresPage() {
     const user = await getUserById(session.userId);
     if (!user) redirect('/login');
 
-    const [subject, body, haWebhook, haEnabled, telegramEnabled, telegramEvents, dbTheme, store, passkeyCount, telegramTemplateRows, irlIndicesRaw, irlSubject, irlBody, telegramChatId, telegramThreadId, telegramParseMode, telegramSilent, telegramToken, portalSubject, portalBody] = await Promise.all([
+    const [subject, body, haWebhook, haEnabled, telegramEnabled, telegramEvents, dbTheme, store, passkeyCount, telegramTemplateRows, irlIndicesRaw, irlSubject, irlBody, telegramChatId, telegramThreadId, telegramParseMode, telegramSilent, telegramToken, portalSubject, portalBody, backupEnabled, backupFrequency, backupHost, backupShare, backupFolder, backupUsername, backupDomain, backupRetention, backupPasswordConfigured, backupLastRun, backupLastStatus, backupLastError] = await Promise.all([
         getSetting('welcome_email_subject').then(v => v ?? DEFAULT_SUBJECT),
         getSetting('welcome_email_body').then(v => v ?? DEFAULT_BODY),
         getSetting('ha_webhook_url').then(v => v ?? ''),
@@ -75,6 +75,18 @@ export default async function ParametresPage() {
         getTelegramTokenHint(),
         getSetting('portal_invite_subject').then(v => v || DEFAULT_PORTAL_INVITE_SUBJECT),
         getSetting('portal_invite_body').then(v => v || DEFAULT_PORTAL_INVITE_BODY),
+        getSetting('backup_enabled').then(v => v === 'true'),
+        getSetting('backup_frequency').then(v => v || 'daily'),
+        getSetting('backup_smb_host').then(v => v ?? ''),
+        getSetting('backup_smb_share').then(v => v ?? ''),
+        getSetting('backup_smb_folder').then(v => v ?? ''),
+        getSetting('backup_smb_username').then(v => v ?? ''),
+        getSetting('backup_smb_domain').then(v => v ?? ''),
+        getSetting('backup_retention').then(v => v ? parseInt(v, 10) : 30),
+        getBackupPasswordConfigured(),
+        getSetting('backup_last_run'),
+        getSetting('backup_last_status'),
+        getSetting('backup_last_error'),
     ]);
     const currentTheme = (dbTheme ?? store.get(THEME_COOKIE)?.value ?? DEFAULT_THEME) as ThemeId;
     const telegramTemplates = Object.fromEntries(telegramTemplateRows) as Record<string, string>;
@@ -106,6 +118,18 @@ export default async function ParametresPage() {
             userId={session.userId}
             totpEnabled={user.totpEnabled}
             passkeyCount={passkeyCount}
+            defaultBackupEnabled={backupEnabled}
+            defaultBackupFrequency={backupFrequency}
+            defaultBackupHost={backupHost}
+            defaultBackupShare={backupShare}
+            defaultBackupFolder={backupFolder}
+            defaultBackupUsername={backupUsername}
+            defaultBackupDomain={backupDomain}
+            defaultBackupRetention={backupRetention}
+            backupPasswordConfigured={backupPasswordConfigured}
+            backupLastRun={backupLastRun}
+            backupLastStatus={backupLastStatus}
+            backupLastError={backupLastError}
         />
     );
 }

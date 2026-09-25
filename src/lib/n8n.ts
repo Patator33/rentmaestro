@@ -7,6 +7,7 @@ export const EVENT_LABELS: Record<string, string> = {
     RECEIPT_DOWNLOADED_BY_TENANT: "📄 Quittance téléchargée",
     TENANT_CREATED: "👤 Nouveau locataire",
     RENT_REVIEW_DUE: "📈 Révision de loyer due",
+    BACKUP_FAILED: "💾 Échec de sauvegarde",
 };
 
 // Variables exposed to each event's Telegram template, with a human description.
@@ -47,6 +48,11 @@ export const EVENT_VARIABLES: Record<string, { name: string; desc: string }[]> =
         { name: 'nouveau_loyer', desc: 'Nouveau loyer estimé (€)' },
         { name: 'date_revision', desc: 'Date anniversaire de révision' },
     ],
+    BACKUP_FAILED: [
+        { name: 'erreur', desc: "Détail de l'erreur" },
+        { name: 'serveur', desc: 'Serveur SMB ciblé' },
+        { name: 'partage', desc: 'Nom du partage' },
+    ],
 };
 
 // Default template per event (used when no custom template is configured).
@@ -57,6 +63,7 @@ export const DEFAULT_TELEGRAM_TEMPLATES: Record<string, string> = {
     RECEIPT_DOWNLOADED_BY_TENANT: "📄 *Quittance téléchargée*\n{{locataire}} — {{periode}} ({{montant}} €)",
     TENANT_CREATED: "👤 *Nouveau locataire*\n{{prenom}} {{nom}} — {{email}}",
     RENT_REVIEW_DUE: "📈 *Révision de loyer due*\n{{locataire}} — {{bien}}\nLoyer actuel : {{loyer_actuel}} € → estimé : {{nouveau_loyer}} €\nRévisable depuis le {{date_revision}}",
+    BACKUP_FAILED: "💾 *Échec de sauvegarde*\n{{serveur}} — {{partage}}\n{{erreur}}",
 };
 
 function applyVars(template: string, vars: Record<string, string>): string {
@@ -92,6 +99,8 @@ function extractVars(eventName: string, p: any): Record<string, string> {
             };
         case 'TENANT_CREATED':
             return { prenom: p?.firstName ?? '', nom: p?.lastName ?? '', email: p?.email ?? '' };
+        case 'BACKUP_FAILED':
+            return { erreur: p?.error ?? '', serveur: p?.host ?? '', partage: p?.share ?? '' };
         case 'RENT_REVIEW_DUE':
             return {
                 locataire: p?.tenantName ?? '',
