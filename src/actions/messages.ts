@@ -89,11 +89,13 @@ export async function sendPortalMessage(tenantId: string, content: string, token
     }).catch(() => {});
 
     // Home Assistant webhook (lecture directe : contexte locataire, pas de session)
-    const haWebhook = await prisma.setting
-        .findUnique({ where: { key: 'ha_webhook_url' } })
-        .then(s => s?.value ?? null)
-        .catch(() => null);
-    if (haWebhook) {
+    const [haWebhook, haEnabledSetting] = await Promise.all([
+        prisma.setting.findUnique({ where: { key: 'ha_webhook_url' } }).then(s => s?.value ?? null).catch(() => null),
+        prisma.setting.findUnique({ where: { key: 'ha_notifications_enabled' } }).then(s => s?.value ?? null).catch(() => null),
+    ]);
+    // Absent = activé : préserve le comportement d'avant ce réglage.
+    const haEnabled = haEnabledSetting !== 'false';
+    if (haWebhook && haEnabled) {
         fetch(haWebhook, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

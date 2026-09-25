@@ -52,10 +52,13 @@ export default async function ParametresPage() {
     const user = await getUserById(session.userId);
     if (!user) redirect('/login');
 
-    const [subject, body, haWebhook, telegramEnabled, telegramEvents, dbTheme, store, passkeyCount, telegramTemplateRows, irlIndicesRaw, irlSubject, irlBody, telegramChatId, telegramThreadId, telegramParseMode, telegramSilent, telegramToken, portalSubject, portalBody] = await Promise.all([
+    const [subject, body, haWebhook, haEnabled, telegramEnabled, telegramEvents, dbTheme, store, passkeyCount, telegramTemplateRows, irlIndicesRaw, irlSubject, irlBody, telegramChatId, telegramThreadId, telegramParseMode, telegramSilent, telegramToken, portalSubject, portalBody] = await Promise.all([
         getSetting('welcome_email_subject').then(v => v ?? DEFAULT_SUBJECT),
         getSetting('welcome_email_body').then(v => v ?? DEFAULT_BODY),
         getSetting('ha_webhook_url').then(v => v ?? ''),
+        // Absent = activé : préserve le comportement des installations existantes
+        // où l'envoi n'a jamais été conditionné qu'à la présence d'une URL.
+        getSetting('ha_notifications_enabled').then(v => v !== 'false'),
         getSetting('telegram_enabled').then(v => v === 'true'),
         getSetting('telegram_events').then(v => v ? JSON.parse(v) as string[] : null),
         getSetting('theme'),
@@ -83,6 +86,7 @@ export default async function ParametresPage() {
             defaultSubject={subject}
             defaultBody={body}
             defaultHaWebhook={haWebhook}
+            defaultHaEnabled={haEnabled}
             currentTheme={currentTheme}
             defaultTelegramEnabled={telegramEnabled}
             defaultTelegramEvents={telegramEvents}

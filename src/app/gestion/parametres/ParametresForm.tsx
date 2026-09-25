@@ -116,7 +116,7 @@ function Collapsible({ title, subtitle, headerRight, children }: {
 }
 
 export default function ParametresForm({
-    defaultSubject, defaultBody, defaultHaWebhook, currentTheme, defaultTelegramEnabled, defaultTelegramEvents,
+    defaultSubject, defaultBody, defaultHaWebhook, defaultHaEnabled, currentTheme, defaultTelegramEnabled, defaultTelegramEvents,
     defaultTelegramTemplates, defaultIrlIndices, defaultIrlSubject, defaultIrlBody,
     defaultTelegramChatId, defaultTelegramThreadId, defaultTelegramParseMode, defaultTelegramSilent,
     telegramTokenConfigured, telegramTokenHint,
@@ -126,6 +126,7 @@ export default function ParametresForm({
     defaultSubject: string;
     defaultBody: string;
     defaultHaWebhook: string;
+    defaultHaEnabled: boolean;
     currentTheme: ThemeId;
     defaultTelegramEnabled: boolean;
     defaultTelegramEvents: string[] | null;
@@ -149,6 +150,7 @@ export default function ParametresForm({
     const [subject, setSubject] = useState(defaultSubject);
     const [body, setBody] = useState(defaultBody);
     const [haWebhook, setHaWebhook] = useState(defaultHaWebhook);
+    const [haEnabled, setHaEnabled] = useState(defaultHaEnabled);
     const [saveState, setSaveState] = useState<SaveState>('idle');
     const [haSaveState, setHaSaveState] = useState<SaveState>('idle');
     const [themePending, startThemeTransition] = useTransition();
@@ -319,8 +321,16 @@ export default function ParametresForm({
 
     const handleSaveHa = async () => {
         setHaSaveState('saving');
-        await saveSetting('ha_webhook_url', haWebhook);
+        await Promise.all([
+            saveSetting('ha_webhook_url', haWebhook),
+            saveSetting('ha_notifications_enabled', haEnabled ? 'true' : 'false'),
+        ]);
         setHaSaveState('saved');
+    };
+
+    const toggleHaEnabled = () => {
+        setHaEnabled(v => !v);
+        setHaSaveState('dirty');
     };
 
     const applyTheme = (id: ThemeId) => {
@@ -386,7 +396,36 @@ export default function ParametresForm({
             </Collapsible>
 
             {/* Home Assistant */}
-            <Collapsible title="🏠 Home Assistant" subtitle="Webhook de notification">
+            <Collapsible
+                title="🏠 Home Assistant"
+                subtitle="Webhook de notification"
+                headerRight={
+                    <button
+                        type="button"
+                        onClick={toggleHaEnabled}
+                        style={{
+                            flexShrink: 0,
+                            width: 48, height: 26,
+                            borderRadius: 13,
+                            border: 'none',
+                            cursor: 'pointer',
+                            background: haEnabled ? 'var(--primary-color)' : 'var(--border-color)',
+                            position: 'relative',
+                            transition: 'background 0.2s',
+                        }}
+                        aria-label="Activer/désactiver Home Assistant"
+                    >
+                        <span style={{
+                            position: 'absolute',
+                            top: 3, left: haEnabled ? 25 : 3,
+                            width: 20, height: 20,
+                            borderRadius: '50%',
+                            background: '#fff',
+                            transition: 'left 0.2s',
+                        }} />
+                    </button>
+                }
+            >
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1rem' }}>
                     URL du webhook appelé lorsqu'un locataire envoie un message.
                 </p>
