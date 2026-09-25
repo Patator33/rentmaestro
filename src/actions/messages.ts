@@ -24,6 +24,15 @@ export async function getMessages(tenantId: string) {
 
 export async function sendAdminMessage(tenantId: string, content: string) {
     await requireAuth();
+    return deliverAdminMessage(tenantId, content);
+}
+
+/**
+ * Cœur de l'envoi d'un message locataire, sans vérification de session : appelé
+ * par `sendAdminMessage` (interface web, authentifiée) et par le webhook
+ * Telegram (authentifié par le jeton secret de la requête, pas par cookie).
+ */
+export async function deliverAdminMessage(tenantId: string, content: string) {
     if (!content.trim()) return { success: false, error: 'Message vide' };
 
     const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
@@ -74,6 +83,7 @@ export async function sendPortalMessage(tenantId: string, content: string, token
 
     // Notify landlord
     await notifyN8n('TENANT_MESSAGE', {
+        tenantId: tenant.id,
         tenantName: `${tenant.firstName} ${tenant.lastName}`,
         message: content.trim(),
     }).catch(() => {});

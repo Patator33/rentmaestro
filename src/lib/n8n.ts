@@ -206,6 +206,20 @@ async function notifyTelegram(eventName: string, payload: any) {
         text = `*${label}*\n${lines}`;
     }
 
+    if (eventName === 'TENANT_MESSAGE' && payload?.tenantId) {
+        // Import tardif : telegram-buttons.ts importe de ce module (config),
+        // un import statique créerait un cycle.
+        const { sendMessageWithButtons } = await import('@/lib/telegram-buttons');
+        const tenantShortId = String(payload.tenantId).slice(0, 8);
+        const sent = await sendMessageWithButtons(text, [
+            { text: '✍️ Répondre', callback_data: `r:${tenantShortId}` },
+        ]);
+        if (!sent.ok) {
+            console.error(`[Telegram] Error sending event ${eventName}:`, sent.error);
+        }
+        return;
+    }
+
     const result = await sendTelegramMessage(text, config);
     if (!result.success) {
         console.error(`[Telegram] Error sending event ${eventName}:`, result.error);

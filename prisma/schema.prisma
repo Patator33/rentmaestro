@@ -330,6 +330,19 @@ model PendingTransfer {
   createdAt  DateTime @default(now())
 }
 
+/// Mode "réponse en cours" ouvert par le bouton Répondre sur un message
+/// Telegram de notification locataire. Le prochain texte libre du chat est
+/// envoyé comme réponse à ce locataire tant que c'est non résolu/expiré.
+model PendingReply {
+  id         String    @id @default(uuid())
+  tenantId   String
+  chatId     String
+  messageId  String?
+  status     String    @default("PENDING") // PENDING, RESOLVED, CANCELLED
+  resolvedAt DateTime?
+  createdAt  DateTime  @default(now())
+}
+
 model Inspection {
   id        String   @id @default(uuid())
   leaseId   String
