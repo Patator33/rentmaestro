@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { getCafEligibleLeases } from "@/actions/caf";
+import { getCafEligibleLeases, getLeasesWithoutCaf } from "@/actions/caf";
 import CafBatchForm from "@/components/CafBatchForm";
+import CafAddForm from "@/components/CafAddForm";
 import PageTitleIcon from "@/components/PageTitleIcon";
 import styles from "./page.module.css";
 
@@ -26,7 +27,10 @@ export default async function CafPage({
     const prevMonthStr = prevMonth.toISOString().slice(0, 7);
     const nextMonthStr = nextMonth.toISOString().slice(0, 7);
 
-    const leases = await getCafEligibleLeases(periodStr);
+    const [leases, candidates] = await Promise.all([
+        getCafEligibleLeases(periodStr),
+        getLeasesWithoutCaf(),
+    ]);
     const totalExpected = leases.reduce((s, l) => s + l.cafMonthlyAmount, 0);
     const totalReceived = leases.reduce((s, l) => s + l.alreadyReceivedCaf, 0);
 
@@ -42,6 +46,10 @@ export default async function CafPage({
                     <Link href={`/caf?month=${nextMonthStr}`} className={styles.navButton}>→</Link>
                 </div>
             </header>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+                <CafAddForm candidates={candidates} />
+            </div>
 
             <div className={styles.infoBox}>
                 <p>
@@ -72,11 +80,17 @@ export default async function CafPage({
 
             {leases.length === 0 ? (
                 <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                    Aucun bail marqué comme bénéficiaire CAF pour ce mois. Renseignez le montant CAF/APL mensuel
-                    attendu sur la fiche d&apos;un bail (page Modifier le contrat) pour qu&apos;il apparaisse ici.
+                    Aucun bail marqué comme bénéficiaire CAF pour ce mois. Utilisez le bouton « Ajouter » pour
+                    renseigner le montant CAF/APL mensuel attendu sur un bail et le faire apparaître ici.
                 </p>
             ) : (
-                <CafBatchForm leases={leases} periodStr={periodStr} />
+                // Remonté quand la liste ou un montant attendu change (ajout d'un bail) :
+                // les champs du formulaire sont initialisés une seule fois depuis les props.
+                <CafBatchForm
+                    key={leases.map(l => `${l.leaseId}:${l.cafMonthlyAmount}`).join('|')}
+                    leases={leases}
+                    periodStr={periodStr}
+                />
             )}
         </div>
     );

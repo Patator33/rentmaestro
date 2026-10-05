@@ -46,6 +46,20 @@ export async function getCafEligibleLeases(periodStr: string) {
     });
 }
 
+/** Baux actifs sans CAF encore renseignée : candidats du bouton « Ajouter » de la page CAF. */
+export async function getLeasesWithoutCaf() {
+    await requireAuth();
+    const leases = await prisma.lease.findMany({
+        where: { isActive: true, cafMonthlyAmount: null },
+        include: { apartment: true, tenant: true },
+        orderBy: [{ apartment: { name: 'asc' } }],
+    });
+    return leases.map(l => ({
+        leaseId: l.id,
+        label: `${l.apartment.name || l.apartment.address} — ${l.tenant.firstName} ${l.tenant.lastName}`,
+    }));
+}
+
 /**
  * Enregistre un virement CAF unique couvrant plusieurs baux (cas courant : la
  * CAF verse un seul virement groupé pour tous les locataires bénéficiaires).
