@@ -14,6 +14,7 @@ type LeaseWithRelations = Lease & { apartment: Apartment; tenant: Tenant }
 export default function EditLeaseForm({ lease }: { lease: LeaseWithRelations }) {
     const startDateStr = lease.startDate.toISOString().split('T')[0];
     const endDateStr = lease.endDate ? lease.endDate.toISOString().split('T')[0] : '';
+    const preInspectionDateStr = lease.preInspectionDate ? lease.preInspectionDate.toISOString().split('T')[0] : '';
     const [guarantorType, setGuarantorType] = useState<GuarantorType>(
         ((lease as any).guarantorType as GuarantorType) || 'NONE'
     );
@@ -58,6 +59,16 @@ export default function EditLeaseForm({ lease }: { lease: LeaseWithRelations }) 
                             className={styles.input}
                         />
                     </div>
+                </div>
+
+                <div className={styles.formGroup}>
+                    <label htmlFor="preInspectionDate" className={styles.label}>Date du pré-état des lieux</label>
+                    <DateInput
+                        id="preInspectionDate"
+                        name="preInspectionDate"
+                        defaultValue={preInspectionDateStr}
+                        className={styles.input}
+                    />
                 </div>
 
                 <div className={styles.row}>

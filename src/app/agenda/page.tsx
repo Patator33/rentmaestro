@@ -23,6 +23,7 @@ export default async function AgendaPage() {
         RENT_REVIEW: { icon: '📈', color: '#22c55e', bg: 'rgba(34,197,94,0.08)' },
         TASK_DUE:    { icon: '🔧', color: '#fb923c', bg: 'rgba(251,146,60,0.08)' },
         LEASE_START: { icon: '📥', color: '#2b8cee', bg: 'rgba(43,140,238,0.08)' },
+        PRE_INSPECTION: { icon: '📋', color: '#67e8f9', bg: 'rgba(103,232,249,0.08)' },
     };
 
     const urgencyBorder: Record<string, string> = {
@@ -32,7 +33,7 @@ export default async function AgendaPage() {
     };
 
     return (
-        <div style={{ maxWidth: '1400px', padding: '2rem' }}>
+        <div style={{ padding: '2rem' }}>
             <header style={{ marginBottom: '2rem' }}>
                 <Link href="/" style={{ color: 'var(--text-muted)', fontSize: '0.9rem', textDecoration: 'none' }}>← Accueil</Link>
                 <h1 style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-main)', marginTop: '0.5rem' }}>

@@ -19,6 +19,8 @@ export async function createLease(formData: FormData) {
     const depositAmountStr = formData.get("depositAmount") as string;
     const depositAmount = depositAmountStr ? parseFloat(depositAmountStr) : null;
     const terminateLeaseId = formData.get("terminateLeaseId") as string;
+    const preInspectionDateStr = formData.get("preInspectionDate") as string;
+    const preInspectionDate = preInspectionDateStr ? new Date(preInspectionDateStr) : null;
 
     if (!apartmentId || !tenantId || !startDateStr || isNaN(rentAmount) || isNaN(chargesAmount)) {
         throw new Error("Données invalides. Veuillez vérifier le formulaire.");
@@ -51,6 +53,7 @@ export async function createLease(formData: FormData) {
                 depositAmount: depositAmount && !isNaN(depositAmount) ? depositAmount : null,
                 depositStatus: depositAmount && !isNaN(depositAmount) ? 'PENDING' : null,
                 isActive: true,
+                preInspectionDate: preInspectionDate && !isNaN(preInspectionDate.getTime()) ? preInspectionDate : null,
                 guarantorType: guarantorType !== 'NONE' ? guarantorType : null,
                 guarantorFirstName: guarantorType === 'PRIVATE' ? guarantorFirstName : null,
                 guarantorLastName: guarantorType === 'PRIVATE' ? guarantorLastName : null,
@@ -126,6 +129,7 @@ export async function updateLease(id: string, formData: FormData) {
     const depositAmountStr = formData.get("depositAmount") as string;
     const cafMonthlyAmountStr = formData.get("cafMonthlyAmount") as string;
     const rentEffectiveDateStr = formData.get("rentEffectiveDate") as string;
+    const preInspectionDateStr = formData.get("preInspectionDate") as string;
 
     if (!startDateStr) {
         throw new Error("La date de début est obligatoire.");
@@ -137,6 +141,7 @@ export async function updateLease(id: string, formData: FormData) {
     const chargesAmount = parseFloat(chargesAmountStr);
     const depositAmount = depositAmountStr ? parseFloat(depositAmountStr) : null;
     const cafMonthlyAmount = cafMonthlyAmountStr ? parseFloat(cafMonthlyAmountStr) : null;
+    const preInspectionDate = preInspectionDateStr ? new Date(preInspectionDateStr) : null;
     // Force UTC 1st of month to match how periods are stored in generate-rents
     let effectiveDate: Date | null = null;
     if (rentEffectiveDateStr) {
@@ -164,6 +169,7 @@ export async function updateLease(id: string, formData: FormData) {
                 chargesAmount,
                 depositAmount: depositAmount !== null && !isNaN(depositAmount) ? depositAmount : null,
                 cafMonthlyAmount: cafMonthlyAmount !== null && !isNaN(cafMonthlyAmount) ? cafMonthlyAmount : null,
+                preInspectionDate: preInspectionDate && !isNaN(preInspectionDate.getTime()) ? preInspectionDate : null,
                 ...(effectiveDate ? { lastRentReviewDate: effectiveDate } : {}),
                 guarantorType: guarantorType !== 'NONE' ? guarantorType : null,
                 guarantorFirstName: guarantorType === 'PRIVATE' ? guarantorFirstName : null,

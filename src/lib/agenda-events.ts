@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { addMonths, differenceInDays } from 'date-fns';
 
-export type AgendaEventType = 'LEASE_END' | 'RENT_REVIEW' | 'TASK_DUE' | 'LEASE_START';
+export type AgendaEventType = 'LEASE_END' | 'RENT_REVIEW' | 'TASK_DUE' | 'LEASE_START' | 'PRE_INSPECTION';
 export type AgendaUrgency = 'low' | 'medium' | 'high';
 
 export interface AgendaEvent {
@@ -23,7 +23,11 @@ export async function getAgendaEvents(horizonMonths: number): Promise<AgendaEven
     const now = new Date();
     const horizon = addMonths(now, horizonMonths);
 
-    const [activeLeases, upcomingLeases, tasks] = await Promise.all([
+    // Début de journée : un pré-état des lieux prévu aujourd'hui reste « à venir ».
+    const startOfToday = new Date(now);
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const [activeLeases, upcomingLeases, preInspectionLeases, tasks] = await Promise.all([
         // Les sorties comptent aussi quand le bail a déjà été résilié : mettre
         // fin à un bail bascule isActive à false, ce qui faisait disparaître la
         // date de départ de l'échéancier alors qu'elle est encore à venir.
@@ -38,6 +42,10 @@ export async function getAgendaEvents(horizonMonths: number): Promise<AgendaEven
         }),
         prisma.lease.findMany({
             where: { startDate: { gt: now, lte: horizon } },
+            include: { tenant: true, apartment: true },
+        }),
+        prisma.lease.findMany({
+            where: { preInspectionDate: { gte: startOfToday, lte: horizon } },
             include: { tenant: true, apartment: true },
         }),
         prisma.task.findMany({
@@ -99,6 +107,19 @@ export async function getAgendaEvents(horizonMonths: number): Promise<AgendaEven
             sublabel: lease.apartment.name || lease.apartment.address,
             href: `/apartments/${lease.apartmentId}`,
             urgency: 'low',
+        });
+    }
+
+    for (const lease of preInspectionLeases) {
+        if (!lease.preInspectionDate) continue;
+        const date = new Date(lease.preInspectionDate);
+        events.push({
+            date,
+            type: 'PRE_INSPECTION',
+            label: `Pré-état des lieux — ${lease.tenant.firstName} ${lease.tenant.lastName}`,
+            sublabel: lease.apartment.name || lease.apartment.address,
+            href: `/leases/${lease.id}`,
+            urgency: byDaysLeft(differenceInDays(date, now)),
         });
     }
 

@@ -173,6 +173,15 @@ export default function LeaseForm({ apartments, tenants }: LeaseFormProps) {
                     />
                 </div>
 
+                <div className={styles.formGroup}>
+                    <label htmlFor="preInspectionDate" className={styles.label}>Date du pré-état des lieux</label>
+                    <DateInput
+                        id="preInspectionDate"
+                        name="preInspectionDate"
+                        className={styles.input}
+                    />
+                </div>
+
                 <div className={styles.row}>
                     <div className={styles.formGroup}>
                         <label htmlFor="rentAmount" className={styles.label}>Loyer (HC) *</label>

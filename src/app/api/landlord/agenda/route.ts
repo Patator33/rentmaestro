@@ -32,13 +32,17 @@ export async function GET(request: Request) {
     const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
     const horizon = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 6, 1));
 
-    const [activeLeases, upcomingLeases, tasks] = await Promise.all([
+    const [activeLeases, upcomingLeases, preInspectionLeases, tasks] = await Promise.all([
         prisma.lease.findMany({
             where: { isActive: true },
             include: { tenant: true, apartment: true },
         }),
         prisma.lease.findMany({
             where: { startDate: { gte: today, lte: horizon } },
+            include: { tenant: true, apartment: true },
+        }),
+        prisma.lease.findMany({
+            where: { preInspectionDate: { gte: today, lte: horizon } },
             include: { tenant: true, apartment: true },
         }),
         prisma.task.findMany({
@@ -99,6 +103,24 @@ export async function GET(request: Request) {
             sublabel: lease.apartment.name || lease.apartment.address,
             daysUntil: diffDays(new Date(lease.startDate), today),
             urgency: 'low',
+            leaseId: lease.id,
+        });
+    }
+
+    // Pré-états des lieux
+    for (const lease of preInspectionLeases) {
+        if (!lease.preInspectionDate) continue;
+        const date = new Date(lease.preInspectionDate);
+        const days = diffDays(date, today);
+        events.push({
+            date,
+            // Type existant (icône « entrée ») : l'appli mobile déjà installée plante
+            // sur un type d'événement qu'elle ne connaît pas. Le libellé distingue.
+            type: 'LEASE_START',
+            label: `Pré-état des lieux — ${lease.tenant.firstName} ${lease.tenant.lastName}`,
+            sublabel: lease.apartment.name || lease.apartment.address,
+            daysUntil: days,
+            urgency: days <= 30 ? 'high' : days <= 60 ? 'medium' : 'low',
             leaseId: lease.id,
         });
     }

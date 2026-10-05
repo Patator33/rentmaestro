@@ -154,6 +154,7 @@ model Lease {
   guarantorPhone     String?
   guarantorVisaleOk  Boolean       @default(false)
   cafMonthlyAmount   Float?        // montant CAF/APL attendu chaque mois, null = pas de CAF sur ce bail
+  preInspectionDate  DateTime?     // date prévue du pré-état des lieux (remonte dans l'agenda)
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
   apartment          Apartment     @relation(fields: [apartmentId], references: [id])

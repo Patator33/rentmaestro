@@ -285,6 +285,7 @@ const EVENT_COLORS: Record<string, string> = {
   RENT_REVIEW: STATUS_COLORS.pending,
   TASK_DUE: STATUS_COLORS.vacant,
   LEASE_START: STATUS_COLORS.ok,
+  PRE_INSPECTION: STATUS_COLORS.soon,
 };
 
 export default async function Home() {
