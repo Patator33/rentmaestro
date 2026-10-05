@@ -308,8 +308,8 @@ input, select, textarea {
   flex: 1;
   min-width: 0;
   overflow-x: hidden;
-  /* Fond légèrement teinté de la couleur du menu courant (transparent par défaut). */
-  background: color-mix(in srgb, var(--page-tint) 11%, transparent);
+  /* Même fond que le menu latéral (la teinte par menu ne s'applique plus au fond). */
+  background: var(--background);
 }
 
 @media (max-width: 768px) {

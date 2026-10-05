@@ -140,7 +140,7 @@ export default async function LeaseDetailPage({ params }: { params: Promise<{ id
     }));
 
     return (
-        <div style={{ maxWidth: '1400px', padding: '2rem' }}>
+        <div style={{ padding: '2rem' }}>
             <Link href="/leases" style={{ color: 'var(--primary-color)', fontSize: '0.9rem' }}>← Retour aux baux</Link>
 
             <h1 style={{ marginTop: '1rem', marginBottom: '0.25rem', fontSize: '1.5rem', fontWeight: 700 }}>

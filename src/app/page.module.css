@@ -1,6 +1,5 @@
 .container {
   padding: 32px;
-  max-width: 1400px;
   animation: pageIn 200ms ease-out;
 }
 

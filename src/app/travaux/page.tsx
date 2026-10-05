@@ -25,12 +25,13 @@ export default async function TravauxPage({
     });
 
     return (
-        <div style={{ maxWidth: 1400, padding: '2rem' }}>
+        <div style={{ padding: '2rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
                 <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-main)' }}><PageTitleIcon />Travaux &amp; Incidents</h1>
                 <Link
                     href={showAll ? '/travaux' : '/travaux?all=1'}
-                    style={{ fontSize: '0.85rem', padding: '0.35rem 0.8rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', textDecoration: 'none' }}
+                    className="std-add-button"
+                    style={{ fontSize: '0.85rem', padding: '0.5rem 1rem' }}
                 >
                     {showAll ? 'Ouverts seulement' : 'Tout afficher'}
                 </Link>
