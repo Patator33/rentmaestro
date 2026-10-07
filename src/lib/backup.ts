@@ -240,7 +240,9 @@ export async function runScheduledBackupIfDue(): Promise<{ ran: boolean; success
     const lastRun = lastRunRaw ? new Date(lastRunRaw) : null;
     const thresholdDays = FREQUENCY_DAYS[loaded.frequency] ?? 1;
     const dueSince = lastRun ? (Date.now() - lastRun.getTime()) / (24 * 3600 * 1000) : Infinity;
-    if (dueSince < thresholdDays) return { ran: false };
+    // Marge de 2 h : un déclencheur « toutes les 24 h » dérive de quelques
+    // secondes, et sans tolérance la sauvegarde sauterait un jour sur deux.
+    if (dueSince < thresholdDays - 2 / 24) return { ran: false };
 
     const result = await performBackup(loaded.config, loaded.retention);
     return { ran: true, ...result };

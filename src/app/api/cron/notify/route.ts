@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import webpush from 'web-push';
 import { prisma } from '@/lib/prisma';
 import { notifyN8n } from '@/lib/n8n';
+import { runScheduledBackupIfDue } from '@/lib/backup';
 import { computeRevision, quarterPlusOneYear, DEFAULT_IRL_INDICES, type IrlIndex } from '@/lib/irl';
 
 async function sendToAll(payload: { title: string; body: string; url: string }) {
@@ -38,6 +39,14 @@ export async function POST(request: NextRequest) {
     if (secret !== process.env.CRON_SECRET) {
         return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
     }
+
+    // Sauvegarde automatique : c'est cette route que le workflow n8n quotidien
+    // appelle réellement (pas /api/cron/daily). Lancée en premier pour qu'un
+    // échec des notifications push ne l'empêche jamais de partir.
+    const backup = await runScheduledBackupIfDue().catch(error => {
+        console.error('[CRON] Backup error:', error);
+        return { ran: false as const };
+    });
 
     const today = new Date();
     const notifications: { title: string; body: string; url: string }[] = [];
@@ -141,7 +150,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (notifications.length === 0) {
-        return NextResponse.json({ sent: 0, message: 'Rien à signaler.' });
+        return NextResponse.json({ sent: 0, message: 'Rien à signaler.', backup });
     }
 
     let totalSent = 0;
@@ -149,5 +158,5 @@ export async function POST(request: NextRequest) {
         totalSent += await sendToAll(notif);
     }
 
-    return NextResponse.json({ sent: totalSent, notifications: notifications.length });
+    return NextResponse.json({ sent: totalSent, notifications: notifications.length, backup });
 }
