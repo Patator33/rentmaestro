@@ -8,7 +8,8 @@ import { expectedRentForPeriod } from '@/lib/rent-period';
  * (/api/cron/daily) — sans ce dernier appel automatique, les loyers en retard
  * n'apparaissent plus nulle part tant que personne n'a cliqué le bouton.
  */
-export async function generateRentsForCurrentMonth() {
+export async function generateRentsForCurrentMonth(options: { dryRun?: boolean } = {}) {
+    const dryRun = options.dryRun ?? false;
     const now = new Date();
     const period = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
 
@@ -36,25 +37,29 @@ export async function generateRentsForCurrentMonth() {
         if (lease.payments.length > 0) {
             const payment = lease.payments[0];
             if (payment.status === 'PENDING' && now.getDate() > 10) {
-                await prisma.rentPayment.update({
-                    where: { id: payment.id },
-                    data: { status: 'LATE' }
-                });
+                if (!dryRun) {
+                    await prisma.rentPayment.update({
+                        where: { id: payment.id },
+                        data: { status: 'LATE' }
+                    });
+                }
                 lateMarked++;
             }
             skipped++;
             continue;
         }
 
-        const amount = expectedRentForPeriod(lease, period);
-        await prisma.rentPayment.create({
-            data: {
-                leaseId: lease.id,
-                period,
-                amount,
-                status: 'PENDING',
-            }
-        });
+        if (!dryRun) {
+            const amount = expectedRentForPeriod(lease, period);
+            await prisma.rentPayment.create({
+                data: {
+                    leaseId: lease.id,
+                    period,
+                    amount,
+                    status: 'PENDING',
+                }
+            });
+        }
         created++;
     }
 

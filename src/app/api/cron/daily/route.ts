@@ -6,6 +6,50 @@ import { runScheduledBackupIfDue } from "@/lib/backup";
 
 export const dynamic = 'force-dynamic';
 
+async function buildDryRunReport() {
+    const rents = await generateRentsForCurrentMonth({ dryRun: true });
+
+    const quittances = await prisma.rentPayment.findMany({
+        where: { status: "PAID", receiptSentAt: null },
+        include: { lease: { include: { tenant: true } } },
+        orderBy: { period: "asc" },
+    });
+    const withEmail = quittances.filter(p => p.lease.tenant.email);
+
+    const today = new Date();
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const activeLeases = await prisma.lease.findMany({ where: { isActive: true }, include: { tenant: true } });
+    const reminders: string[] = [];
+    for (const lease of activeLeases) {
+        if (!lease.tenant.email) continue;
+        const payment = await prisma.rentPayment.findFirst({ where: { leaseId: lease.id, period: startOfMonth } });
+        const late = today.getDate() > 9 && (!payment || payment.status !== "PAID");
+        if (late && (!payment || !payment.sentAt || payment.sentAt < sevenDaysAgo)) {
+            reminders.push(`${lease.tenant.firstName} ${lease.tenant.lastName}`);
+        }
+    }
+
+    const byPeriod: Record<string, number> = {};
+    for (const p of withEmail) {
+        const key = p.period.toISOString().slice(0, 7);
+        byPeriod[key] = (byPeriod[key] ?? 0) + 1;
+    }
+
+    return {
+        dryRun: true,
+        month: rents.month,
+        rentsToCreate: rents.created,
+        rentsToMarkLate: rents.lateMarked,
+        quittancesToSend: withEmail.length,
+        quittancesByPeriod: byPeriod,
+        remindersToSend: reminders.length,
+        reminderTenants: reminders,
+    };
+}
+
 export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
@@ -23,6 +67,13 @@ export async function GET(request: Request) {
         const isAuthorized = token === validToken || authHeader === `Bearer ${validToken}`;
         if (!isAuthorized) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        // ?dryRun=1 : compte ce qui serait fait, sans rien écrire ni envoyer
+        // (utile avant d'activer ce cron pour la première fois : l'arriéré de
+        // quittances jamais envoyées partirait d'un seul coup).
+        if (searchParams.get("dryRun") === "1") {
+            return NextResponse.json(await buildDryRunReport());
         }
 
         let sentQuittances = 0;
