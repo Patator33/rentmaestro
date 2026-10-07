@@ -103,6 +103,40 @@ function renderDashboard(data, baseUrl) {
         }).join('')}</div>`;
     }
 
+    const EVENT_COLORS = {
+        LEASE_END: STATUS_COLORS.late,
+        RENT_REVIEW: STATUS_COLORS.pending,
+        TASK_DUE: STATUS_COLORS.vacant,
+        LEASE_START: STATUS_COLORS.ok,
+        PRE_INSPECTION: STATUS_COLORS.soon,
+    };
+    const upcoming = data.upcoming ?? [];
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    let upcomingHtml;
+    if (upcoming.length === 0) {
+        upcomingHtml = `<div class="empty" data-open="/agenda">Rien de prévu dans les 2 prochains mois</div>`;
+    } else {
+        upcomingHtml = `<div class="lateList">${upcoming.map(ev => {
+            const d = new Date(ev.date);
+            const days = Math.round((d.getTime() - startOfToday.getTime()) / 86400000);
+            const color = EVENT_COLORS[ev.type] ?? STATUS_COLORS.soon;
+            const href = `${appBaseUrl}${ev.href}`;
+            return `
+                <a class="eventRow" href="${escapeHtml(href)}" target="_blank" rel="noopener" style="border-left:3px solid ${color}">
+                    <div class="eventDate">
+                        <div class="eventDay" style="color:${color}">${d.getDate()}</div>
+                        <div class="eventMonth">${escapeHtml(d.toLocaleDateString('fr-FR', { month: 'short' }).replace('.', ''))}</div>
+                    </div>
+                    <div class="lateInfo">
+                        <div class="lateName">${escapeHtml(ev.label)}</div>
+                        ${ev.sublabel ? `<div class="lateSub">${escapeHtml(ev.sublabel)}</div>` : ''}
+                    </div>
+                    <div class="eventDays">${days <= 0 ? "auj." : `J−${days}`}</div>
+                </a>`;
+        }).join('')}</div>`;
+    }
+
     content.innerHTML = `
         <div class="card" data-open="/">
             <div class="sectionTitle">Occupation</div>
@@ -114,6 +148,10 @@ function renderDashboard(data, baseUrl) {
         <div>
             <div class="sectionTitle" data-open="/rents">Loyers en attente (${data.unpaidThisMonth.length})</div>
             ${lateHtml}
+        </div>
+        <div>
+            <div class="sectionTitle" data-open="/agenda">À venir</div>
+            ${upcomingHtml}
         </div>`;
 }
 

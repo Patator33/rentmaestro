@@ -174,3 +174,23 @@ body {
 [data-open], .content.openable { cursor: pointer; }
 .card[data-open]:hover { border-color: var(--primary); }
 .brand[data-open]:hover { color: var(--primary); }
+
+/* Liste « À venir » */
+.eventRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  text-decoration: none;
+  color: inherit;
+}
+.eventRow:hover { border-color: var(--primary); }
+.eventDate { width: 30px; text-align: center; flex-shrink: 0; line-height: 1.1; }
+.eventDay { font-family: var(--mono); font-size: 15px; font-weight: 500; }
+.eventMonth { font-family: var(--mono); font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); }
+.eventDays { font-family: var(--mono); font-size: 10px; color: var(--text-muted); flex-shrink: 0; }
+
+.content > div + div { margin-top: 12px; }

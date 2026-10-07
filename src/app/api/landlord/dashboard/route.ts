@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { verifyMobileToken, unauthorized } from '@/lib/mobile-auth';
 import { expectedRentForPeriod, isRentSettled, isRentLate, unsettledPastRents, PAST_MONTHS_SCANNED } from '@/lib/rent-period';
 import { occupancyBreakdown } from '@/lib/apartment-state';
+import { getAgendaEvents } from '@/lib/agenda-events';
 
 export const dynamic = 'force-dynamic';
 
@@ -205,6 +206,16 @@ export async function GET(request: Request) {
         .filter(r => !r.settled)
         .reduce((sum, r) => sum + Math.max(0, r.expected - r.received), 0);
 
+    // Même source que l'encart « À venir » du dashboard web (2 mois d'horizon).
+    const upcoming = (await getAgendaEvents(2)).slice(0, 6).map(e => ({
+        date: e.date.toISOString(),
+        type: e.type,
+        label: e.label,
+        sublabel: e.sublabel ?? null,
+        href: e.href,
+        urgency: e.urgency,
+    }));
+
     return NextResponse.json({
         pendingRents,
         monthRevenue,
@@ -220,6 +231,7 @@ export async function GET(request: Request) {
         rentReviews,
         incompleteGed,
         partialPayments,
+        upcoming,
         unpaidThisMonth: unpaidThisMonth.map(r => ({
             paymentId: r.payment?.id ?? null,
             amount: r.remaining,
