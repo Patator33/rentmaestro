@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 import { Source_Serif_4, Inter } from 'next/font/google';
 import PortalShell from '@/components/PortalShell';
+import { apartmentState } from '@/lib/apartment-state';
 
 // Polices du design (thème clair = serif presse, thème sombre = Inter).
 const portalSerif = Source_Serif_4({
@@ -72,6 +73,18 @@ export default async function TenantPortalPage({ params }: { params: Promise<{ t
         ...apartmentTravaux,
     ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
+    // Retard calculé à la volée (comme le dashboard) : le statut LATE stocké n'est
+    // posé que par /api/cron/daily, qui n'est pas forcément planifié.
+    const now = new Date();
+    const currentPeriod = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
+    const rentLate = currentLease
+        ? apartmentState(
+            { leases: [{ ...currentLease, tenant: { paymentDay: tenant.paymentDay } }] },
+            currentPeriod,
+            now
+        ).code === 'late'
+        : false;
+
     const allPayments = tenant.leases
         .flatMap(lease => lease.payments.map(p => ({ ...p, leaseId: lease.id })))
         .sort((a, b) => new Date(b.period).getTime() - new Date(a.period).getTime());
@@ -105,6 +118,7 @@ export default async function TenantPortalPage({ params }: { params: Promise<{ t
                 lastName={tenant.lastName}
                 token={token}
                 currentLease={currentLease}
+                rentLate={rentLate}
                 allPayments={allPayments}
                 initialTasks={allTasks}
                 initialMessages={tenant.messages}

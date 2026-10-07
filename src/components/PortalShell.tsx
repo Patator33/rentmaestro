@@ -34,6 +34,7 @@ export interface PortalShellProps {
     lastName: string;
     token: string;
     currentLease: Lease | null;
+    rentLate?: boolean;
     allPayments: Payment[];
     initialTasks: Task[];
     initialMessages: Message[];
@@ -127,7 +128,7 @@ const TASK_LABELS: Record<string, string> = { TODO: 'Reçu', IN_PROGRESS: 'En co
 // ─────────────────────────────────────────────────────────────
 export default function PortalShell({
     tenantId, firstName, token,
-    currentLease, allPayments, initialTasks, initialMessages, portalDocuments,
+    currentLease, rentLate, allPayments, initialTasks, initialMessages, portalDocuments,
 }: PortalShellProps) {
     const [dark, setDark] = useState(false);
     const [page, setPage] = useState<Page>('accueil');
@@ -222,9 +223,9 @@ export default function PortalShell({
         const cur = allPayments.find(p => p.leaseId === currentLease.id && sameMonth(p.period, now));
         if (cur?.status === 'PAID') return { text: `Loyer à jour — ${label}`, tone: 'ok' as const };
         if (cur?.status === 'PARTIAL') return { text: `Loyer partiel — ${label}`, tone: 'warn' as const };
-        if (cur?.status === 'LATE') return { text: `Loyer en retard — ${label}`, tone: 'warn' as const };
+        if (rentLate || cur?.status === 'LATE') return { text: `Loyer en retard — ${label}`, tone: 'warn' as const };
         return { text: `Loyer en attente — ${label}`, tone: 'warn' as const };
-    }, [allPayments, currentLease]);
+    }, [allPayments, currentLease, rentLate]);
 
     // Groupes de documents (mappés sur le design)
     const tenantSent = [...localDocs, ...portalDocuments.tenantDocs];

@@ -3,6 +3,7 @@ import webpush from 'web-push';
 import { prisma } from '@/lib/prisma';
 import { notifyN8n } from '@/lib/n8n';
 import { runScheduledBackupIfDue } from '@/lib/backup';
+import { getLateRents } from '@/lib/late-rents';
 import { computeRevision, quarterPlusOneYear, DEFAULT_IRL_INDICES, type IrlIndex } from '@/lib/irl';
 
 async function sendToAll(payload: { title: string; body: string; url: string }) {
@@ -52,16 +53,12 @@ export async function POST(request: NextRequest) {
     const notifications: { title: string; body: string; url: string }[] = [];
 
     // 1. Loyers en retard (LATE)
-    const lateRents = await prisma.rentPayment.findMany({
-        where: { status: 'LATE' },
-        include: { lease: { include: { apartment: true, tenant: true } } },
-    });
+    // Calculés à la volée (le statut LATE stocké n'est posé que par /daily).
+    const lateRents = await getLateRents(today);
     if (lateRents.length > 0) {
         notifications.push({
             title: `⚠️ ${lateRents.length} loyer${lateRents.length > 1 ? 's' : ''} en retard`,
-            body: lateRents.map((r) =>
-                `${r.lease.tenant.firstName} ${r.lease.tenant.lastName} — ${r.lease.apartment.address}`
-            ).slice(0, 3).join('\n'),
+            body: lateRents.map((r) => `${r.tenantName} — ${r.address}`).slice(0, 3).join('\n'),
             url: '/rents',
         });
     }
