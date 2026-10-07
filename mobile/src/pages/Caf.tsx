@@ -41,6 +41,7 @@ export default function Caf() {
   const [leases, setLeases] = useState<CafLease[]>([]);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
 
   const [reference, setReference] = useState('');
   const [dateStr, setDateStr] = useState(todayStr());
@@ -59,6 +60,7 @@ export default function Caf() {
 
   const load = (m: string) => {
     setLoading(true);
+    setLoadError('');
     api.getCaf(m)
       .then((data: { leases: CafLease[]; candidates: Candidate[] }) => {
         setLeases(data.leases);
@@ -69,6 +71,14 @@ export default function Caf() {
         setExpectedAmounts(Object.fromEntries(data.leases.map(l => [l.leaseId, l.cafMonthlyAmount.toFixed(2)])));
         setReference(`CAF ${m}`);
         setHistory({});
+      })
+      .catch((e: Error) => {
+        // Sans ça, un échec réseau/serveur s'affichait comme « aucun bail CAF ».
+        setLeases([]);
+        setCandidates([]);
+        setLoadError(/404/.test(e.message)
+          ? "Le serveur n'est pas encore à jour (route CAF introuvable). Réessayez après le déploiement."
+          : e.message || 'Impossible de charger la CAF.');
       })
       .finally(() => setLoading(false));
   };
@@ -172,7 +182,7 @@ export default function Caf() {
 
             <button
               onClick={() => { setAddOpen(true); setAddMsg(''); }}
-              disabled={candidates.length === 0}
+              disabled={candidates.length === 0 || !!loadError}
               className="w-full mb-4 py-2.5 rounded-xl text-sm font-semibold border border-paid/30 bg-paid/20 text-paid disabled:opacity-40"
             >
               {candidates.length === 0 && !loading ? 'Tous les baux ont déjà une CAF' : '+ Ajouter une CAF sur un bail'}
@@ -180,6 +190,11 @@ export default function Caf() {
 
             {loading ? (
               <p className="text-text-muted text-sm text-center py-8">Chargement...</p>
+            ) : loadError ? (
+              <div className="text-center py-8">
+                <p className="text-sm mb-3" style={{ color: '#ef4444' }}>⚠ {loadError}</p>
+                <button onClick={() => load(month)} className="px-4 py-2 rounded-xl border border-border text-text-secondary text-sm">Réessayer</button>
+              </div>
             ) : leases.length === 0 ? (
               <p className="text-text-muted text-sm text-center py-8 italic">
                 Aucun bail bénéficiaire CAF ce mois. Utilisez « Ajouter » pour renseigner le montant sur un bail.
