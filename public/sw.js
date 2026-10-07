@@ -1,5 +1,5 @@
 // ============================================================
-// Rentmaestro Service Worker — v5
+// Rentmaestro Service Worker — v6
 // Strategies:
 //   App shell (HTML + icons + manifest) → Cache on install
 //   Navigation (HTML pages)            → Network-first, cache fallback
@@ -11,12 +11,17 @@
 //     exclue, renvoyant parfois la réponse d'une AUTRE action plus
 //     ancienne sur la même page. Bump de version pour purger les entrées
 //     déjà mises en cache par erreur.)
+//   Requêtes internes Next.js (RSC / router.refresh) → Network only (v6 :
+//     le cache-first du bloc 4 les mettait en cache, y compris la redirection
+//     vers /login renvoyée quand la session avait expiré ; elle était ensuite
+//     rejouée APRÈS reconnexion, renvoyant sur /login à chaque retour sur la
+//     fenêtre. Les redirections ne sont plus jamais mises en cache non plus.)
 //   Push notifications                 → Show notification with click handler
 // ============================================================
 
-const SHELL_CACHE  = 'rentmaestro-shell-v5';
-const PAGES_CACHE  = 'rentmaestro-pages-v5';
-const STATIC_CACHE = 'rentmaestro-static-v5';
+const SHELL_CACHE  = 'rentmaestro-shell-v6';
+const PAGES_CACHE  = 'rentmaestro-pages-v6';
+const STATIC_CACHE = 'rentmaestro-static-v6';
 
 const SHELL_URLS = [
     '/',
@@ -68,6 +73,17 @@ self.addEventListener('fetch', (event) => {
     //    token renvoyait la réponse d'un « Enregistrer » plus ancien).
     if (request.method !== 'GET') return;
 
+    // 0bis. Requêtes internes de Next.js (router.refresh(), navigation côté
+    //    client, préchargement) : toujours réseau. Elles dépendent de la session
+    //    et de l'état du routeur, jamais d'un asset statique.
+    if (
+        url.searchParams.has('_rsc') ||
+        request.headers.has('RSC') ||
+        request.headers.has('Next-Router-State-Tree') ||
+        request.headers.has('Next-Router-Prefetch') ||
+        request.headers.has('Next-Action')
+    ) return;
+
     // 1. API routes → browser handles natively (cookies, Set-Cookie preserved)
     if (url.pathname.startsWith('/api/')) return;
 
@@ -84,7 +100,11 @@ self.addEventListener('fetch', (event) => {
     }
 
     // 4. Other same-origin assets (icons, fonts, images) → cache-first
-    if (url.origin === self.location.origin) {
+    //    (uniquement de vrais assets : le reste, ex. données de page, passe au réseau)
+    if (
+        url.origin === self.location.origin &&
+        ['image', 'font', 'style', 'script', 'manifest'].includes(request.destination)
+    ) {
         event.respondWith(cacheFirst(request, SHELL_CACHE));
         return;
     }
@@ -98,7 +118,8 @@ async function cacheFirst(request, cacheName) {
     if (cached) return cached;
     try {
         const response = await fetch(request);
-        if (response.ok) cache.put(request, response.clone());
+        // Jamais de redirection en cache (ex. vers /login quand la session a expiré).
+        if (response.ok && !response.redirected) cache.put(request, response.clone());
         return response;
     } catch {
         return new Response('Indisponible hors ligne', { status: 503 });
@@ -109,7 +130,7 @@ async function networkFirstNav(request) {
     const cache = await caches.open(PAGES_CACHE);
     try {
         const response = await fetch(request);
-        if (response.ok) cache.put(request, response.clone());
+        if (response.ok && !response.redirected) cache.put(request, response.clone());
         return response;
     } catch {
         const cached = await cache.match(request);
