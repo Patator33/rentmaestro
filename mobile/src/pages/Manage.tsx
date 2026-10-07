@@ -5,6 +5,7 @@ const sections = [
   { label: 'Appartements', icon: '🏠', path: '/apartments' },
   { label: 'Immeubles', icon: '🏢', path: '/buildings' },
   { label: 'Baux', icon: '📜', path: '/leases' },
+  { label: 'CAF', icon: '💶', path: '/caf' },
   { label: 'Sociétés', icon: '🏛️', path: '/companies' },
   { label: 'Paramètres', icon: '⚙️', path: '/settings' },
 ];

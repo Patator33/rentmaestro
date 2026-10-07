@@ -26,6 +26,7 @@ import Companies from './pages/Companies';
 import CompanyDetail from './pages/CompanyDetail';
 import CompanyForm from './pages/CompanyForm';
 import BuildingForm from './pages/BuildingForm';
+import Caf from './pages/Caf';
 
 const TABS = ['/', '/rents', '/messages', '/incidents', '/manage'];
 
@@ -128,6 +129,7 @@ export default function App() {
           <Route path="/companies/new" element={<AppShell><CompanyForm /></AppShell>} />
           <Route path="/companies/:id/edit" element={<AppShell><CompanyForm /></AppShell>} />
           <Route path="/companies/:id" element={<AppShell><CompanyDetail /></AppShell>} />
+          <Route path="/caf" element={<AppShell><Caf /></AppShell>} />
           <Route path="/leases" element={<AppShell><Leases /></AppShell>} />
           <Route path="/leases/new" element={<AppShell><LeaseForm /></AppShell>} />
           <Route path="/leases/:id" element={<AppShell><LeaseDetail /></AppShell>} />

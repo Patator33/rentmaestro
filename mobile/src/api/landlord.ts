@@ -65,6 +65,32 @@ export const api = {
     return res.json();
   },
 
+  getCaf: async (month: string) => {
+    const res = await apiFetch(`/api/landlord/caf?month=${month}`);
+    return res.json();
+  },
+
+  recordCafBatch: async (reference: string, date: string, month: string, entries: { leaseId: string; amount: number }[]) => {
+    const res = await apiFetch('/api/landlord/caf/batch', {
+      method: 'POST',
+      body: JSON.stringify({ reference, date, month, entries }),
+    });
+    return res.json();
+  },
+
+  setCafAmount: async (leaseId: string, amount: number | null) => {
+    const res = await apiFetch('/api/landlord/caf/lease', {
+      method: 'POST',
+      body: JSON.stringify({ leaseId, amount }),
+    });
+    return res.json();
+  },
+
+  getCafHistory: async (leaseId: string) => {
+    const res = await apiFetch(`/api/landlord/caf/history?leaseId=${leaseId}`);
+    return res.json();
+  },
+
   getConversations: async () => {
     const res = await apiFetch('/api/landlord/messages');
     return res.json();
