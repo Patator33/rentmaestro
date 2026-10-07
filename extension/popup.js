@@ -8,6 +8,30 @@ const settingsBtn = document.getElementById('settingsBtn');
 settingsBtn.addEventListener('click', () => chrome.runtime.openOptionsPage());
 refreshBtn.addEventListener('click', () => load());
 
+// Adresse du serveur, connue une fois le tableau de bord affiché.
+let appBaseUrl = null;
+
+function openApp(path) {
+    if (!appBaseUrl) return;
+    chrome.tabs.create({ url: `${appBaseUrl}${path}` });
+    window.close();
+}
+
+// Un clic n'importe où (carte, barre, chiffres, titre, en-tête…) ouvre RentMaestro,
+// sauf sur les loyers en retard (liens vers la fiche du locataire) et les boutons.
+// `data-open` précise la page visée ; à défaut, le tableau de bord.
+document.addEventListener('click', (e) => {
+    if (!appBaseUrl) return;
+    const target = e.target;
+    if (target.closest('a, button')) return;
+    const zone = target.closest('[data-open]');
+    if (zone) {
+        openApp(zone.dataset.open);
+    } else if (target.closest('#content')) {
+        openApp('/');
+    }
+});
+
 function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
@@ -46,6 +70,7 @@ function renderError(message) {
 }
 
 function renderDashboard(data, baseUrl) {
+    appBaseUrl = baseUrl.replace(/\/+$/, '');
     const occ = data.occupancy;
     const slotsHtml = occ.slots.map(s => `<div class="occupancySlot" style="background:${STATUS_COLORS[s]}" title="${STATUS_LABELS[s]}"></div>`).join('');
     const legendHtml = ['ok', 'late', 'pending', 'soon', 'vacant']
@@ -57,7 +82,7 @@ function renderDashboard(data, baseUrl) {
 
     let lateHtml;
     if (data.unpaidThisMonth.length === 0) {
-        lateHtml = `<div class="empty">Aucun impayé 🎉</div>`;
+        lateHtml = `<div class="empty" data-open="/rents">Aucun impayé 🎉</div>`;
     } else {
         lateHtml = `<div class="lateList">${data.unpaidThisMonth.map(p => {
             const initials = `${p.tenant.firstName?.[0] ?? ''}${p.tenant.lastName?.[0] ?? ''}`.toUpperCase();
@@ -79,7 +104,7 @@ function renderDashboard(data, baseUrl) {
     }
 
     content.innerHTML = `
-        <div class="card">
+        <div class="card" data-open="/">
             <div class="sectionTitle">Occupation</div>
             <div class="occupancyBig">${data.occupancyRate}<span class="pct">%</span></div>
             <div class="occupancySub">${loues} LOUÉS · ${occ.vacant} VACANT${occ.vacant !== 1 ? 'S' : ''}</div>
@@ -87,7 +112,7 @@ function renderDashboard(data, baseUrl) {
             <div class="occupancyLegend">${legendHtml}</div>
         </div>
         <div>
-            <div class="sectionTitle">Loyers en attente (${data.unpaidThisMonth.length})</div>
+            <div class="sectionTitle" data-open="/rents">Loyers en attente (${data.unpaidThisMonth.length})</div>
             ${lateHtml}
         </div>`;
 }

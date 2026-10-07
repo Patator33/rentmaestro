@@ -169,3 +169,8 @@ body {
   font-family: inherit;
   align-self: flex-start;
 }
+
+/* Zones qui ouvrent l'application au clic */
+[data-open], .content.openable { cursor: pointer; }
+.card[data-open]:hover { border-color: var(--primary); }
+.brand[data-open]:hover { color: var(--primary); }
