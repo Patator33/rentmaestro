@@ -1,6 +1,8 @@
 import { execFile } from 'child_process';
 import { promisify } from 'util';
-import { readFile } from 'fs/promises';
+import { tmpdir } from 'os';
+import { join } from 'path';
+import { unlink } from 'fs/promises';
 import { prisma } from '@/lib/prisma';
 import { notifyN8n } from '@/lib/n8n';
 
@@ -26,11 +28,6 @@ const FREQUENCY_DAYS: Record<BackupFrequency, number> = {
     // façon pas besoin d'être exact au jour près.
     monthly: 30,
 };
-
-function getDbPath(): string {
-    const url = process.env.DATABASE_URL || 'file:./prisma/dev.db';
-    return url.replace(/^file:/, '');
-}
 
 /**
  * Nettoie le sous-dossier saisi : sépare avec des '/', et liste blanche
@@ -100,6 +97,7 @@ async function runSmbClient(config: SmbConfig, commands: string, folder?: string
         return { stdout, stderr };
     } catch (error) {
         const e = error as NodeJS.ErrnoException & { stdout?: string; stderr?: string; killed?: boolean; signal?: string | null };
+        if (e.code === 'ENOENT') throw new Error("smbclient n'est pas installé sur le serveur.");
         if (e.killed || e.signal) {
             throw new Error(`Délai dépassé (${SMB_TIMEOUT_MS / 1000}s) — serveur injoignable ou pare-feu.`);
         }
@@ -121,8 +119,16 @@ export async function testSmbConnection(config: SmbConfig): Promise<{ success: b
     }
 }
 
-/** Envoie la base actuelle sur le partage et purge les sauvegardes au-delà de `retention`. */
+/** Copie cohérente de la base (VACUUM INTO) : sûre même si l'app écrit pendant la copie. */
+async function snapshotDb(): Promise<string> {
+    const target = join(tmpdir(), `rentmaestro_snapshot_${Date.now()}.db`);
+    await prisma.$executeRawUnsafe(`VACUUM INTO '${target.replace(/'/g, "''")}'`);
+    return target;
+}
+
+/** Envoie un snapshot de la base sur le partage et purge les sauvegardes au-delà de `retention`. */
 async function uploadBackup(config: SmbConfig, retention: number): Promise<{ success: boolean; error?: string; fileName?: string }> {
+    let snapshot: string | null = null;
     try {
         const folder = normalizeFolder(config.folder);
         const dir = folder || undefined;
@@ -133,8 +139,9 @@ async function uploadBackup(config: SmbConfig, retention: number): Promise<{ suc
         // blanche de normalizeFolder, sûr à insérer dans la commande.
         if (folder) await runSmbClient(config, `mkdir "${folder}"`).catch(() => {});
 
+        snapshot = await snapshotDb();
         const fileName = backupFileName();
-        const { stdout, stderr } = await runSmbClient(config, `put "${getDbPath()}" "${fileName}"`, dir);
+        const { stdout, stderr } = await runSmbClient(config, `put "${snapshot}" "${fileName}"`, dir);
         const err = checkSmbOutput(stdout + stderr);
         if (err) return { success: false, error: err };
 
@@ -157,6 +164,8 @@ async function uploadBackup(config: SmbConfig, retention: number): Promise<{ suc
         return { success: true, fileName };
     } catch (error) {
         return { success: false, error: error instanceof Error ? error.message : 'Erreur inconnue' };
+    } finally {
+        if (snapshot) await unlink(snapshot).catch(() => {});
     }
 }
 
@@ -222,17 +231,43 @@ async function performBackup(config: SmbConfig, retention: number): Promise<{ su
             update: { value: result.error ?? 'Erreur inconnue' },
             create: { key: 'backup_last_error', value: result.error ?? 'Erreur inconnue' },
         });
-        await notifyN8n('BACKUP_FAILED', { error: result.error ?? 'Erreur inconnue', host: config.host, share: config.share }).catch(() => {});
+        // Une alerte par jour au plus : le planificateur réessaie toutes les
+        // heures tant que la sauvegarde échoue (NAS éteint...), sans noyer Telegram.
+        const lastNotified = await getSetting('backup_last_failure_notified');
+        const notifiedAgo = lastNotified ? Date.now() - new Date(lastNotified).getTime() : Infinity;
+        if (notifiedAgo > 24 * 3600 * 1000) {
+            await prisma.setting.upsert({
+                where: { key: 'backup_last_failure_notified' },
+                update: { value: new Date().toISOString() },
+                create: { key: 'backup_last_failure_notified', value: new Date().toISOString() },
+            });
+            await notifyN8n('BACKUP_FAILED', { error: result.error ?? 'Erreur inconnue', host: config.host, share: config.share }).catch(() => {});
+        }
     }
 
     return { success: result.success, error: result.error };
 }
 
+// Le planificateur interne (instrumentation.ts) et /api/cron/notify peuvent
+// tomber au même moment : une seule sauvegarde à la fois.
+let backupRunning = false;
+
 /**
- * Appelée depuis le cron quotidien existant : n'agit que si la sauvegarde
- * automatique est activée et que la fréquence choisie est échue.
+ * Appelée par le planificateur interne (toutes les heures) et par le cron
+ * existant : n'agit que si la sauvegarde automatique est activée et que la
+ * fréquence choisie est échue.
  */
 export async function runScheduledBackupIfDue(): Promise<{ ran: boolean; success?: boolean; error?: string }> {
+    if (backupRunning) return { ran: false };
+    backupRunning = true;
+    try {
+        return await runIfDue();
+    } finally {
+        backupRunning = false;
+    }
+}
+
+async function runIfDue(): Promise<{ ran: boolean; success?: boolean; error?: string }> {
     const loaded = await loadConfig();
     if (!loaded || !loaded.enabled) return { ran: false };
 
@@ -240,9 +275,9 @@ export async function runScheduledBackupIfDue(): Promise<{ ran: boolean; success
     const lastRun = lastRunRaw ? new Date(lastRunRaw) : null;
     const thresholdDays = FREQUENCY_DAYS[loaded.frequency] ?? 1;
     const dueSince = lastRun ? (Date.now() - lastRun.getTime()) / (24 * 3600 * 1000) : Infinity;
-    // Marge de 2 h : un déclencheur « toutes les 24 h » dérive de quelques
-    // secondes, et sans tolérance la sauvegarde sauterait un jour sur deux.
-    if (dueSince < thresholdDays - 2 / 24) return { ran: false };
+    // Marge d'une heure : le tick horaire ne doit pas décaler la sauvegarde
+    // d'un jour entier (ni la sauter un jour sur deux en cas de dérive).
+    if (dueSince < thresholdDays - 1 / 24) return { ran: false };
 
     const result = await performBackup(loaded.config, loaded.retention);
     return { ran: true, ...result };
