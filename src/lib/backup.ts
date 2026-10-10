@@ -2,7 +2,7 @@ import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { unlink } from 'fs/promises';
+import { mkdtemp, chmod, rm } from 'fs/promises';
 import { prisma } from '@/lib/prisma';
 import { notifyN8n } from '@/lib/n8n';
 
@@ -119,16 +119,29 @@ export async function testSmbConnection(config: SmbConfig): Promise<{ success: b
     }
 }
 
-/** Copie cohérente de la base (VACUUM INTO) : sûre même si l'app écrit pendant la copie. */
-async function snapshotDb(): Promise<string> {
-    const target = join(tmpdir(), `rentmaestro_snapshot_${Date.now()}.db`);
-    await prisma.$executeRawUnsafe(`VACUUM INTO '${target.replace(/'/g, "''")}'`);
-    return target;
+/**
+ * Copie cohérente de la base (VACUUM INTO) : sûre même si l'app écrit pendant
+ * la copie. Elle contient tout (hash de mots de passe, jetons, identifiants
+ * SMB) : dossier privé 0700 au nom aléatoire (mkdtemp) et fichier en 0600,
+ * jamais lisible par un autre utilisateur du système.
+ */
+async function snapshotDb(): Promise<{ file: string; dir: string }> {
+    const dir = await mkdtemp(join(tmpdir(), 'rentmaestro-'));
+    await chmod(dir, 0o700);
+    const file = join(dir, 'snapshot.db');
+    try {
+        await prisma.$executeRawUnsafe(`VACUUM INTO '${file.replace(/'/g, "''")}'`);
+        await chmod(file, 0o600);
+    } catch (error) {
+        await rm(dir, { recursive: true, force: true }).catch(() => {});
+        throw error;
+    }
+    return { file, dir };
 }
 
 /** Envoie un snapshot de la base sur le partage et purge les sauvegardes au-delà de `retention`. */
 async function uploadBackup(config: SmbConfig, retention: number): Promise<{ success: boolean; error?: string; fileName?: string }> {
-    let snapshot: string | null = null;
+    let snapshot: { file: string; dir: string } | null = null;
     try {
         const folder = normalizeFolder(config.folder);
         const dir = folder || undefined;
@@ -141,7 +154,7 @@ async function uploadBackup(config: SmbConfig, retention: number): Promise<{ suc
 
         snapshot = await snapshotDb();
         const fileName = backupFileName();
-        const { stdout, stderr } = await runSmbClient(config, `put "${snapshot}" "${fileName}"`, dir);
+        const { stdout, stderr } = await runSmbClient(config, `put "${snapshot.file}" "${fileName}"`, dir);
         const err = checkSmbOutput(stdout + stderr);
         if (err) return { success: false, error: err };
 
@@ -165,7 +178,7 @@ async function uploadBackup(config: SmbConfig, retention: number): Promise<{ suc
     } catch (error) {
         return { success: false, error: error instanceof Error ? error.message : 'Erreur inconnue' };
     } finally {
-        if (snapshot) await unlink(snapshot).catch(() => {});
+        if (snapshot) await rm(snapshot.dir, { recursive: true, force: true }).catch(() => {});
     }
 }
 
