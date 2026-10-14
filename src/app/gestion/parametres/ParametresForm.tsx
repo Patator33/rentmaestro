@@ -19,6 +19,8 @@ const VARIABLES = [
     { name: '{{prenom_locataire}}', desc: 'Prénom du locataire' },
     { name: '{{nom_locataire}}', desc: 'Nom complet du locataire' },
     { name: '{{nom_colocataire}}', desc: 'Nom complet du co-locataire' },
+    { name: '{{nom_garant}}', desc: 'Nom du garant privé du bail' },
+    { name: '{{texte_garant}}', desc: 'Paragraphe adapté au bail : texte « garant privé » ou « Visale » ci-dessous, vide sans garantie' },
     { name: '{{adresse_bien}}', desc: 'Adresse du logement (sans le complément)' },
     { name: '{{complement_adresse}}', desc: "Complément d'adresse (bâtiment, étage…), vide si non renseigné" },
     { name: '{{adresse_complete}}', desc: "Adresse complète, complément inclus" },
@@ -125,6 +127,7 @@ export default function ParametresForm({
     defaultBackupEnabled, defaultBackupFrequency, defaultBackupHost, defaultBackupShare, defaultBackupFolder,
     defaultBackupUsername, defaultBackupDomain, defaultBackupRetention, backupPasswordConfigured,
     backupLastRun, backupLastStatus, backupLastError,
+    defaultGuarantorPrivate, defaultGuarantorVisale,
 }: {
     defaultSubject: string;
     defaultBody: string;
@@ -161,9 +164,13 @@ export default function ParametresForm({
     backupLastRun: string | null;
     backupLastStatus: string | null;
     backupLastError: string | null;
+    defaultGuarantorPrivate: string;
+    defaultGuarantorVisale: string;
 }) {
     const [subject, setSubject] = useState(defaultSubject);
     const [body, setBody] = useState(defaultBody);
+    const [guarantorPrivate, setGuarantorPrivate] = useState(defaultGuarantorPrivate);
+    const [guarantorVisale, setGuarantorVisale] = useState(defaultGuarantorVisale);
     const [haWebhook, setHaWebhook] = useState(defaultHaWebhook);
     const [haEnabled, setHaEnabled] = useState(defaultHaEnabled);
     const [saveState, setSaveState] = useState<SaveState>('idle');
@@ -318,7 +325,8 @@ export default function ParametresForm({
         setTelegramSaveState('dirty');
     };
 
-    const isDirty = subject !== defaultSubject || body !== defaultBody;
+    const isDirty = subject !== defaultSubject || body !== defaultBody
+        || guarantorPrivate !== defaultGuarantorPrivate || guarantorVisale !== defaultGuarantorVisale;
 
     const handleChange = (setter: (v: string) => void) => (v: string) => {
         setter(v);
@@ -330,6 +338,8 @@ export default function ParametresForm({
         await Promise.all([
             saveSetting('welcome_email_subject', subject),
             saveSetting('welcome_email_body', body),
+            saveSetting('welcome_email_guarantor_private', guarantorPrivate),
+            saveSetting('welcome_email_guarantor_visale', guarantorVisale),
         ]);
         setSaveState('saved');
     };
@@ -1111,6 +1121,17 @@ export default function ParametresForm({
                             style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--bg)', color: 'var(--text-main)', fontSize: '0.9rem', fontFamily: 'inherit', resize: 'vertical' }}
                         />
                     </div>
+                    <div>
+                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem', color: 'var(--text-secondary)' }}>Paragraphe « garant privé » (utilisé si le bail a un garant privé)</label>
+                        <textarea value={guarantorPrivate} onChange={e => handleChange(setGuarantorPrivate)(e.target.value)} rows={3} style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--bg)', color: 'var(--text-main)', fontSize: '0.9rem', fontFamily: 'inherit', resize: 'vertical' }} />
+                    </div>
+                    <div>
+                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem', color: 'var(--text-secondary)' }}>Paragraphe « Visale » (utilisé si le bail est couvert par Visale)</label>
+                        <textarea value={guarantorVisale} onChange={e => handleChange(setGuarantorVisale)(e.target.value)} rows={3} style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--bg)', color: 'var(--text-main)', fontSize: '0.9rem', fontFamily: 'inherit', resize: 'vertical' }} />
+                    </div>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        {'Sans garantie sur le bail, {{texte_garant}} est remplacé par rien. Si votre corps de message ne contient pas {{texte_garant}}, le paragraphe est ajouté automatiquement avant la formule de politesse.'}
+                    </p>
                 </div>
 
                 <div style={{ marginTop: '1.25rem' }}>

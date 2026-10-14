@@ -9,6 +9,7 @@ import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import { EVENT_LABELS, DEFAULT_TELEGRAM_TEMPLATES } from '@/lib/n8n';
 import { DEFAULT_IRL_INDICES, type IrlIndex } from '@/lib/irl';
+import { DEFAULT_GUARANTOR_PRIVATE_TEXT, DEFAULT_GUARANTOR_VISALE_TEXT, DEFAULT_WELCOME_BODY, GUARANTOR_SETTING_KEYS } from '@/lib/welcome-email';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,9 +53,9 @@ export default async function ParametresPage() {
     const user = await getUserById(session.userId);
     if (!user) redirect('/login');
 
-    const [subject, body, haWebhook, haEnabled, telegramEnabled, telegramEvents, dbTheme, store, passkeyCount, telegramTemplateRows, irlIndicesRaw, irlSubject, irlBody, telegramChatId, telegramThreadId, telegramParseMode, telegramSilent, telegramToken, portalSubject, portalBody, backupEnabled, backupFrequency, backupHost, backupShare, backupFolder, backupUsername, backupDomain, backupRetention, backupPasswordConfigured, backupLastRun, backupLastStatus, backupLastError] = await Promise.all([
+    const [subject, body, haWebhook, haEnabled, telegramEnabled, telegramEvents, dbTheme, store, passkeyCount, telegramTemplateRows, irlIndicesRaw, irlSubject, irlBody, telegramChatId, telegramThreadId, telegramParseMode, telegramSilent, telegramToken, portalSubject, portalBody, backupEnabled, backupFrequency, backupHost, backupShare, backupFolder, backupUsername, backupDomain, backupRetention, backupPasswordConfigured, backupLastRun, backupLastStatus, backupLastError, guarantorPrivateText, guarantorVisaleText] = await Promise.all([
         getSetting('welcome_email_subject').then(v => v ?? DEFAULT_SUBJECT),
-        getSetting('welcome_email_body').then(v => v ?? DEFAULT_BODY),
+        getSetting('welcome_email_body').then(v => v ?? DEFAULT_WELCOME_BODY),
         getSetting('ha_webhook_url').then(v => v ?? ''),
         // Absent = activé : préserve le comportement des installations existantes
         // où l'envoi n'a jamais été conditionné qu'à la présence d'une URL.
@@ -87,6 +88,8 @@ export default async function ParametresPage() {
         getSetting('backup_last_run'),
         getSetting('backup_last_status'),
         getSetting('backup_last_error'),
+        getSetting(GUARANTOR_SETTING_KEYS.PRIVATE).then(v => v ?? DEFAULT_GUARANTOR_PRIVATE_TEXT),
+        getSetting(GUARANTOR_SETTING_KEYS.VISALE).then(v => v ?? DEFAULT_GUARANTOR_VISALE_TEXT),
     ]);
     const currentTheme = (dbTheme ?? store.get(THEME_COOKIE)?.value ?? DEFAULT_THEME) as ThemeId;
     const telegramTemplates = Object.fromEntries(telegramTemplateRows) as Record<string, string>;
@@ -130,6 +133,8 @@ export default async function ParametresPage() {
             backupLastRun={backupLastRun}
             backupLastStatus={backupLastStatus}
             backupLastError={backupLastError}
+            defaultGuarantorPrivate={guarantorPrivateText}
+            defaultGuarantorVisale={guarantorVisaleText}
         />
     );
 }
