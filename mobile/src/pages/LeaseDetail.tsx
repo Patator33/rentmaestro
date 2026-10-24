@@ -28,6 +28,7 @@ export default function LeaseDetail() {
   const [terminateModal, setTerminateModal] = useState(false);
   const [terminateDate, setTerminateDate] = useState(new Date().toISOString().split('T')[0]);
   const [terminateLoading, setTerminateLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const navigate = useNavigate();
 
   const load = useCallback(() => api.getLease(id!).then(setLease), [id]);
@@ -58,6 +59,29 @@ export default function LeaseDetail() {
       alert(e.message || 'Erreur résiliation');
     } finally {
       setTerminateLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    const who = `${lease.tenant?.firstName ?? ''} ${lease.tenant?.lastName ?? ''}`.trim();
+    const nbPayments = lease.payments?.length ?? 0;
+    const msg =
+      `Supprimer définitivement le bail de ${who || 'ce locataire'} ?
+
+` +
+      `Seront aussi supprimés : ${nbPayments} loyer${nbPayments > 1 ? 's' : ''} enregistré${nbPayments > 1 ? 's' : ''}, ` +
+      `les états des lieux et les documents du bail.
+
+` +
+      `Cette action est irréversible. Pour simplement terminer un bail, utilisez « Résilier le bail ».`;
+    if (!confirm(msg)) return;
+    setDeleteLoading(true);
+    try {
+      await api.deleteLease(id!);
+      navigate('/leases', { replace: true });
+    } catch (e: any) {
+      alert(e.message || 'Erreur suppression du bail');
+      setDeleteLoading(false);
     }
   };
 
@@ -218,6 +242,15 @@ export default function LeaseDetail() {
               Résilier le bail
             </button>
           )}
+
+          {/* Supprimer le bail (irréversible, avec ses loyers et documents) */}
+          <button
+            onClick={handleDelete}
+            disabled={deleteLoading}
+            className="w-full text-sm text-red-400 border border-red-400/30 py-2.5 rounded-xl mt-3 disabled:opacity-50"
+          >
+            {deleteLoading ? 'Suppression...' : '🗑 Supprimer le bail'}
+          </button>
         </div>
       </div>
     </PullToRefresh>

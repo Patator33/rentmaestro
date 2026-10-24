@@ -291,6 +291,11 @@ export const api = {
     return res.json();
   },
 
+  deleteLease: async (id: string) => {
+    const res = await apiFetch(`/api/landlord/leases/${id}`, { method: 'DELETE' });
+    return res.json();
+  },
+
   terminateLease: async (id: string, terminationDate?: string) => {
     const res = await apiFetch(`/api/landlord/leases/${id}`, {
       method: 'POST',
