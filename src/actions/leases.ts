@@ -7,6 +7,7 @@ import { logAction } from "@/lib/audit";
 import { requireAuth } from "@/lib/session";
 import { applyRentRevisionCore, type RevisionParams } from "@/lib/rent-revision";
 import { sendDepositReturnEmailCore } from "@/lib/deposit-emails";
+import { expectedRentForPeriod } from "@/lib/rent-period";
 
 export async function createLease(formData: FormData) {
     await requireAuth();
@@ -129,6 +130,7 @@ export async function updateLease(id: string, formData: FormData) {
     const depositAmountStr = formData.get("depositAmount") as string;
     const cafMonthlyAmountStr = formData.get("cafMonthlyAmount") as string;
     const rentEffectiveDateStr = formData.get("rentEffectiveDate") as string;
+    const applyToPaid = formData.get("applyToPaid") === 'on';
     const preInspectionDateStr = formData.get("preInspectionDate") as string;
 
     if (!startDateStr) {
@@ -188,6 +190,29 @@ export async function updateLease(id: string, formData: FormData) {
                 },
                 data: { amount: rentAmount + chargesAmount },
             });
+
+            // Opt-in : les loyers déjà encaissés gardent par défaut leur montant
+            // (leur quittance reste celle de l'époque). Quand le nouveau loyer
+            // a en réalité été payé avant que le bail soit modifié, la ligne
+            // PAID garde l'ancien montant et la quittance est fausse : on la
+            // recalcule, prorata d'entrée/sortie compris.
+            if (applyToPaid) {
+                const paid = await prisma.rentPayment.findMany({
+                    where: { leaseId: id, period: { gte: effectiveDate }, status: { in: ['PAID', 'PARTIAL'] } },
+                });
+                for (const p of paid) {
+                    const amount = expectedRentForPeriod({ rentAmount, chargesAmount, startDate, endDate }, p.period);
+                    if (Math.abs(amount - p.amount) > 0.001) {
+                        await prisma.rentPayment.update({ where: { id: p.id }, data: { amount } });
+                    }
+                }
+                await logAction({
+                    action: 'UPDATE_PAID_RENTS',
+                    entity: 'Lease',
+                    entityId: id,
+                    details: `Loyers déjà payés recalculés depuis ${effectiveDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric', timeZone: 'UTC' })} (${paid.length} ligne(s) examinée(s))`,
+                });
+            }
         }
         await logAction({ action: 'UPDATE_LEASE', entity: 'Lease', entityId: id, details: `Loyer: ${rentAmount}€` });
     } catch (error) {

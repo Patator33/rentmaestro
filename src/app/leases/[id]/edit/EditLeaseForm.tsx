@@ -110,8 +110,15 @@ export default function EditLeaseForm({ lease }: { lease: LeaseWithRelations }) 
                         className={styles.input}
                     />
                     <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.3rem' }}>
-                        Si le loyer est modifié, les paiements <strong>non payés</strong> à partir de cette date seront mis à jour au nouveau montant. Les loyers déjà payés (et leurs quittances) ne sont pas modifiés.
+                        Si le loyer est modifié, les paiements <strong>non payés</strong> à partir de cette date seront mis à jour au nouveau montant. Les loyers déjà payés (et leurs quittances) ne sont pas modifiés, sauf si vous cochez la case ci-dessous.
                     </p>
+                    <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', marginTop: '0.6rem', textTransform: 'none', letterSpacing: 'normal', fontFamily: 'inherit', fontSize: '0.85rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                        <input type="checkbox" name="applyToPaid" style={{ marginTop: '0.2rem', accentColor: 'var(--primary-color)' }} />
+                        <span>
+                            Appliquer aussi aux loyers <strong>déjà payés</strong> depuis cette date : leurs quittances seront recalculées au nouveau montant.
+                            À utiliser si le locataire a payé le nouveau loyer avant la modification du bail ; les mois antérieurs à la date d'effet ne sont pas touchés.
+                        </span>
+                    </label>
                 </div>
 
                 <div className={styles.row}>
