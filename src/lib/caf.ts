@@ -150,3 +150,39 @@ export async function getCafHistoryForLease(leaseId: string) {
         status: p.status,
     }));
 }
+
+/**
+ * Annule la part CAF enregistrée sur le loyer d'un mois (erreur de montant,
+ * mauvais bail...). La part du locataire est conservée : le total déjà payé
+ * est diminué de la part CAF, le statut est recalculé en conséquence (soldé,
+ * partiel ou de nouveau impayé).
+ */
+export async function resetCafReceived(leaseId: string, periodStr: string, actor?: string) {
+    const period = parsePeriod(periodStr);
+    const payment = await prisma.rentPayment.findFirst({ where: { leaseId, period } });
+    if (!payment || payment.cafAmount == null) {
+        throw new Error("Aucun versement CAF à remettre à zéro pour cette période.");
+    }
+    const lease = await prisma.lease.findUnique({ where: { id: leaseId } });
+    if (!lease) throw new Error("Bail introuvable.");
+
+    const expected = expectedRentForPeriod(lease, period);
+    const paidTotal = payment.status === 'PAID' ? expected : payment.status === 'PARTIAL' ? (payment.paidAmount ?? 0) : 0;
+    const remaining = Math.round((paidTotal - payment.cafAmount) * 100) / 100;
+
+    const base = { cafAmount: null, cafReference: null };
+    const data =
+        remaining >= expected - 0.01 ? { ...base, status: 'PAID', paidAmount: null }
+        : remaining > 0.01 ? { ...base, status: 'PARTIAL', paidAmount: remaining }
+        : { ...base, status: 'PENDING', paidAmount: null, paidAt: null };
+
+    await prisma.rentPayment.update({ where: { id: payment.id }, data });
+
+    await logAction({
+        action: 'RESET_CAF_RECEIVED',
+        entity: 'RentPayment',
+        entityId: payment.id,
+        details: `${payment.cafAmount}€ de CAF annulés — ${period.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric', timeZone: 'UTC' })} — loyer désormais ${data.status}`,
+        userEmail: actor,
+    });
+}

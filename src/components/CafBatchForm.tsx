@@ -2,7 +2,7 @@
 
 import { Fragment, useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { recordCafBatch, getCafHistoryForLease, updateCafMonthlyAmount } from '@/actions/caf'
+import { recordCafBatch, getCafHistoryForLease, updateCafMonthlyAmount, resetCafReceived } from '@/actions/caf'
 import styles from '@/app/caf/page.module.css'
 
 export interface CafLeaseRow {
@@ -61,6 +61,27 @@ export default function CafBatchForm({ leases, periodStr }: { leases: CafLeaseRo
                 setError(err?.message || "Impossible de modifier le montant CAF.")
             } finally {
                 setSavingExpected(prev => ({ ...prev, [leaseId]: false }))
+            }
+        })
+    }
+
+    function resetReceived(leaseId: string, month: string, label: string, amount: number) {
+        if (!confirm(`Remettre à zéro la CAF de ${label} (${amount.toFixed(2)} €) ?
+
+Le versement est annulé ; la part payée par le locataire est conservée.`)) return
+        setError(null)
+        startTransition(async () => {
+            try {
+                await resetCafReceived(leaseId, month)
+                // Recharge l'historique s'il est ouvert, et les montants du mois.
+                if (openHistory[leaseId] !== undefined) {
+                    setOpenHistory(prev => ({ ...prev, [leaseId]: 'loading' }))
+                    const history = await getCafHistoryForLease(leaseId)
+                    setOpenHistory(prev => ({ ...prev, [leaseId]: history }))
+                }
+                router.refresh()
+            } catch (err: any) {
+                setError(err?.message || "Impossible de remettre la CAF à zéro.")
             }
         })
     }
@@ -176,7 +197,23 @@ export default function CafBatchForm({ leases, periodStr }: { leases: CafLeaseRo
                                             </button>
                                         </div>
                                     </td>
-                                    <td>{l.alreadyReceivedCaf > 0 ? `${l.alreadyReceivedCaf.toFixed(2)} €` : '—'}</td>
+                                    <td>
+                                        {l.alreadyReceivedCaf > 0 ? (
+                                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                                                <span style={{ whiteSpace: 'nowrap' }}>{l.alreadyReceivedCaf.toFixed(2)} €</span>
+                                                <button
+                                                    type="button"
+                                                    className={styles.historyToggle}
+                                                    style={{ whiteSpace: 'nowrap' }}
+                                                    disabled={isPending}
+                                                    title="Annuler le versement CAF de ce mois"
+                                                    onClick={() => resetReceived(l.leaseId, periodStr, `${l.tenantLabel} — ${l.apartmentLabel}`, l.alreadyReceivedCaf)}
+                                                >
+                                                    ↺ Remettre à zéro
+                                                </button>
+                                            </div>
+                                        ) : '—'}
+                                    </td>
                                     <td>
                                         <input
                                             type="number"
@@ -203,7 +240,7 @@ export default function CafBatchForm({ leases, periodStr }: { leases: CafLeaseRo
                                             ) : (
                                                 <table className={styles.historyTable}>
                                                     <thead>
-                                                        <tr><th>Période</th><th>Part CAF</th><th>Reçu le</th><th>Référence</th><th>Statut du loyer</th></tr>
+                                                        <tr><th>Période</th><th>Part CAF</th><th>Reçu le</th><th>Référence</th><th>Statut du loyer</th><th></th></tr>
                                                     </thead>
                                                     <tbody>
                                                         {(openHistory[l.leaseId] as HistoryEntry[]).map((h, i) => (
@@ -213,6 +250,21 @@ export default function CafBatchForm({ leases, periodStr }: { leases: CafLeaseRo
                                                                 <td>{h.paidAt ? new Date(h.paidAt).toLocaleDateString('fr-FR') : '—'}</td>
                                                                 <td>{h.cafReference || '—'}</td>
                                                                 <td>{h.status === 'PAID' ? 'Payé' : h.status === 'PARTIAL' ? 'Partiel' : h.status}</td>
+                                                                <td>
+                                                                    <button
+                                                                        type="button"
+                                                                        className={styles.historyToggle}
+                                                                        disabled={isPending}
+                                                                        onClick={() => resetReceived(
+                                                                            l.leaseId,
+                                                                            new Date(h.period).toISOString().slice(0, 7),
+                                                                            `${l.tenantLabel} — ${new Date(h.period).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric', timeZone: 'UTC' })}`,
+                                                                            h.cafAmount
+                                                                        )}
+                                                                    >
+                                                                        ↺ Remettre à zéro
+                                                                    </button>
+                                                                </td>
                                                             </tr>
                                                         ))}
                                                     </tbody>

@@ -86,6 +86,14 @@ export const api = {
     return res.json();
   },
 
+  resetCaf: async (leaseId: string, month: string) => {
+    const res = await apiFetch('/api/landlord/caf/reset', {
+      method: 'POST',
+      body: JSON.stringify({ leaseId, month }),
+    });
+    return res.json();
+  },
+
   getCafHistory: async (leaseId: string) => {
     const res = await apiFetch(`/api/landlord/caf/history?leaseId=${leaseId}`);
     return res.json();

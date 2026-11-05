@@ -46,3 +46,12 @@ export async function getCafHistoryForLease(leaseId: string) {
     await requireAuth();
     return caf.getCafHistoryForLease(leaseId);
 }
+
+/** Remet à zéro la part CAF reçue pour un bail et un mois (YYYY-MM). */
+export async function resetCafReceived(leaseId: string, periodStr: string) {
+    await requireAuth();
+    await caf.resetCafReceived(leaseId, periodStr);
+    revalidatePath('/caf');
+    revalidatePath('/rents');
+    revalidatePath('/');
+}

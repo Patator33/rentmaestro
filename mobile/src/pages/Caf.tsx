@@ -145,6 +145,19 @@ export default function Caf() {
     setHistory(prev => ({ ...prev, [leaseId]: data }));
   };
 
+  const handleResetCaf = async (leaseId: string, periodMonth: string, label: string, amount: number) => {
+    if (!confirm(`Remettre à zéro la CAF de ${label} (${eur(amount)}) ?
+
+Le versement est annulé ; la part payée par le locataire est conservée.`)) return;
+    setMessage(null);
+    try {
+      await api.resetCaf(leaseId, periodMonth);
+      load(month);
+    } catch (e: any) {
+      setMessage({ ok: false, text: e.message || 'Impossible de remettre la CAF à zéro.' });
+    }
+  };
+
   const handleAdd = async () => {
     const value = parseFloat(addAmount);
     if (!addLeaseId) { setAddMsg('Choisissez un bail.'); return; }
@@ -242,6 +255,17 @@ export default function Caf() {
                         <p className="text-xs text-text-muted text-right">
                           Déjà reçu<br />
                           <span className="text-text-main font-semibold">{l.alreadyReceivedCaf > 0 ? eur(l.alreadyReceivedCaf) : '—'}</span>
+                          {l.alreadyReceivedCaf > 0 && (
+                            <>
+                              <br />
+                              <button
+                                onClick={() => handleResetCaf(l.leaseId, month, `${l.tenantLabel}`, l.alreadyReceivedCaf)}
+                                className="text-xs mt-1 px-2 py-0.5 rounded-lg border border-red-400/30 text-red-400"
+                              >
+                                ↺ Remettre à zéro
+                              </button>
+                            </>
+                          )}
                         </p>
                       </div>
 
@@ -288,7 +312,16 @@ export default function Caf() {
                                   {new Date(h.period).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric', timeZone: 'UTC' })}
                                   {h.cafReference ? ` · ${h.cafReference}` : ''}
                                 </span>
-                                <span className="text-text-main font-semibold">{eur(h.cafAmount)}</span>
+                                <span className="text-text-main font-semibold">
+                                  {eur(h.cafAmount)}
+                                  <button
+                                    onClick={() => handleResetCaf(l.leaseId, new Date(h.period).toISOString().slice(0, 7), `${l.tenantLabel}`, h.cafAmount)}
+                                    className="ml-2 text-red-400"
+                                    title="Remettre à zéro"
+                                  >
+                                    ↺
+                                  </button>
+                                </span>
                               </div>
                             ))}
                           </div>
