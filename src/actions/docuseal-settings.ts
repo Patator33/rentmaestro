@@ -137,9 +137,19 @@ export async function testDocusealConnection(input: {
 }): Promise<{ success: boolean; error?: string; templates?: { label: string; id: number; name: string; roles: string[] }[] }> {
     await requireAuth()
     const s = await readAll()
-    const base = normalizeBaseUrl(input.url) || s.get(K.url) || ''
-    const apiKey = input.apiKey.trim() || s.get(K.apiKey) || ''
+    const typedUrl = normalizeBaseUrl(input.url)
+    if (typedUrl === null) return { success: false, error: "URL DocuSeal invalide (ex. https://sign.exemple.fr)." }
+    const storedUrl = s.get(K.url) ?? ''
+    const base = typedUrl || storedUrl
     if (!base) return { success: false, error: "URL DocuSeal manquante." }
+
+    // La clé enregistrée ne part jamais vers une autre URL que celle enregistrée :
+    // tester une nouvelle URL impose de ressaisir la clé.
+    const typedKey = input.apiKey.trim()
+    if (!typedKey && typedUrl && typedUrl !== storedUrl) {
+        return { success: false, error: "Pour tester une nouvelle URL, ressaisissez la clé API (la clé enregistrée n'est utilisée qu'avec l'URL enregistrée)." }
+    }
+    const apiKey = typedKey || s.get(K.apiKey) || ''
     if (!apiKey) return { success: false, error: "Clé API manquante." }
 
     const wanted: [string, string][] = [
@@ -151,7 +161,9 @@ export async function testDocusealConnection(input: {
 
     const headers = { 'X-Auth-Token': apiKey, Accept: 'application/json' }
     const call = async (path: string) => {
-        const res = await fetch(`${base}${path}`, { headers, signal: AbortSignal.timeout(15_000), cache: 'no-store' })
+        // redirect: 'manual' : une redirection ne doit jamais emporter la clé vers un autre hôte.
+        const res = await fetch(`${base}${path}`, { headers, signal: AbortSignal.timeout(15_000), cache: 'no-store', redirect: 'manual' })
+        if (res.status >= 300 && res.status < 400) throw new Error("DocuSeal a répondu par une redirection : vérifiez l'URL (https, sans chemin superflu).")
         if (res.status === 401 || res.status === 403) throw new Error('Clé API refusée par DocuSeal.')
         if (!res.ok) throw new Error(`DocuSeal a répondu ${res.status}.`)
         return res.json()
