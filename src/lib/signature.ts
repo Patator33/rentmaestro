@@ -13,6 +13,7 @@ import {
     DocusealError, docusealRequest, fetchTemplate, getDocusealConfig, type DocusealConfig, type TemplateInfo,
 } from '@/lib/docuseal'
 import { CATALOG_BY_KEY, type DocKind } from '@/lib/lease-catalog'
+import { syncSignatureRequest, type RawSubmission } from '@/lib/signature-sync'
 
 /** Erreur attendue (donnée manquante, template incomplet, demande déjà en cours…). */
 export class SignatureError extends Error {
@@ -272,25 +273,37 @@ export interface RequestStatus {
     signers: { role: string; name: string; email: string; status: string; link: string | null }[] | null
 }
 
-/** Demandes d'un bail, avec l'état de chaque signataire pour celles en cours. */
+/**
+ * Demandes d'un bail, avec l'état de chaque signataire pour celles en cours.
+ * Rattrape au passage les signatures terminées côté DocuSeal dont le webhook
+ * n'a pas été reçu (le PDF signé est alors rangé dans la GED).
+ */
 export async function getLeaseSignatureStatus(leaseId: string): Promise<RequestStatus[]> {
-    const rows = await prisma.signatureRequest.findMany({ where: { leaseId }, orderBy: { createdAt: 'desc' } })
+    let rows = await prisma.signatureRequest.findMany({ where: { leaseId }, orderBy: { createdAt: 'desc' } })
     const cfg = rows.some(r => r.status === 'PENDING') ? await getDocusealConfig() : null
 
-    return Promise.all(rows.map(async r => {
-        let signers: RequestStatus['signers'] = null
-        if (cfg && r.status === 'PENDING' && r.docusealSubmissionId) {
+    const submissions = new Map<string, RawSubmission>()
+    if (cfg) {
+        for (const r of rows.filter(x => x.status === 'PENDING')) {
             try {
-                const sub = await docusealRequest<{ submitters?: { role: string; name?: string | null; email: string; status?: string; slug?: string; embed_src?: string }[] }>(cfg, `/api/submissions/${r.docusealSubmissionId}`)
-                signers = (sub.submitters ?? []).map(s => ({
-                    role: s.role,
-                    name: s.name ?? '',
-                    email: s.email,
-                    status: s.status ?? 'awaiting',
-                    link: s.embed_src ?? (s.slug ? `${cfg.baseUrl}/s/${s.slug}` : null),
-                }))
-            } catch { /* DocuSeal inaccessible : on affiche l'état local */ }
+                const res = await syncSignatureRequest(r.id, cfg)
+                if (res.submission) submissions.set(r.id, res.submission)
+            } catch { /* DocuSeal inaccessible ou PDF non enregistré : l'état local reste affiché */ }
         }
+        rows = await prisma.signatureRequest.findMany({ where: { leaseId }, orderBy: { createdAt: 'desc' } })
+    }
+
+    return rows.map(r => {
+        const sub = r.status === 'PENDING' ? submissions.get(r.id) : undefined
+        const signers: RequestStatus['signers'] = sub?.submitters
+            ? sub.submitters.map(s => ({
+                role: s.role,
+                name: s.name ?? '',
+                email: s.email,
+                status: s.status ?? 'awaiting',
+                link: cfg ? (s.embed_src ?? (s.slug ? `${cfg.baseUrl}/s/${s.slug}` : null)) : null,
+            }))
+            : null
         return { id: r.id, kind: r.kind as DocKind, status: r.status, sentAt: r.sentAt, completedAt: r.completedAt, submissionId: r.docusealSubmissionId, signers }
-    }))
+    })
 }

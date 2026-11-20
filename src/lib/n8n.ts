@@ -8,6 +8,8 @@ export const EVENT_LABELS: Record<string, string> = {
     TENANT_CREATED: "👤 Nouveau locataire",
     RENT_REVIEW_DUE: "📈 Révision de loyer due",
     BACKUP_FAILED: "💾 Échec de sauvegarde",
+    LEASE_SIGNED: "✍️ Bail signé",
+    LEASE_SIGNATURE_DECLINED: "🚫 Signature refusée",
 };
 
 // Variables exposed to each event's Telegram template, with a human description.
@@ -52,6 +54,17 @@ export const EVENT_VARIABLES: Record<string, { name: string; desc: string }[]> =
         { name: 'erreur', desc: "Détail de l'erreur" },
         { name: 'serveur', desc: 'Serveur SMB ciblé' },
         { name: 'partage', desc: 'Nom du partage' },
+    ],
+    LEASE_SIGNED: [
+        { name: 'locataire', desc: 'Nom du ou des locataires' },
+        { name: 'bien', desc: 'Nom ou adresse du bien' },
+        { name: 'documents', desc: 'Documents signés (bail, acte de cautionnement)' },
+    ],
+    LEASE_SIGNATURE_DECLINED: [
+        { name: 'locataire', desc: 'Nom du locataire' },
+        { name: 'bien', desc: 'Nom ou adresse du bien' },
+        { name: 'signataire', desc: 'Email du signataire qui a refusé' },
+        { name: 'motif', desc: 'Motif du refus' },
     ],
 };
 
@@ -101,6 +114,10 @@ function extractVars(eventName: string, p: any): Record<string, string> {
             return { prenom: p?.firstName ?? '', nom: p?.lastName ?? '', email: p?.email ?? '' };
         case 'BACKUP_FAILED':
             return { erreur: p?.error ?? '', serveur: p?.host ?? '', partage: p?.share ?? '' };
+        case 'LEASE_SIGNED':
+            return { locataire: p?.tenantName ?? '', bien: p?.apartment ?? '', documents: p?.documents ?? '' };
+        case 'LEASE_SIGNATURE_DECLINED':
+            return { locataire: p?.tenantName ?? '', bien: p?.apartment ?? '', signataire: p?.signer ?? '', motif: p?.reason ?? '' };
         case 'RENT_REVIEW_DUE':
             return {
                 locataire: p?.tenantName ?? '',

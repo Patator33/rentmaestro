@@ -86,8 +86,10 @@ export default function DocusealSettings({ initial }: { initial: DocusealSetting
                     <button type="button" style={button} onClick={generateSecret}>Générer</button>
                 </div>
                 <p style={hintStyle}>
-                    À déclarer dans DocuSeal (Paramètres → Webhooks) : URL <code>{webhookUrl}</code> et un en-tête <code>x-docuseal-secret</code> portant ce secret.
-                    Copiez le secret généré avant d'enregistrer.
+                    À déclarer dans DocuSeal (Paramètres → Webhooks) : URL <code>{webhookUrl}</code> et un en-tête <code>x-docuseal-secret</code> portant ce secret
+                    (si DocuSeal n'offre pas d'en-tête personnalisé, ajoutez <code>?secret=</code> suivi du secret à l'URL).
+                    Événements à cocher : <em>submission.completed</em>, <em>form.declined</em>, <em>submission.expired</em>, <em>submission.archived</em>.
+                    Copiez le secret généré avant d'enregistrer. Sans webhook, l'état se met à jour à l'ouverture de la page du bail.
                 </p>
             </div>
 

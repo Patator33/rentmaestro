@@ -196,6 +196,15 @@ Conséquences sur le plan : le client DocuSeal lit pour chaque champ son rôle e
 - Constat : créer un template depuis un PDF par l'API est une fonction Pro de DocuSeal. Les templates restent faits à la main.
 - Vérifié de bout en bout sur ton DocuSeal avec 2 templates de test (supprimés ensuite) : valeurs routées vers le bon rôle, cases cochées, aucun email envoyé, annulation et régénération.
 
-## 12. Hors périmètre (pour l'instant)
+## 12. Phase 4 réalisée
+
+- `POST /api/docuseal/webhook` (chemin public du middleware) : secret en en-tête `x-docuseal-secret` ou en `?secret=`, comparaison à temps constant, corps limité à 1 Mo. Le corps n'est qu'un déclencheur : seul l'identifiant de la demande est lu, l'état vient de DocuSeal (relu avec la clé API). Erreur 500 sur échec de traitement, pour que DocuSeal réessaie.
+- `src/lib/signature-sync.ts` : à la signature, le PDF est téléchargé depuis l'URL DocuSeal **configurée** (jamais l'hôte écrit dans la réponse), contrôlé (signature `%PDF-`, 20 Mo max) et rangé dans la GED du bail : « bail signé Prénom NOM Appt X » (type Bail) et « acte de cautionnement signé … » (type Acte de cautionnement, ce qui valide aussi la case garant de la page du bail). Idempotent, sans doublon ni fichier orphelin.
+- Statut du bail : « Signé » quand plus aucune demande n'est en cours ; annulation ou expiration détectées côté DocuSeal.
+- Notifications Telegram : « ✍️ Bail signé » et « 🚫 Signature refusée » (modèles éditables dans Paramètres → Telegram, événements à activer).
+- Rattrapage sans webhook : l'ouverture de la page du bail resynchronise les demandes en cours ; `syncPendingSignatures()` est prêt pour le scheduler (phase 5).
+- Vérifié de bout en bout sur ton DocuSeal (templates de test supprimés ensuite) : secret refusé ou accepté, requête inconnue ignorée, rejeu sans doublon, bail signé puis acte signé, rattrapage sans webhook, annulation faite côté DocuSeal.
+
+## 13. Hors périmètre (pour l'instant)
 
 Renouvellement et avenant, états des lieux, mandat de prélèvement, mandataire, usage mixte (habitation + profession libérale), signature électronique qualifiée, import des baux déjà signés, envoi en lot.
