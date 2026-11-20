@@ -223,6 +223,11 @@ Conséquences sur le plan : le client DocuSeal lit pour chaque champ son rôle e
 - La saisie des nouvelles données (naissance, adresse, logement…) reste sur le web.
 - Vérifié sur l'appli mobile lancée dans le navigateur, face à un vrai DocuSeal (templates de test supprimés ensuite) : contrôle, envoi, régénération, annulation, badge de la liste.
 
-## 15. Hors périmètre (pour l'instant)
+## 15. Phase 7 en préparation : bail de test
+
+- Template DocuSeal n° 34 « TEST RentMaestro - bail nu » (copie du template 1, noms de champs du catalogue) et fiche pas à pas : [bail-de-test.md](bail-de-test.md).
+- Constat : le PDF Rentila du template 1 contient des valeurs écrites en dur d'un ancien bail (dates 2025-2028, indice 2025, caution 680 €, bailleur…). Un vrai bail demande un PDF vierge avec un champ par donnée variable.
+
+## 16. Hors périmètre (pour l'instant)
 
 Renouvellement et avenant, états des lieux, mandat de prélèvement, mandataire, usage mixte (habitation + profession libérale), signature électronique qualifiée, import des baux déjà signés, envoi en lot.
