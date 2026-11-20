@@ -6,6 +6,7 @@ import { createApartment } from "@/actions/apartments";
 import { prisma } from "@/lib/prisma";
 import BuildingSelectorWithCreate from "@/components/BuildingSelectorWithCreate";
 import { BUILDING_EXPENSE_FIELDS } from "@/lib/building-expenses";
+import ApartmentLeaseFields from "@/components/ApartmentLeaseFields";
 
 export default async function NewApartmentPage() {
     const [companies, buildings] = await Promise.all([
@@ -122,6 +123,8 @@ export default async function NewApartmentPage() {
                     <label htmlFor="availableFrom" className={styles.label}>Disponible à la location depuis *</label>
                     <input type="date" id="availableFrom" name="availableFrom" required className={styles.input} />
                 </div>
+
+                <ApartmentLeaseFields />
 
                 <button type="submit" className={styles.submitButton}>Enregistrer</button>
             </form>

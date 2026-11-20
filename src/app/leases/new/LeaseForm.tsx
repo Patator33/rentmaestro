@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { createLease } from '@/actions/leases'
 import styles from './page.module.css'
 import DateInput from '@/components/DateInput'
+import LeaseGenerationFields, { GuarantorDetailsFields } from '@/components/LeaseGenerationFields'
 import type { Apartment, Tenant, Lease } from '@prisma/client'
 
 type GuarantorType = 'NONE' | 'PRIVATE' | 'VISALE'
@@ -25,9 +26,12 @@ export default function LeaseForm({ apartments, tenants }: LeaseFormProps) {
     const [deposit, setDeposit] = useState<number | string>('');
     const [conflictingLease, setConflictingLease] = useState<(Lease & { tenant: Tenant }) | null>(null);
     const [terminateConflict, setTerminateConflict] = useState(true);
+    const [selectedAptId, setSelectedAptId] = useState('');
+    const selectedApt = apartments.find(a => a.id === selectedAptId) ?? null;
 
     const handleApartmentChange = (e: ChangeEvent<HTMLSelectElement>) => {
         const aptId = e.target.value;
+        setSelectedAptId(aptId);
         const apt = apartments.find(a => a.id === aptId);
 
         if (apt) {
@@ -229,6 +233,19 @@ export default function LeaseForm({ apartments, tenants }: LeaseFormProps) {
 
                 {prorataDisplay}
 
+                <LeaseGenerationFields
+                    key={selectedAptId}
+                    apartmentDefaultType={selectedApt?.defaultLeaseType}
+                    apartmentRules={selectedApt ? {
+                        rentCapDecree: selectedApt.rentCapDecree,
+                        rentComplement: selectedApt.rentComplement,
+                        rentReferenceMajored: selectedApt.rentReferenceMajored,
+                        rentReassessed: selectedApt.rentReassessed,
+                        referenceRentPerM2: selectedApt.referenceRentPerM2,
+                        referenceRentMajoredPerM2: selectedApt.referenceRentMajoredPerM2,
+                    } : null}
+                />
+
                 {/* ── Garant ──────────────────────────────────────────── */}
                 <div className={styles.formGroup} style={{ marginTop: '1.5rem' }}>
                     <label className={styles.label}>Garant</label>
@@ -265,6 +282,7 @@ export default function LeaseForm({ apartments, tenants }: LeaseFormProps) {
                                 <input type="tel" name="guarantorPhone" className={styles.input} placeholder="06 XX XX XX XX" />
                             </div>
                         </div>
+                        <GuarantorDetailsFields />
                     </div>
                 )}
 

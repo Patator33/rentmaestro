@@ -126,6 +126,30 @@ export default function CompanyForm({ company }: Props) {
                 />
             </div>
 
+            <div className={styles.formGroup}>
+                <label htmlFor="leaseDisplayName" className={styles.label}>Nom du bailleur sur les baux</label>
+                <input
+                    type="text"
+                    id="leaseDisplayName"
+                    name="leaseDisplayName"
+                    defaultValue={company?.leaseDisplayName || ''}
+                    className={styles.input}
+                    placeholder="Ex: M. et Mme RIGAUD, ou Rigaudimmo&co"
+                />
+            </div>
+
+            <div className={styles.formGroup}>
+                <label htmlFor="signerEmail" className={styles.label}>Email du signataire des baux</label>
+                <input
+                    type="email"
+                    id="signerEmail"
+                    name="signerEmail"
+                    defaultValue={company?.signerEmail || ''}
+                    className={styles.input}
+                    placeholder="Reçoit la demande de signature DocuSeal"
+                />
+            </div>
+
             {/* Logo Upload */}
             <div className={styles.formGroup}>
                 <label className={styles.label}>Logo (affiché sur les quittances)</label>

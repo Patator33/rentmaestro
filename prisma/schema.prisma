@@ -9,103 +9,144 @@ datasource db {
 }
 
 model Building {
-  id         String      @id @default(uuid())
-  name       String
-  address    String
-  complement String?
-  zipCode    String?
-  city       String?
-  companyId  String?
-  company    Company?    @relation(fields: [companyId], references: [id], onDelete: SetNull)
-  apartments Apartment[]
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
+  id                 String      @id @default(uuid())
+  name               String
+  address            String
+  complement         String?
+  zipCode            String?
+  city               String?
+  companyId          String?
+  company            Company?    @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  apartments         Apartment[]
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
   /// Charges communes mensuelles, réparties entre les appartements du bâtiment
   /// au prorata dans le calcul du Cash Flow Net Net (voir src/lib/building-expenses.ts).
-  expenseInternet    Float @default(0)
-  expenseElectricity Float @default(0)
-  expenseWater       Float @default(0)
-  expenseGas         Float @default(0)
-  expenseMaintenance Float @default(0)
-  expenseAccountant  Float @default(0)
-  expenseBank        Float @default(0)
-  expenseCleaning    Float @default(0)
-  expenseOther       Float @default(0)
+  expenseInternet    Float       @default(0)
+  expenseElectricity Float       @default(0)
+  expenseWater       Float       @default(0)
+  expenseGas         Float       @default(0)
+  expenseMaintenance Float       @default(0)
+  expenseAccountant  Float       @default(0)
+  expenseBank        Float       @default(0)
+  expenseCleaning    Float       @default(0)
+  expenseOther       Float       @default(0)
   /// Coûts fixes de l'immeuble entier (crédit/assurance/taxe foncière),
   /// répartis à parts égales entre ses appartements. Un appartement sans
   /// immeuble garde ses propres champs (voir Apartment) comme repli.
-  mortgageAmount  Float @default(0)
-  insuranceAmount Float @default(0)
-  taxAmount       Float @default(0)
+  mortgageAmount     Float       @default(0)
+  insuranceAmount    Float       @default(0)
+  taxAmount          Float       @default(0)
+  /// Données du logement entier pour la génération des baux : elles priment sur
+  /// celles de l'appartement quand il appartient à l'immeuble (cas colocation).
+  surface            Float?
+  rooms              Int?
+  housingType        String? // COLLECTIVE | INDIVIDUAL
+  legalRegime        String? // COPRO | MONO
+  constructionYear   Int?
 }
 
 model Apartment {
-  id              String    @id @default(uuid())
-  name            String?
-  address         String
-  complement      String?
-  city            String
-  zipCode         String
-  rent            Float
-  charges         Float
-  description     String?
-  surface         Float?
-  dpe             String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  comment         String?
-  mortgageAmount  Float?
-  insuranceAmount Float?
-  taxAmount       Float?
+  id                        String              @id @default(uuid())
+  name                      String?
+  address                   String
+  complement                String?
+  city                      String
+  zipCode                   String
+  rent                      Float
+  charges                   Float
+  description               String?
+  surface                   Float?
+  dpe                       String?
+  createdAt                 DateTime            @default(now())
+  updatedAt                 DateTime            @updatedAt
+  comment                   String?
+  mortgageAmount            Float?
+  insuranceAmount           Float?
+  taxAmount                 Float?
   /// Charges communes mensuelles propres à l'appartement. Utilisées uniquement
   /// pour le poste tant que l'immeuble ne renseigne pas ce même champ ; dès
   /// que l'immeuble le fait, sa quote-part prévaut (voir src/lib/building-expenses.ts).
-  expenseInternet    Float @default(0)
-  expenseElectricity Float @default(0)
-  expenseWater       Float @default(0)
-  expenseGas         Float @default(0)
-  expenseMaintenance Float @default(0)
-  expenseAccountant  Float @default(0)
-  expenseBank        Float @default(0)
-  expenseCleaning    Float @default(0)
-  expenseOther       Float @default(0)
-  defaultDeposit  Float?
-  availableFrom   DateTime?
-  soldAt          DateTime?
-  companyId       String?
-  company         Company?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
-  buildingId      String?
-  building        Building? @relation(fields: [buildingId], references: [id], onDelete: SetNull)
-  leases          Lease[]
-  expenses        Expense[]
-  tasks           Task[]
-  documents       ApartmentDocument[]
-  contacts        Contact[]
+  expenseInternet           Float               @default(0)
+  expenseElectricity        Float               @default(0)
+  expenseWater              Float               @default(0)
+  expenseGas                Float               @default(0)
+  expenseMaintenance        Float               @default(0)
+  expenseAccountant         Float               @default(0)
+  expenseBank               Float               @default(0)
+  expenseCleaning           Float               @default(0)
+  expenseOther              Float               @default(0)
+  defaultDeposit            Float?
+  /// Données du logement pour la génération des baux (DocuSeal).
+  rooms                     Int?
+  floor                     String?
+  doorCode                  String?
+  cellarNumber              String?
+  hasParking                Boolean             @default(false)
+  housingType               String? // COLLECTIVE | INDIVIDUAL
+  legalRegime               String? // COPRO | MONO
+  constructionYear          Int?
+  heatingMode               String? // INDIVIDUAL | COLLECTIVE
+  hotWaterMode              String? // INDIVIDUAL | COLLECTIVE
+  /// Clés d'équipements communs, séparées par des virgules (voir src/lib/lease-options.ts).
+  commonEquipments          String?
+  /// Zone tendue : réponses Oui/Non du bail et loyers de référence.
+  rentCapDecree             Boolean             @default(false)
+  rentComplement            Boolean             @default(false)
+  rentReferenceMajored      Boolean             @default(false)
+  rentReassessed            Boolean             @default(false)
+  referenceRentPerM2        Float?
+  referenceRentMajoredPerM2 Float?
+  /// Textes libres repris dans les baux (surtout colocation).
+  descPrivate               String?
+  descCommon                String?
+  descEquipment             String?
+  chargesDetail             String?
+  ictEquipment              String?
+  defaultLeaseType          String? // NU | MEUBLE | COLOCATION
+  availableFrom             DateTime?
+  soldAt                    DateTime?
+  companyId                 String?
+  company                   Company?            @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  buildingId                String?
+  building                  Building?           @relation(fields: [buildingId], references: [id], onDelete: SetNull)
+  leases                    Lease[]
+  expenses                  Expense[]
+  tasks                     Task[]
+  documents                 ApartmentDocument[]
+  contacts                  Contact[]
 }
 
 model Tenant {
-  id                String           @id @default(uuid())
-  firstName         String
-  lastName          String
-  email             String           @unique
-  phone             String?
-  coTenantFirstName String?
-  coTenantLastName  String?
-  coTenantEmail     String?
-  coTenantPhone     String?
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
-  paymentDay        Int?             @default(5)
-  portalToken       String?          @unique
-  isArchived        Boolean          @default(false)
+  id                 String           @id @default(uuid())
+  firstName          String
+  lastName           String
+  email              String           @unique
+  phone              String?
+  coTenantFirstName  String?
+  coTenantLastName   String?
+  coTenantEmail      String?
+  coTenantPhone      String?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  paymentDay         Int?             @default(5)
+  portalToken        String?          @unique
+  isArchived         Boolean          @default(false)
   /// Libellé tel qu'il apparaît sur les virements bancaires (souvent différent
   /// du nom d'usage). Sert au rapprochement automatique des paiements.
-  bankLabel         String?
-  leases            Lease[]
-  documents         TenantDocument[]
-  notes             TenantNote[]
-  tasks             Task[]
-  messages          Message[]
+  bankLabel          String?
+  /// État civil pour la génération des baux.
+  birthDate          DateTime?
+  birthPlace         String?
+  address            String?
+  coTenantBirthDate  DateTime?
+  coTenantBirthPlace String?
+  coTenantAddress    String?
+  leases             Lease[]
+  documents          TenantDocument[]
+  notes              TenantNote[]
+  tasks              Task[]
+  messages           Message[]
 }
 
 model TenantDocument {
@@ -129,55 +170,89 @@ model TenantNote {
 }
 
 model Lease {
-  id                 String        @id @default(uuid())
-  apartmentId        String
-  tenantId           String
-  startDate          DateTime
-  endDate            DateTime?
-  rentAmount         Float
-  chargesAmount      Float
-  depositAmount      Float?
-  depositPaidAmount  Float?   // partial amount already received toward deposit
-  depositStatus      String? // PENDING, PARTIAL_RECEIVED, RECEIVED, TO_RETURN, RETURNED, DEDUCTED
-  depositReturnedAt  DateTime?
-  depositReturnedAmount    Float?    // montant réellement restitué au locataire
-  depositReturnNote        String?   // annotation : justifie une restitution incomplète / une retenue
+  id                       String             @id @default(uuid())
+  apartmentId              String
+  tenantId                 String
+  startDate                DateTime
+  endDate                  DateTime?
+  rentAmount               Float
+  chargesAmount            Float
+  depositAmount            Float?
+  depositPaidAmount        Float? // partial amount already received toward deposit
+  depositStatus            String? // PENDING, PARTIAL_RECEIVED, RECEIVED, TO_RETURN, RETURNED, DEDUCTED
+  depositReturnedAt        DateTime?
+  depositReturnedAmount    Float? // montant réellement restitué au locataire
+  depositReturnNote        String? // annotation : justifie une restitution incomplète / une retenue
   depositReturnEmailSentAt DateTime? // anti-doublon de l'email de restitution
-  isActive           Boolean       @default(true)
-  lastRentReviewDate DateTime?
-  irlBaseIndex       Float?        // INSEE IRL index used as the revision baseline
-  irlBaseQuarter     String?       // e.g. "2025-T1" - quarter of the baseline index
-  guarantorType      String?       // NONE, PRIVATE, VISALE
-  guarantorFirstName String?
-  guarantorLastName  String?
-  guarantorEmail     String?
-  guarantorPhone     String?
-  guarantorVisaleOk  Boolean       @default(false)
-  cafMonthlyAmount   Float?        // montant CAF/APL attendu chaque mois, null = pas de CAF sur ce bail
-  preInspectionDate  DateTime?     // date prévue du pré-état des lieux (remonte dans l'agenda)
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
-  apartment          Apartment     @relation(fields: [apartmentId], references: [id])
-  tenant             Tenant        @relation(fields: [tenantId], references: [id])
-  payments           RentPayment[]
-  inspections        Inspection[]
-  documents          LeaseDocument[]
+  isActive                 Boolean            @default(true)
+  lastRentReviewDate       DateTime?
+  irlBaseIndex             Float? // INSEE IRL index used as the revision baseline
+  irlBaseQuarter           String? // e.g. "2025-T1" - quarter of the baseline index
+  guarantorType            String? // NONE, PRIVATE, VISALE
+  guarantorFirstName       String?
+  guarantorLastName        String?
+  guarantorEmail           String?
+  guarantorPhone           String?
+  guarantorVisaleOk        Boolean            @default(false)
+  cafMonthlyAmount         Float? // montant CAF/APL attendu chaque mois, null = pas de CAF sur ce bail
+  preInspectionDate        DateTime? // date prévue du pré-état des lieux (remonte dans l'agenda)
+  /// Génération du bail (DocuSeal). null = on reprend le défaut de l'appartement.
+  leaseType                String? // NU | MEUBLE | COLOCATION
+  chargesMode              String             @default("PROVISION") // PROVISION | FORFAIT
+  durationMonths           Int? // 36 (nu), 12 (meublé, colocation), 9 (étudiant)
+  insurerName              String?
+  /// JSON {rentCapDecree, rentComplement, rentReferenceMajored, rentReassessed,
+  /// referenceRentPerM2, referenceRentMajoredPerM2} qui remplace les valeurs de l'appartement.
+  rentRulesOverride        String?
+  guarantorBirthDate       DateTime?
+  guarantorBirthPlace      String?
+  guarantorAddress         String?
+  guarantorNationality     String?
+  signatureStatus          String             @default("NONE") // NONE | PENDING | SIGNED | CANCELED | EXPIRED
+  createdAt                DateTime           @default(now())
+  updatedAt                DateTime           @updatedAt
+  apartment                Apartment          @relation(fields: [apartmentId], references: [id])
+  tenant                   Tenant             @relation(fields: [tenantId], references: [id])
+  payments                 RentPayment[]
+  inspections              Inspection[]
+  documents                LeaseDocument[]
+  signatureRequests        SignatureRequest[]
+}
+
+/// Une demande de signature DocuSeal (bail ou acte de cautionnement). L'historique
+/// des renvois est conservé : l'ancienne ligne passe en CANCELED.
+model SignatureRequest {
+  id                   String    @id @default(uuid())
+  leaseId              String
+  lease                Lease     @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+  kind                 String // BAIL | CAUTION
+  docusealSubmissionId Int?
+  status               String    @default("PENDING") // PENDING | SIGNED | CANCELED | EXPIRED
+  sentAt               DateTime  @default(now())
+  completedAt          DateTime?
+  lastReminderAt       DateTime?
+  reminderCount        Int       @default(0)
+  signedDocumentId     String? // LeaseDocument créé à la signature
+  createdAt            DateTime  @default(now())
+
+  @@index([leaseId])
+  @@index([docusealSubmissionId])
 }
 
 model RentPayment {
-  id              String    @id @default(uuid())
-  leaseId         String
-  period          DateTime
-  amount          Float
-  paidAmount      Float?
-  status          String // PAID, PENDING, LATE, PARTIAL
-  paidAt          DateTime?
-  sentAt          DateTime? // Used for LATE/PENDING reminders
-  receiptSentAt   DateTime? // Used for PAID receipts
-  cafAmount       Float?    // part cumulée de paidAmount reçue de la CAF (reste = part locataire)
-  cafReference    String?   // libellé du virement CAF groupé (ex: date/mois du virement)
-  createdAt       DateTime  @default(now())
-  lease           Lease     @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+  id            String    @id @default(uuid())
+  leaseId       String
+  period        DateTime
+  amount        Float
+  paidAmount    Float?
+  status        String // PAID, PENDING, LATE, PARTIAL
+  paidAt        DateTime?
+  sentAt        DateTime? // Used for LATE/PENDING reminders
+  receiptSentAt DateTime? // Used for PAID receipts
+  cafAmount     Float? // part cumulée de paidAmount reçue de la CAF (reste = part locataire)
+  cafReference  String? // libellé du virement CAF groupé (ex: date/mois du virement)
+  createdAt     DateTime  @default(now())
+  lease         Lease     @relation(fields: [leaseId], references: [id], onDelete: Cascade)
 }
 
 model Expense {
@@ -193,19 +268,19 @@ model Expense {
 }
 
 model Task {
-  id          String     @id @default(cuid())
+  id          String         @id @default(cuid())
   apartmentId String
-  apartment   Apartment  @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
+  apartment   Apartment      @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
   title       String
   description String?
-  status      String     @default("TODO") // TODO, IN_PROGRESS, DONE
+  status      String         @default("TODO") // TODO, IN_PROGRESS, DONE
   cost        Float?
   dueDate     DateTime?
   scheduledAt DateTime?
   tenantId    String?
-  tenant      Tenant?    @relation(fields: [tenantId], references: [id], onDelete: SetNull)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  tenant      Tenant?        @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
   notes       TaskNote[]
   documents   TaskDocument[]
 }
@@ -226,7 +301,7 @@ model TaskNote {
   taskId     String
   task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
   content    String
-  authorType String   // LANDLORD | TENANT
+  authorType String // LANDLORD | TENANT
   createdAt  DateTime @default(now())
 }
 
@@ -255,18 +330,22 @@ model LeaseDocument {
 }
 
 model Company {
-  id          String            @id @default(uuid())
-  name        String
-  type        String            // SCI, LMNP, NOM_PROPRE, etc.
-  siret       String?
-  address     String?
-  logoUrl     String?
-  isPersonal  Boolean           @default(false)
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-  apartments  Apartment[]
-  buildings   Building[]
-  documents   CompanyDocument[]
+  id               String            @id @default(uuid())
+  name             String
+  type             String // SCI, LMNP, NOM_PROPRE, etc.
+  siret            String?
+  address          String?
+  logoUrl          String?
+  isPersonal       Boolean           @default(false)
+  /// Nom du bailleur tel qu'il figure sur les baux (ex. « M. et Mme RIGAUD »)
+  /// et email du signataire côté DocuSeal. Le SIRET et l'adresse sont ci-dessus.
+  leaseDisplayName String?
+  signerEmail      String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  apartments       Apartment[]
+  buildings        Building[]
+  documents        CompanyDocument[]
 }
 
 model CompanyDocument {
@@ -294,7 +373,7 @@ model GlobalDocument {
 model Contact {
   id          String     @id @default(uuid())
   name        String
-  role        String     // ARTISAN, SYNDIC, INSURANCE, OTHER
+  role        String // ARTISAN, SYNDIC, INSURANCE, OTHER
   email       String?
   phone       String?
   address     String?
@@ -318,17 +397,17 @@ model Message {
 /// Virement reçu en attente de validation par le propriétaire via Telegram.
 /// Rien n'est écrit sur les loyers tant que la réponse n'est pas arrivée.
 model PendingTransfer {
-  id         String   @id @default(uuid())
+  id         String    @id @default(uuid())
   sender     String
   amount     Float
-  receivedAt DateTime @default(now())
-  status     String   @default("PENDING") // PENDING, CONFIRMED, REJECTED
+  receivedAt DateTime  @default(now())
+  status     String    @default("PENDING") // PENDING, CONFIRMED, REJECTED
   /// Choix proposés dans le message Telegram, indexés par position du bouton.
-  options    String   @default("[]")
+  options    String    @default("[]")
   chatId     String?
   messageId  String?
   resolvedAt DateTime?
-  createdAt  DateTime @default(now())
+  createdAt  DateTime  @default(now())
 }
 
 /// Mode "réponse en cours" ouvert par le bouton Répondre sur un message
@@ -347,24 +426,24 @@ model PendingReply {
 model Inspection {
   id        String   @id @default(uuid())
   leaseId   String
-  type      String   // ENTRY, EXIT
+  type      String // ENTRY, EXIT
   date      DateTime
   rooms     String   @default("[]") // kept for backward compat
   notes     String?
-  fileUrl   String?  // uploaded inspection document
+  fileUrl   String? // uploaded inspection document
   fileName  String?
   createdAt DateTime @default(now())
   lease     Lease    @relation(fields: [leaseId], references: [id], onDelete: Cascade)
 }
 
 model User {
-  id            String    @id @default(uuid())
-  email         String    @unique
-  passwordHash  String
-  totpSecret    String?
-  totpEnabled   Boolean   @default(false)
-  createdAt     DateTime  @default(now())
-  passkeys      Passkey[]
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  totpSecret   String?
+  totpEnabled  Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  passkeys     Passkey[]
 }
 
 model Passkey {

@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { logAction } from "@/lib/audit";
 import { requireAuth } from "@/lib/session";
+import { readCompanyLeaseData } from "@/lib/lease-options";
 
 export async function createCompany(formData: FormData) {
     await requireAuth();
@@ -20,7 +21,7 @@ export async function createCompany(formData: FormData) {
     try {
         const validatedData = companySchema.parse(rawData);
         const c = await prisma.company.create({
-            data: { ...validatedData, ...(logoUrl !== null ? { logoUrl } : {}) },
+            data: { ...validatedData, ...(logoUrl !== null ? { logoUrl } : {}), ...readCompanyLeaseData(formData) },
         });
         await logAction({ action: 'CREATE_COMPANY', entity: 'Company', entityId: c.id, details: `${rawData.name} (${rawData.type})` });
     } catch (error) {
@@ -60,7 +61,7 @@ export async function updateCompany(id: string, formData: FormData) {
         const validatedData = companySchema.parse(rawData);
         await prisma.company.update({
             where: { id },
-            data: { ...validatedData, logoUrl },
+            data: { ...validatedData, logoUrl, ...readCompanyLeaseData(formData) },
         });
         await logAction({ action: 'UPDATE_COMPANY', entity: 'Company', entityId: id, details: `${rawData.name} (${rawData.type})` });
     } catch (error) {

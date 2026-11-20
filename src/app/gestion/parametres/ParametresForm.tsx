@@ -11,6 +11,8 @@ import PasskeySetup from '@/components/PasskeySetup';
 import PushNotificationToggle from '@/components/PushNotificationToggle';
 import UserManagement from '@/components/UserManagement';
 import BackupRestore from '@/components/BackupRestore';
+import DocusealSettings from '@/components/DocusealSettings';
+import type { DocusealSettingsView } from '@/actions/docuseal-settings';
 import Link from 'next/link';
 
 const ALL_EVENTS = Object.keys(EVENT_LABELS);
@@ -128,7 +130,9 @@ export default function ParametresForm({
     defaultBackupUsername, defaultBackupDomain, defaultBackupRetention, backupPasswordConfigured,
     backupLastRun, backupLastStatus, backupLastError,
     defaultGuarantorPrivate, defaultGuarantorVisale,
+    docuseal,
 }: {
+    docuseal: DocusealSettingsView;
     defaultSubject: string;
     defaultBody: string;
     defaultHaWebhook: string;
@@ -1087,6 +1091,11 @@ export default function ParametresForm({
                         Consulter les logs →
                     </Link>
                 </div>
+            </Collapsible>
+
+            {/* Signature des baux */}
+            <Collapsible title="✍️ Signature des baux (DocuSeal)" subtitle="Connexion, templates et rappels">
+                <DocusealSettings initial={docuseal} />
             </Collapsible>
 
             {/* Email de bienvenue */}

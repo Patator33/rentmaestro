@@ -6,6 +6,8 @@ import { updateLease, deleteLease } from '@/actions/leases'
 import styles from '@/app/leases/new/page.module.css'
 import DateInput from '@/components/DateInput'
 import DeleteButton from '@/components/DeleteButton'
+import LeaseGenerationFields, { GuarantorDetailsFields } from '@/components/LeaseGenerationFields'
+import { parseRentRulesOverride } from '@/lib/lease-options'
 import type { Apartment, Tenant, Lease } from '@prisma/client'
 
 type GuarantorType = 'NONE' | 'PRIVATE' | 'VISALE'
@@ -148,6 +150,23 @@ export default function EditLeaseForm({ lease }: { lease: LeaseWithRelations }) 
                     </div>
                 </div>
 
+                <LeaseGenerationFields
+                    leaseType={lease.leaseType}
+                    apartmentDefaultType={lease.apartment.defaultLeaseType}
+                    chargesMode={lease.chargesMode}
+                    durationMonths={lease.durationMonths}
+                    insurerName={lease.insurerName}
+                    rentRulesOverride={parseRentRulesOverride(lease.rentRulesOverride)}
+                    apartmentRules={{
+                        rentCapDecree: lease.apartment.rentCapDecree,
+                        rentComplement: lease.apartment.rentComplement,
+                        rentReferenceMajored: lease.apartment.rentReferenceMajored,
+                        rentReassessed: lease.apartment.rentReassessed,
+                        referenceRentPerM2: lease.apartment.referenceRentPerM2,
+                        referenceRentMajoredPerM2: lease.apartment.referenceRentMajoredPerM2,
+                    }}
+                />
+
                 {/* ── Garant ──────────────────────────────────────────── */}
                 <div className={styles.formGroup} style={{ marginTop: '0.5rem' }}>
                     <label className={styles.label}>Garant</label>
@@ -184,6 +203,12 @@ export default function EditLeaseForm({ lease }: { lease: LeaseWithRelations }) 
                                 <input type="tel" name="guarantorPhone" className={styles.input} placeholder="06 XX XX XX XX" defaultValue={(lease as any).guarantorPhone ?? ''} />
                             </div>
                         </div>
+                        <GuarantorDetailsFields
+                            birthDate={lease.guarantorBirthDate}
+                            birthPlace={lease.guarantorBirthPlace}
+                            address={lease.guarantorAddress}
+                            nationality={lease.guarantorNationality}
+                        />
                     </div>
                 )}
 

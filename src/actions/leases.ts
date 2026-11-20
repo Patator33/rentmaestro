@@ -8,6 +8,7 @@ import { requireAuth } from "@/lib/session";
 import { applyRentRevisionCore, type RevisionParams } from "@/lib/rent-revision";
 import { sendDepositReturnEmailCore } from "@/lib/deposit-emails";
 import { expectedRentForPeriod } from "@/lib/rent-period";
+import { readLeaseGenerationData, readGuarantorDetails } from "@/lib/lease-options";
 
 export async function createLease(formData: FormData) {
     await requireAuth();
@@ -60,6 +61,8 @@ export async function createLease(formData: FormData) {
                 guarantorLastName: guarantorType === 'PRIVATE' ? guarantorLastName : null,
                 guarantorEmail: guarantorType === 'PRIVATE' ? guarantorEmail : null,
                 guarantorPhone: guarantorType === 'PRIVATE' ? guarantorPhone : null,
+                ...readGuarantorDetails(formData, guarantorType === 'PRIVATE'),
+                ...readLeaseGenerationData(formData),
             },
         });
         await logAction({ action: 'CREATE_LEASE', entity: 'Lease', entityId: newLease.id, details: `Loyer: ${rentAmount}€` });
@@ -178,6 +181,8 @@ export async function updateLease(id: string, formData: FormData) {
                 guarantorLastName: guarantorType === 'PRIVATE' ? guarantorLastName : null,
                 guarantorEmail: guarantorType === 'PRIVATE' ? guarantorEmail : null,
                 guarantorPhone: guarantorType === 'PRIVATE' ? guarantorPhone : null,
+                ...readGuarantorDetails(formData, guarantorType === 'PRIVATE'),
+                ...readLeaseGenerationData(formData),
             }
         });
 

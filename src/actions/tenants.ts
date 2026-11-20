@@ -10,6 +10,7 @@ import { logAction } from "@/lib/audit";
 import { headers } from "next/headers";
 import { requireAuth } from "@/lib/session";
 import { DEFAULT_PORTAL_INVITE_SUBJECT, DEFAULT_PORTAL_INVITE_BODY, escapeHtml } from "@/lib/portal-invite";
+import { readTenantIdentityData } from "@/lib/lease-options";
 
 async function getBaseUrl() {
     const h = await headers();
@@ -40,7 +41,7 @@ export async function createTenant(formData: FormData) {
 
     let newTenant;
     try {
-        newTenant = await prisma.tenant.create({ data: parsed.data });
+        newTenant = await prisma.tenant.create({ data: { ...parsed.data, ...readTenantIdentityData(formData) } });
     } catch (error) {
         console.error("Erreur lors de la création du locataire:", error);
         return { success: false, error: "Impossible de créer le locataire (email peut-être déjà utilisé)." };
@@ -90,7 +91,7 @@ export async function updateTenant(id: string, formData: FormData) {
     try {
         await prisma.tenant.update({
             where: { id },
-            data: rawData,
+            data: { ...rawData, ...readTenantIdentityData(formData) },
         });
         await logAction({ action: 'UPDATE_TENANT', entity: 'Tenant', entityId: id, details: `${rawData.firstName} ${rawData.lastName}` });
     } catch (error) {

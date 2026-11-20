@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { updateBuilding } from '@/actions/buildings';
 import { BUILDING_EXPENSE_FIELDS, BUILDING_FIXED_COST_FIELDS } from '@/lib/building-expenses';
 import styles from '../../../apartments/new/page.module.css';
+import BuildingHousingFields from '@/components/BuildingHousingFields';
 
 export default async function EditBuildingPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -83,6 +84,8 @@ export default async function EditBuildingPage({ params }: { params: Promise<{ i
                         </div>
                     ))}
                 </div>
+
+                <BuildingHousingFields building={building} />
 
                 <button type="submit" className={styles.submitButton}>Enregistrer les modifications</button>
             </form>

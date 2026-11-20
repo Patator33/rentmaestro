@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import BuildingSelectorWithCreate from "@/components/BuildingSelectorWithCreate";
 import DeleteButton from "@/components/DeleteButton";
 import { BUILDING_EXPENSE_FIELDS } from "@/lib/building-expenses";
+import ApartmentLeaseFields from "@/components/ApartmentLeaseFields";
 
 export default async function EditApartmentPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -174,6 +175,8 @@ export default async function EditApartmentPage({ params }: { params: Promise<{ 
                         />
                     </div>
                 </div>
+
+                <ApartmentLeaseFields apartment={apartment} />
 
                 <button type="submit" className={styles.submitButton}>Enregistrer les modifications</button>
             </form>

@@ -1,4 +1,5 @@
 import { getSetting, getTelegramTokenHint, getBackupPasswordConfigured } from '@/actions/settings';
+import { getDocusealSettings } from '@/actions/docuseal-settings';
 import { DEFAULT_PORTAL_INVITE_SUBJECT, DEFAULT_PORTAL_INVITE_BODY } from '@/lib/portal-invite';
 import { cookies } from 'next/headers';
 import { THEME_COOKIE, DEFAULT_THEME, type ThemeId } from '@/themes/index';
@@ -53,7 +54,7 @@ export default async function ParametresPage() {
     const user = await getUserById(session.userId);
     if (!user) redirect('/login');
 
-    const [subject, body, haWebhook, haEnabled, telegramEnabled, telegramEvents, dbTheme, store, passkeyCount, telegramTemplateRows, irlIndicesRaw, irlSubject, irlBody, telegramChatId, telegramThreadId, telegramParseMode, telegramSilent, telegramToken, portalSubject, portalBody, backupEnabled, backupFrequency, backupHost, backupShare, backupFolder, backupUsername, backupDomain, backupRetention, backupPasswordConfigured, backupLastRun, backupLastStatus, backupLastError, guarantorPrivateText, guarantorVisaleText] = await Promise.all([
+    const [subject, body, haWebhook, haEnabled, telegramEnabled, telegramEvents, dbTheme, store, passkeyCount, telegramTemplateRows, irlIndicesRaw, irlSubject, irlBody, telegramChatId, telegramThreadId, telegramParseMode, telegramSilent, telegramToken, portalSubject, portalBody, backupEnabled, backupFrequency, backupHost, backupShare, backupFolder, backupUsername, backupDomain, backupRetention, backupPasswordConfigured, backupLastRun, backupLastStatus, backupLastError, guarantorPrivateText, guarantorVisaleText, docusealSettings] = await Promise.all([
         getSetting('welcome_email_subject').then(v => v ?? DEFAULT_SUBJECT),
         getSetting('welcome_email_body').then(v => v ?? DEFAULT_WELCOME_BODY),
         getSetting('ha_webhook_url').then(v => v ?? ''),
@@ -90,6 +91,7 @@ export default async function ParametresPage() {
         getSetting('backup_last_error'),
         getSetting(GUARANTOR_SETTING_KEYS.PRIVATE).then(v => v ?? DEFAULT_GUARANTOR_PRIVATE_TEXT),
         getSetting(GUARANTOR_SETTING_KEYS.VISALE).then(v => v ?? DEFAULT_GUARANTOR_VISALE_TEXT),
+        getDocusealSettings(),
     ]);
     const currentTheme = (dbTheme ?? store.get(THEME_COOKIE)?.value ?? DEFAULT_THEME) as ThemeId;
     const telegramTemplates = Object.fromEntries(telegramTemplateRows) as Record<string, string>;
@@ -135,6 +137,7 @@ export default async function ParametresPage() {
             backupLastError={backupLastError}
             defaultGuarantorPrivate={guarantorPrivateText}
             defaultGuarantorVisale={guarantorVisaleText}
+            docuseal={docusealSettings}
         />
     );
 }

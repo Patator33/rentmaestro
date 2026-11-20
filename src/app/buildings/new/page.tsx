@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { createBuilding } from '@/actions/buildings';
 import { BUILDING_EXPENSE_FIELDS, BUILDING_FIXED_COST_FIELDS } from '@/lib/building-expenses';
 import styles from '../../apartments/new/page.module.css';
+import BuildingHousingFields from '@/components/BuildingHousingFields';
 
 export default async function NewBuildingPage() {
     const companies = await prisma.company.findMany({ orderBy: { name: 'asc' } });
@@ -74,6 +75,8 @@ export default async function NewBuildingPage() {
                         </div>
                     ))}
                 </div>
+
+                <BuildingHousingFields />
 
                 <button type="submit" className={styles.submitButton}>Enregistrer</button>
             </form>

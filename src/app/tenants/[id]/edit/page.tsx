@@ -4,6 +4,7 @@ import { updateTenant, deleteTenant } from "@/actions/tenants";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import DeleteButton from "@/components/DeleteButton";
+import TenantIdentityFields from "@/components/TenantIdentityFields";
 
 export default async function EditTenantPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -88,6 +89,9 @@ export default async function EditTenantPage({ params }: { params: Promise<{ id:
                             automatique des loyers ; se remplit tout seul à la première validation.
                         </small>
                     </div>
+
+                    <h3 style={{ fontSize: '0.9rem', fontWeight: 700, margin: '1rem 0 0.5rem' }}>État civil (pour le bail)</h3>
+                    <TenantIdentityFields birthDate={tenant.birthDate} birthPlace={tenant.birthPlace} address={tenant.address} />
                 </div>
 
                 <div className={styles.section}>
@@ -120,6 +124,8 @@ export default async function EditTenantPage({ params }: { params: Promise<{ id:
                             title="Format attendu : 06 12 34 56 78 ou +33 6 12 34 56 78"
                         />
                     </div>
+
+                    <TenantIdentityFields prefix="coTenant" birthDate={tenant.coTenantBirthDate} birthPlace={tenant.coTenantBirthPlace} address={tenant.coTenantAddress} />
                 </div>
 
                 <button type="submit" className={styles.submitButton}>Enregistrer les modifications</button>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import styles from "./page.module.css";
 import { createTenant } from "@/actions/tenants";
+import TenantIdentityFields from "@/components/TenantIdentityFields";
 
 export default function NewTenantPage() {
     const [error, setError] = useState('');
@@ -96,6 +97,9 @@ export default function NewTenantPage() {
                     </small>
                 </div>
 
+                <h3 style={{ fontSize: '0.9rem', fontWeight: 700, margin: '0.5rem 0' }}>État civil (pour le bail, facultatif)</h3>
+                <TenantIdentityFields />
+
                 <div className={styles.sectionSeparator} style={{ margin: '2rem 0', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
                     <h2 className={styles.subtitle} style={{ fontSize: '1.1rem', marginBottom: '1rem', color: 'var(--text-main)' }}>Colocataire (Optionnel)</h2>
                 </div>
@@ -128,6 +132,8 @@ export default function NewTenantPage() {
                         title="Format attendu : 06 12 34 56 78 ou +33 6 12 34 56 78"
                     />
                 </div>
+
+                <TenantIdentityFields prefix="coTenant" />
 
                 <button type="submit" disabled={submitting} className={styles.submitButton}>
                     {submitting ? 'Enregistrement...' : 'Enregistrer'}

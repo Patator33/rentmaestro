@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 import { logAction } from "@/lib/audit";
 import { requireAuth } from "@/lib/session";
 import { BUILDING_EXPENSE_FIELDS } from "@/lib/building-expenses";
+import { readApartmentLeaseData } from "@/lib/lease-options";
 
 function readOwnExpenseFields(formData: FormData) {
     const out: Record<string, number> = {};
@@ -44,7 +45,7 @@ export async function createApartment(formData: FormData) {
     try {
         const validatedData = apartmentSchema.parse(rawData);
         const apt = await prisma.apartment.create({
-            data: { ...validatedData, availableFrom: rawData.availableFrom, buildingId: rawData.buildingId },
+            data: { ...validatedData, availableFrom: rawData.availableFrom, buildingId: rawData.buildingId, ...readApartmentLeaseData(formData) },
         });
         await logAction({ action: 'CREATE_APARTMENT', entity: 'Apartment', entityId: apt.id, details: rawData.name || rawData.address });
     } catch (error) {
@@ -102,7 +103,7 @@ export async function updateApartment(id: string, formData: FormData) {
     try {
         await prisma.apartment.update({
             where: { id },
-            data: rawData,
+            data: { ...rawData, ...readApartmentLeaseData(formData) },
         });
         await logAction({ action: 'UPDATE_APARTMENT', entity: 'Apartment', entityId: id, details: rawData.name || rawData.address });
     } catch (error) {
