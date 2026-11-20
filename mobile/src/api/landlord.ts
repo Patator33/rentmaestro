@@ -11,7 +11,9 @@ async function apiFetch(path: string, options?: RequestInit) {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
-    throw new Error(err.error || `HTTP ${res.status}`);
+    const e: Error & { details?: string[] } = new Error(err.error || `HTTP ${res.status}`);
+    if (Array.isArray(err.details)) e.details = err.details;
+    throw e;
   }
   return res;
 }
@@ -301,6 +303,33 @@ export const api = {
 
   deleteLease: async (id: string) => {
     const res = await apiFetch(`/api/landlord/leases/${id}`, { method: 'DELETE' });
+    return res.json();
+  },
+
+  // Signature du bail (DocuSeal)
+  getLeaseSignature: async (id: string) => {
+    const res = await apiFetch(`/api/landlord/leases/${id}/signature`);
+    return res.json();
+  },
+
+  setLeaseType: async (id: string, leaseType: string | null) => {
+    const res = await apiFetch(`/api/landlord/leases/${id}/signature`, {
+      method: 'PUT',
+      body: JSON.stringify({ leaseType }),
+    });
+    return res.json();
+  },
+
+  sendLeaseSignature: async (id: string, opts: { regenerate?: boolean; notify?: boolean } = {}) => {
+    const res = await apiFetch(`/api/landlord/leases/${id}/signature`, {
+      method: 'POST',
+      body: JSON.stringify(opts),
+    });
+    return res.json() as Promise<{ success: boolean; warnings: string[] }>;
+  },
+
+  cancelLeaseSignature: async (id: string) => {
+    const res = await apiFetch(`/api/landlord/leases/${id}/signature`, { method: 'DELETE' });
     return res.json();
   },
 

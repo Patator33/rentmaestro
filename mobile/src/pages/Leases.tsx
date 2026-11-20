@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/landlord';
 import { useAutoRefresh } from '../hooks/useAutoRefresh';
+import { SIGNATURE_BADGE } from '../components/LeaseSignature';
 
 function leaseStatus(l: any): 'future' | 'active' | 'past' {
   const today = new Date();
@@ -39,6 +40,12 @@ export default function Leases() {
       <div className="flex items-start justify-between">
         <div>
           <p className="text-text-main font-medium text-sm">{l.tenant?.firstName} {l.tenant?.lastName}</p>
+          {SIGNATURE_BADGE[l.signatureStatus] && (
+            <span className="inline-block text-xs font-semibold px-1.5 py-0.5 rounded-full my-0.5"
+              style={{ color: SIGNATURE_BADGE[l.signatureStatus].color, background: `${SIGNATURE_BADGE[l.signatureStatus].color}20` }}>
+              {SIGNATURE_BADGE[l.signatureStatus].label}
+            </span>
+          )}
           <p className="text-text-muted text-xs">{l.apartment?.name || l.apartment?.address}</p>
           <p className="text-text-muted text-xs">
             {new Date(l.startDate).toLocaleDateString('fr-FR')} — {l.endDate ? new Date(l.endDate).toLocaleDateString('fr-FR') : 'en cours'}

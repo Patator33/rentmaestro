@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api/landlord';
 import PullToRefresh from '../components/PullToRefresh';
+import LeaseSignature, { SIGNATURE_BADGE } from '../components/LeaseSignature';
 
 const DEPOSIT_LABELS: Record<string, { label: string; color: string }> = {
   PENDING:          { label: 'En attente', color: '#f59e0b' },
@@ -126,9 +127,17 @@ export default function LeaseDetail() {
           <div className="bg-surface rounded-xl border border-border p-3 mb-3">
             <div className="flex items-center justify-between mb-3">
               <p className="text-text-muted text-xs uppercase tracking-wide">Bail</p>
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
-                style={{ color: statusColor, background: `${statusColor}20` }}>
-                {statusLabel}
+              <span className="flex items-center gap-1.5">
+                {SIGNATURE_BADGE[lease.signatureStatus] && (
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                    style={{ color: SIGNATURE_BADGE[lease.signatureStatus].color, background: `${SIGNATURE_BADGE[lease.signatureStatus].color}20` }}>
+                    {SIGNATURE_BADGE[lease.signatureStatus].label}
+                  </span>
+                )}
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                  style={{ color: statusColor, background: `${statusColor}20` }}>
+                  {statusLabel}
+                </span>
               </span>
             </div>
             <div className="space-y-2">
@@ -143,6 +152,9 @@ export default function LeaseDetail() {
               </div>
             </div>
           </div>
+
+          {/* Signature du bail (DocuSeal) */}
+          <LeaseSignature leaseId={id!} onChanged={load} />
 
           {/* Caution */}
           {(lease.depositAmount != null || depositInfo) && (

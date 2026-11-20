@@ -215,6 +215,14 @@ Conséquences sur le plan : le client DocuSeal lit pour chaque champ son rôle e
 - Panneau du bail : nombre de rappels et date du dernier, mention « liens transmis à la main ».
 - Vérifié sur ton DocuSeal avec un faux serveur SMTP local (aucun email réel) : rythme des rappels, plafond, fusion des liens du garant, absence de relance du bailleur et des signataires ayant signé, mode manuel.
 
-## 14. Hors périmètre (pour l'instant)
+## 14. Phase 6 réalisée (mobile)
+
+- API `/api/landlord/leases/[id]/signature` (jeton mobile) : `GET` (type de bail, état, demandes avec signataires et liens, contrôle des données), `PUT` (type de bail), `POST` (envoyer, avec `regenerate` et `notify`), `DELETE` (annuler). Les erreurs de données manquantes renvoient la liste dans `details`.
+- Fiche d'un bail (appli mobile) : section « Signature » : choix du type de bail, manques listés avec leur origine (« à renseigner depuis l'application web »), signataires, envoi avec confirmation, case « envoyer les emails d'invitation », suivi par signataire avec « Copier le lien », régénération et annulation.
+- Badge « En attente de signature » / « Signé » sur la fiche et dans la liste des baux.
+- La saisie des nouvelles données (naissance, adresse, logement…) reste sur le web.
+- Vérifié sur l'appli mobile lancée dans le navigateur, face à un vrai DocuSeal (templates de test supprimés ensuite) : contrôle, envoi, régénération, annulation, badge de la liste.
+
+## 15. Hors périmètre (pour l'instant)
 
 Renouvellement et avenant, états des lieux, mandat de prélèvement, mandataire, usage mixte (habitation + profession libérale), signature électronique qualifiée, import des baux déjà signés, envoi en lot.
