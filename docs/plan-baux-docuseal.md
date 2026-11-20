@@ -205,6 +205,16 @@ Conséquences sur le plan : le client DocuSeal lit pour chaque champ son rôle e
 - Rattrapage sans webhook : l'ouverture de la page du bail resynchronise les demandes en cours ; `syncPendingSignatures()` est prêt pour le scheduler (phase 5).
 - Vérifié de bout en bout sur ton DocuSeal (templates de test supprimés ensuite) : secret refusé ou accepté, requête inconnue ignorée, rejeu sans doublon, bail signé puis acte signé, rattrapage sans webhook, annulation faite côté DocuSeal.
 
-## 13. Hors périmètre (pour l'instant)
+## 13. Phase 5 réalisée
+
+- `src/lib/signature-reminders.ts`, lancé chaque heure par le planificateur interne (`instrumentation.ts`) : rattrape d'abord les signatures terminées côté DocuSeal (si le webhook n'est pas arrivé), puis relance les signataires qui tardent.
+- Rappels : après `signature_reminder_days` jours (3 par défaut), puis tous les N jours, jusqu'à `signature_reminder_max` rappels (3 par défaut, 0 = aucun). Un email par adresse avec les liens (un garant n'en reçoit qu'un pour le bail et l'acte), uniquement aux signataires qui n'ont pas signé. Le bailleur n'est jamais relancé par email.
+- Mode « liens transmis à la main » (case décochée à l'envoi, mémorisée sur la demande) : aucun email aux signataires ; Telegram prévient le propriétaire qu'il y a une relance à faire, à chaque échéance.
+- Mode email : Telegram prévient au dernier rappel automatique (« plus de relance automatique »).
+- Un rappel dont tous les emails échouent n'est pas compté : nouvel essai à l'heure suivante.
+- Panneau du bail : nombre de rappels et date du dernier, mention « liens transmis à la main ».
+- Vérifié sur ton DocuSeal avec un faux serveur SMTP local (aucun email réel) : rythme des rappels, plafond, fusion des liens du garant, absence de relance du bailleur et des signataires ayant signé, mode manuel.
+
+## 14. Hors périmètre (pour l'instant)
 
 Renouvellement et avenant, états des lieux, mandat de prélèvement, mandataire, usage mixte (habitation + profession libérale), signature électronique qualifiée, import des baux déjà signés, envoi en lot.

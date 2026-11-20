@@ -10,6 +10,7 @@ export const EVENT_LABELS: Record<string, string> = {
     BACKUP_FAILED: "💾 Échec de sauvegarde",
     LEASE_SIGNED: "✍️ Bail signé",
     LEASE_SIGNATURE_DECLINED: "🚫 Signature refusée",
+    LEASE_SIGNATURE_REMINDER: "⏳ Signature en attente",
 };
 
 // Variables exposed to each event's Telegram template, with a human description.
@@ -66,6 +67,13 @@ export const EVENT_VARIABLES: Record<string, { name: string; desc: string }[]> =
         { name: 'signataire', desc: 'Email du signataire qui a refusé' },
         { name: 'motif', desc: 'Motif du refus' },
     ],
+    LEASE_SIGNATURE_REMINDER: [
+        { name: 'locataire', desc: 'Nom du locataire' },
+        { name: 'bien', desc: 'Nom ou adresse du bien' },
+        { name: 'signataires', desc: 'Signataires qui attendent encore (rôle et nom)' },
+        { name: 'jours', desc: "Jours écoulés depuis l'envoi" },
+        { name: 'note', desc: 'Rappel envoyé, dernier rappel ou relance à faire à la main' },
+    ],
 };
 
 // Default template per event (used when no custom template is configured).
@@ -118,6 +126,8 @@ function extractVars(eventName: string, p: any): Record<string, string> {
             return { locataire: p?.tenantName ?? '', bien: p?.apartment ?? '', documents: p?.documents ?? '' };
         case 'LEASE_SIGNATURE_DECLINED':
             return { locataire: p?.tenantName ?? '', bien: p?.apartment ?? '', signataire: p?.signer ?? '', motif: p?.reason ?? '' };
+        case 'LEASE_SIGNATURE_REMINDER':
+            return { locataire: p?.tenantName ?? '', bien: p?.apartment ?? '', signataires: p?.waiting ?? '', jours: String(p?.days ?? ''), note: p?.note ?? '' };
         case 'RENT_REVIEW_DUE':
             return {
                 locataire: p?.tenantName ?? '',

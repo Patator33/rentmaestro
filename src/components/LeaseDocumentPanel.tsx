@@ -131,7 +131,12 @@ export default function LeaseDocumentPanel({ leaseId }: { leaseId: string }) {
                         <div key={r.id} style={{ border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '0.75rem 1rem', background: 'var(--bg)', opacity: r.status === 'CANCELED' ? 0.6 : 1 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap', fontSize: '0.9rem' }}>
                                 <strong>{KIND_LABEL[r.kind] ?? r.kind}</strong>
-                                <span>{REQUEST_STATUS[r.status] ?? r.status} · envoyé le {fmt(r.sentAt)}{r.completedAt ? ` · signé le ${fmt(r.completedAt)}` : ''}</span>
+                                <span>
+                                    {REQUEST_STATUS[r.status] ?? r.status} · envoyé le {fmt(r.sentAt)}
+                                    {r.completedAt ? ` · signé le ${fmt(r.completedAt)}` : ''}
+                                    {r.status === 'PENDING' && r.reminderCount > 0 && r.lastReminderAt ? ` · ${r.reminderCount} rappel${r.reminderCount > 1 ? 's' : ''} (dernier le ${fmt(r.lastReminderAt)})` : ''}
+                                    {r.status === 'PENDING' && !r.notify ? ' · liens transmis à la main' : ''}
+                                </span>
                             </div>
                             {r.signers && (
                                 <ul style={{ margin: '0.5rem 0 0', paddingLeft: 0, listStyle: 'none', fontSize: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>

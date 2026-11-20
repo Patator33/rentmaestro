@@ -173,7 +173,7 @@ async function doSend(leaseId: string, opts: { regenerate?: boolean; actor?: str
     }
 
     await prisma.$transaction([
-        ...created.map(c => prisma.signatureRequest.create({ data: { leaseId, kind: c.kind, docusealSubmissionId: c.submissionId, status: 'PENDING' } })),
+        ...created.map(c => prisma.signatureRequest.create({ data: { leaseId, kind: c.kind, docusealSubmissionId: c.submissionId, status: 'PENDING', notify } })),
         prisma.lease.update({ where: { id: leaseId }, data: { signatureStatus: 'PENDING' } }),
     ])
 
@@ -268,6 +268,9 @@ export interface RequestStatus {
     status: string
     sentAt: Date
     completedAt: Date | null
+    reminderCount: number
+    lastReminderAt: Date | null
+    notify: boolean
     submissionId: number | null
     /** Détail par signataire, lu en direct dans DocuSeal (absent si DocuSeal est inaccessible). */
     signers: { role: string; name: string; email: string; status: string; link: string | null }[] | null
@@ -304,6 +307,6 @@ export async function getLeaseSignatureStatus(leaseId: string): Promise<RequestS
                 link: cfg ? (s.embed_src ?? (s.slug ? `${cfg.baseUrl}/s/${s.slug}` : null)) : null,
             }))
             : null
-        return { id: r.id, kind: r.kind as DocKind, status: r.status, sentAt: r.sentAt, completedAt: r.completedAt, submissionId: r.docusealSubmissionId, signers }
+        return { id: r.id, kind: r.kind as DocKind, status: r.status, sentAt: r.sentAt, completedAt: r.completedAt, reminderCount: r.reminderCount, lastReminderAt: r.lastReminderAt, notify: r.notify, submissionId: r.docusealSubmissionId, signers }
     })
 }

@@ -232,6 +232,8 @@ model SignatureRequest {
   completedAt          DateTime?
   lastReminderAt       DateTime?
   reminderCount        Int       @default(0)
+  /// false : invitations non envoyées par email (liens transmis à la main), donc pas de rappel par email.
+  notify               Boolean   @default(true)
   signedDocumentId     String? // LeaseDocument créé à la signature
   createdAt            DateTime  @default(now())
 
