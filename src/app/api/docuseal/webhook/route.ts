@@ -16,15 +16,16 @@ function safeEqual(a: string, b: string): boolean {
 
 /**
  * Webhook DocuSeal. Protégé par le secret des paramètres, envoyé dans l'en-tête
- * `x-docuseal-secret` (ou, à défaut, en paramètre `?secret=` de l'URL). Le corps
- * n'est qu'un déclencheur : l'état réel est relu dans DocuSeal avec la clé API.
+ * `x-docuseal-secret` uniquement : un secret dans l'URL finirait dans les
+ * journaux du reverse proxy. Le corps n'est qu'un déclencheur : l'état réel est
+ * relu dans DocuSeal avec la clé API.
  */
 export async function POST(request: Request) {
     const row = await prisma.setting.findUnique({ where: { key: DOCUSEAL_SETTING_KEYS.webhookSecret } })
     const secret = row?.value?.trim()
     if (!secret) return NextResponse.json({ error: 'Webhook non configuré.' }, { status: 503 })
 
-    const provided = request.headers.get('x-docuseal-secret') ?? new URL(request.url).searchParams.get('secret') ?? ''
+    const provided = request.headers.get('x-docuseal-secret') ?? ''
     if (!provided || !safeEqual(provided, secret)) {
         return NextResponse.json({ error: 'Non autorisé.' }, { status: 401 })
     }
