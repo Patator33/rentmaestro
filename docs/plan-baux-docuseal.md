@@ -186,6 +186,16 @@ Conséquences sur le plan : le client DocuSeal lit pour chaque champ son rôle e
 - `docs/champs-docuseal.md` : liste des champs à poser dans les templates, générée depuis le catalogue.
 - Vérifié sur des données du bail meublé Le Gonidec : toutes les valeurs correspondent au bail réel.
 
-## 11. Hors périmètre (pour l'instant)
+## 11. Phase 3 réalisée
+
+- `src/lib/signature.ts` : envoi (bail, puis acte de cautionnement s'il y a un garant privé), annulation, régénération, suivi par signataire lu en direct dans DocuSeal. Pas de demi-envoi : si la 2e demande échoue, la 1re est archivée.
+- Panneau « ✍️ Signature du bail » : contrôle, envoi avec confirmation, case « envoyer les emails d'invitation » (décochée : aucun email, les liens se copient et se transmettent à la main), annulation, régénération, liens de signature.
+- Statut du bail (`signatureStatus`) et badge « EN ATTENTE DE SIGNATURE » sur la liste des baux (tableau et cartes).
+- Invitation RentMaestro (un seul mail par adresse, le bailleur n'en reçoit pas) en plus de celle de DocuSeal.
+- Suppression d'un bail (web et mobile) : les demandes en cours sont archivées dans DocuSeal.
+- Constat : créer un template depuis un PDF par l'API est une fonction Pro de DocuSeal. Les templates restent faits à la main.
+- Vérifié de bout en bout sur ton DocuSeal avec 2 templates de test (supprimés ensuite) : valeurs routées vers le bon rôle, cases cochées, aucun email envoyé, annulation et régénération.
+
+## 12. Hors périmètre (pour l'instant)
 
 Renouvellement et avenant, états des lieux, mandat de prélèvement, mandataire, usage mixte (habitation + profession libérale), signature électronique qualifiée, import des baux déjà signés, envoi en lot.

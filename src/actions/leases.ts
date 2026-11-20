@@ -9,6 +9,7 @@ import { applyRentRevisionCore, type RevisionParams } from "@/lib/rent-revision"
 import { sendDepositReturnEmailCore } from "@/lib/deposit-emails";
 import { expectedRentForPeriod } from "@/lib/rent-period";
 import { readLeaseGenerationData, readGuarantorDetails } from "@/lib/lease-options";
+import { archivePendingSubmissionsBestEffort } from "@/lib/signature";
 
 export async function createLease(formData: FormData) {
     await requireAuth();
@@ -111,6 +112,8 @@ export async function terminateLease(id: string, endDateStr?: string | null) {
 
 export async function deleteLease(id: string) {
     await requireAuth();
+    // Une demande de signature en cours ne doit pas survivre au bail.
+    await archivePendingSubmissionsBestEffort(id);
     try {
         await prisma.lease.delete({
             where: { id },

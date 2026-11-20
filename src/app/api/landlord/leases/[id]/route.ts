@@ -5,6 +5,7 @@ import { sendEmail } from '@/lib/email';
 import { buildSigningPdf } from '@/lib/pdf-signing';
 import { ensurePortalToken, buildPortalFileLink } from '@/lib/document-links';
 import { logAction } from '@/lib/audit';
+import { archivePendingSubmissionsBestEffort } from '@/lib/signature';
 
 export const dynamic = 'force-dynamic';
 
@@ -254,6 +255,7 @@ export async function DELETE(
     if (!verifyMobileToken(request)) return unauthorized();
     const { id } = await params;
     try {
+        await archivePendingSubmissionsBestEffort(id);
         await prisma.lease.delete({ where: { id } });
         await logAction({ action: 'DELETE_LEASE', entity: 'Lease', entityId: id, userEmail: 'mobile' });
         return NextResponse.json({ success: true });

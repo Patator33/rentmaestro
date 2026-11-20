@@ -12,6 +12,25 @@ import PageTitleIcon from "@/components/PageTitleIcon";
 
 export const dynamic = "force-dynamic";
 
+/** Pastille de l'état de signature du bail (rien tant qu'aucune demande n'a été envoyée). */
+function SignatureBadge({ status }: { status: string }) {
+    if (status !== 'PENDING' && status !== 'SIGNED') return null;
+    const pending = status === 'PENDING';
+    return (
+        <span
+            className={styles.statusBadge}
+            style={{
+                marginLeft: '0.4rem',
+                whiteSpace: 'nowrap',
+                background: pending ? 'rgba(245, 158, 11, 0.15)' : 'rgba(34, 197, 94, 0.15)',
+                color: pending ? '#f59e0b' : '#22c55e',
+            }}
+        >
+            {pending ? '✍️ EN ATTENTE DE SIGNATURE' : '✅ SIGNÉ'}
+        </span>
+    );
+}
+
 interface SearchParams {
     view?: string;
     sort?: string;
@@ -173,6 +192,7 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                                     <Link href={`/apartments/${lease.apartment.id}`} style={{ color: 'var(--primary-color)' }}>
                                                         {lease.apartment.name || lease.apartment.address}
                                                     </Link>
+                                                    <div><SignatureBadge status={lease.signatureStatus} /></div>
                                                 </td>
                                                 <td>
                                                     <Link href={`/tenants/${lease.tenant.id}`} style={{ color: 'var(--text-main)' }}>
@@ -228,6 +248,7 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                                 <Link href={`/apartments/${lease.apartment.id}`} style={{ color: 'var(--primary-color)' }}>
                                                     {lease.apartment.name || lease.apartment.address}
                                                 </Link>
+                                                <div><SignatureBadge status={lease.signatureStatus} /></div>
                                             </td>
                                             <td>
                                                 <Link href={`/tenants/${lease.tenant.id}`} style={{ color: 'var(--text-main)' }}>
@@ -344,7 +365,10 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                     return (
                                         <ClickableCard key={lease.id} href={`/leases/${lease.id}`} className={styles.card} style={{ borderColor: 'var(--accent-color)', background: 'rgba(255, 165, 0, 0.05)' }}>
                                             <div className={styles.cardHeader}>
-                                                <span className={styles.statusBadge} style={{ background: 'rgba(255, 165, 0, 0.15)', color: 'var(--accent-color)' }}>À VENIR</span>
+                                                <span>
+                                                    <span className={styles.statusBadge} style={{ background: 'rgba(255, 165, 0, 0.15)', color: 'var(--accent-color)' }}>À VENIR</span>
+                                                    <SignatureBadge status={lease.signatureStatus} />
+                                                </span>
                                                 <h3 className={styles.cardTitle}>
                                                     <Link href={`/apartments/${lease.apartment.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
                                                         {lease.apartment.name || lease.apartment.address}
@@ -435,7 +459,10 @@ export default async function LeasesPage({ searchParams }: { searchParams: Promi
                                     <ClickableCard key={lease.id} href={`/leases/${lease.id}`} className={styles.card}>
                                         <div className={styles.cardHeader}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                                <span className={`${styles.statusBadge} ${styles.statusActive}`}>ACTIF</span>
+                                                <span>
+                                                    <span className={`${styles.statusBadge} ${styles.statusActive}`}>ACTIF</span>
+                                                    <SignatureBadge status={lease.signatureStatus} />
+                                                </span>
                                                 {lease.endDate && (
                                                     <TerminateLeaseButton
                                                         leaseId={lease.id}

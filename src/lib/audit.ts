@@ -43,6 +43,8 @@ export const ACTION_LABELS: Record<string, string> = {
     UPDATE_LEASE: '✏️ Bail modifié',
     DELETE_LEASE: '🗑️ Bail supprimé',
     TERMINATE_LEASE: '🔚 Bail résilié',
+    SEND_LEASE_SIGNATURE: '✍️ Bail envoyé en signature',
+    CANCEL_LEASE_SIGNATURE: '🚫 Signature de bail annulée',
     CREATE_APARTMENT: '➕ Bien créé',
     UPDATE_APARTMENT: '✏️ Bien modifié',
     DELETE_APARTMENT: '🗑️ Bien supprimé',
