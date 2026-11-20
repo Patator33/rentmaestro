@@ -9,6 +9,7 @@ import RentRevision from "@/components/RentRevision";
 import { DEFAULT_IRL_INDICES, type IrlIndex } from "@/lib/irl";
 import { getSetting } from "@/actions/settings";
 import LeaseQuittancesList from "@/components/LeaseQuittancesList";
+import LeaseDocumentPanel from "@/components/LeaseDocumentPanel";
 import PageTitleIcon from "@/components/PageTitleIcon";
 
 export const dynamic = "force-dynamic";
@@ -349,6 +350,8 @@ export default async function LeaseDetailPage({ params }: { params: Promise<{ id
                     letterVars={irlLetterVars}
                 />
             )}
+
+            <LeaseDocumentPanel leaseId={lease.id} />
 
             <section style={{ background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '1.25rem', marginBottom: '1.5rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>

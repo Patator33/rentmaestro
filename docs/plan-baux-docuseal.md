@@ -21,7 +21,8 @@ Périmètre : nouveaux baux uniquement (pas de renouvellement, avenant, état de
 | Nom du PDF signé | `bail signé Prénom Nom et Prénom Nom Appt Berson 3` (pas de civilité) |
 | Copie au locataire | Déjà faite par DocuSeal |
 | Statut « Signé » | Informatif seulement |
-| Surface, pièces, régime, période de construction, type d'habitat | Pris sur `Building` quand l'appartement en a un, sinon sur l'appartement |
+| Surface et pièces | Colocation : prises sur `Building` (logement entier), sinon sur l'appartement. Les autres baux gardent la surface de l'appartement, car un immeuble regroupe des logements de tailles différentes |
+| Régime, année de construction, type d'habitat | Faits d'immeuble : `Building` prioritaire, sinon l'appartement |
 | Zone tendue | Réponses sur la fiche appartement, avec exception possible sur le bail |
 | Bailleur | `Company` reçoit un « nom sur le bail » et un email de signataire |
 
@@ -55,7 +56,7 @@ Elle garde l'historique des renvois ; l'ancienne ligne passe en CANCELED.
 - Textes libres : `descPrivate`, `descCommon`, `descEquipment`, `chargesDetail`, `ictEquipment` (internet/TV)
 - `defaultLeaseType`
 
-**Building** : `surface`, `rooms`, `housingType`, `legalRegime`, `constructionYear`. Règle de résolution : si l'appartement a un immeuble, les valeurs de l'immeuble priment pour ces champs ; sinon celles de l'appartement.
+**Building** : `surface`, `rooms`, `housingType`, `legalRegime`, `constructionYear`. Règle de résolution : régime, année et type d'habitat viennent de l'immeuble quand il les renseigne, sinon de l'appartement ; surface et pièces viennent de l'immeuble pour une colocation seulement.
 
 **Company** : `leaseDisplayName` (ex. « M. et Mme RIGAUD » ou « Rigaudimmo&co »), `signerEmail`. SIRET et adresse existent déjà.
 
@@ -177,6 +178,14 @@ Non vérifié (à confirmer en phase 4 et 5, avec le vrai endpoint) :
 
 Conséquences sur le plan : le client DocuSeal lit pour chaque champ son rôle et sa présence dans le template, envoie `true`/`false` pour chaque case, et construit les signataires uniquement pour les rôles utiles (Caution absent si Visale ou sans garant).
 
-## 10. Hors périmètre (pour l'instant)
+## 10. Phase 2 réalisée
+
+- `src/lib/lease-catalog.ts` (97 champs du bail, 27 de l'acte), `src/lib/lease-document.ts` (valeurs, signataires, manques), `src/lib/docuseal.ts` (client et analyse de template), `src/lib/french-format.ts` (nombres en lettres, dates, montants).
+- Page du bail : panneau « Génération du bail » (contrôle, signataires, valeurs préparées).
+- Paramètres : bouton « Vérifier les modèles ».
+- `docs/champs-docuseal.md` : liste des champs à poser dans les templates, générée depuis le catalogue.
+- Vérifié sur des données du bail meublé Le Gonidec : toutes les valeurs correspondent au bail réel.
+
+## 11. Hors périmètre (pour l'instant)
 
 Renouvellement et avenant, états des lieux, mandat de prélèvement, mandataire, usage mixte (habitation + profession libérale), signature électronique qualifiée, import des baux déjà signés, envoi en lot.

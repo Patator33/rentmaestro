@@ -33,8 +33,9 @@ export default function ApartmentLeaseFields({ apartment }: { apartment?: Apt | 
             </summary>
 
             <p style={{ ...hint, marginTop: '0.75rem' }}>
-                Reprises dans le bail généré. Si l'appartement appartient à un immeuble, la surface, le nombre de
-                pièces, le type d'habitat, le régime juridique et l'année de construction de l'immeuble priment.
+                Reprises dans le bail généré. Le type d'habitat, le régime juridique et l'année de construction de
+                l'immeuble priment sur ceux de l'appartement. Pour une colocation, la surface et le nombre de pièces
+                de l'immeuble priment aussi (la chambre est un appartement du logement entier).
             </p>
 
             <div className={styles.formGroup}>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { saveDocusealSettings, testDocusealConnection, type DocusealSettingsView } from '@/actions/docuseal-settings'
+import { saveDocusealSettings, testDocusealConnection, checkDocusealTemplates, type DocusealSettingsView, type TemplateCheckResult } from '@/actions/docuseal-settings'
 
 const label: React.CSSProperties = { display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem', color: 'var(--text-secondary)' }
 const input: React.CSSProperties = { width: '100%', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--bg)', color: 'var(--text-main)', fontSize: '0.9rem', fontFamily: 'inherit' }
@@ -53,6 +53,12 @@ export default function DocusealSettings({ initial }: { initial: DocusealSetting
         startTransition(async () => {
             setTest(await testDocusealConnection({ url, apiKey, tplNu, tplMeuble, tplColoc, tplCaution }))
         })
+    }
+
+    const [check, setCheck] = useState<{ success: boolean; error?: string; results: TemplateCheckResult[] } | null>(null)
+    const runCheck = () => {
+        setCheck(null)
+        startTransition(async () => { setCheck(await checkDocusealTemplates()) })
     }
 
     return (
@@ -122,7 +128,8 @@ export default function DocusealSettings({ initial }: { initial: DocusealSetting
                     {pending ? '⏳' : '💾 Enregistrer'}
                 </button>
                 <button type="button" style={button} disabled={pending} onClick={runTest}>Tester la connexion</button>
-                {message && <span style={{ fontSize: '0.85rem', color: message.ok ? '#22c55e' : '#ef4444' }}>{message.text}</span>}
+                <button type="button" style={button} disabled={pending} onClick={runCheck}>Vérifier les modèles</button>
+                {message &&<span style={{ fontSize: '0.85rem', color: message.ok ? '#22c55e' : '#ef4444' }}>{message.text}</span>}
             </div>
 
             {test && (
@@ -139,6 +146,54 @@ export default function DocusealSettings({ initial }: { initial: DocusealSetting
                             ) : <span> Aucun template configuré à vérifier.</span>}
                         </>
                     ) : <strong style={{ color: '#ef4444' }}>{test.error}</strong>}
+                </div>
+            )}
+
+            {check && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {!check.success && <strong style={{ color: '#ef4444', fontSize: '0.85rem' }}>{check.error}</strong>}
+                    {check.results.map(r => (
+                        <div key={r.label} style={{ fontSize: '0.85rem', padding: '0.75rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--bg)' }}>
+                            <strong>{r.label}</strong>
+                            {!r.templateId && <span style={{ color: 'var(--text-muted)' }}> : template non configuré</span>}
+                            {r.error && <div style={{ color: '#ef4444', marginTop: '0.25rem' }}>{r.error}</div>}
+                            {r.analysis && (
+                                <div style={{ marginTop: '0.35rem', lineHeight: 1.6 }}>
+                                    <div>« {r.analysis.name} » (n° {r.analysis.id}) — rôles : {r.analysis.roles.join(', ') || 'aucun'}</div>
+                                    {r.analysis.missingRoles.length > 0 && (
+                                        <div style={{ color: '#ef4444' }}>❌ Rôle(s) obligatoire(s) absent(s) : {r.analysis.missingRoles.join(', ')}</div>
+                                    )}
+                                    {r.analysis.extraRoles.length > 0 && (
+                                        <div style={{ color: '#f59e0b' }}>⚠️ Rôle(s) non standard (jamais renseignés par RentMaestro) : {r.analysis.extraRoles.join(', ')}</div>
+                                    )}
+                                    <div style={{ color: r.analysis.matched.length ? '#22c55e' : '#f59e0b' }}>
+                                        {r.analysis.matched.length ? '✅' : '⚠️'} {r.analysis.matched.length} champ(s) préremplis par RentMaestro
+                                    </div>
+                                    {r.analysis.riskyRoleFields.length > 0 && (
+                                        <div style={{ color: '#f59e0b' }}>
+                                            ⚠️ Champs sur un rôle parfois absent (ils resteraient vides) : {r.analysis.riskyRoleFields.map(f => `${f.name} (${f.role})`).join(', ')}.
+                                            Placez-les sur le rôle Bailleur.
+                                        </div>
+                                    )}
+                                    {r.analysis.ambiguousNames.length > 0 && (
+                                        <div style={{ color: '#f59e0b' }}>⚠️ Nom de champ utilisé par plusieurs rôles : {r.analysis.ambiguousNames.join(', ')}</div>
+                                    )}
+                                    {r.analysis.freeFields.length > 0 && (
+                                        <details>
+                                            <summary style={{ cursor: 'pointer' }}>{r.analysis.freeFields.length} champ(s) hors catalogue (à remplir par le signataire)</summary>
+                                            <div style={{ color: 'var(--text-muted)' }}>{r.analysis.freeFields.map(f => `${f.name} [${f.type}${f.role ? `, ${f.role}` : ''}]`).join(' · ')}</div>
+                                        </details>
+                                    )}
+                                    {r.analysis.notInTemplate.length > 0 && (
+                                        <details>
+                                            <summary style={{ cursor: 'pointer' }}>{r.analysis.notInTemplate.length} champ(s) du catalogue absents du template (information)</summary>
+                                            <div style={{ color: 'var(--text-muted)' }}>{r.analysis.notInTemplate.join(' · ')}</div>
+                                        </details>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    ))}
                 </div>
             )}
         </div>

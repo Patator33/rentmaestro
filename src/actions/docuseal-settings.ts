@@ -3,6 +3,9 @@
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { requireAuth } from '@/lib/session'
+import { getDocusealConfig, fetchTemplate, analyzeTemplate, type TemplateAnalysis } from '@/lib/docuseal'
+import type { DocKind } from '@/lib/lease-catalog'
+import type { LeaseType } from '@/lib/lease-options'
 import {
     DOCUSEAL_SETTING_KEYS as K,
     DEFAULT_SIGNATURE_REMINDER_DAYS,
@@ -126,6 +129,45 @@ export async function saveDocusealSettings(input: DocusealSettingsInput): Promis
     revalidatePath('/gestion/parametres')
     const s = await readAll()
     return { success: true, apiKeyHint: hint(s.get(K.apiKey)), webhookSecretHint: hint(s.get(K.webhookSecret)) }
+}
+
+export type TemplateCheckResult = {
+    label: string
+    templateId: number | null
+    error?: string
+    analysis?: TemplateAnalysis
+}
+
+/**
+ * Compare chaque template enregistré au catalogue de champs : rôles manquants,
+ * champs préremplis, champs libres, champs placés sur un rôle parfois absent.
+ * Utilise les réglages enregistrés (pas ceux du formulaire en cours de saisie).
+ */
+export async function checkDocusealTemplates(): Promise<{ success: boolean; error?: string; results: TemplateCheckResult[] }> {
+    await requireAuth()
+    const cfg = await getDocusealConfig()
+    if (!cfg) return { success: false, error: "Enregistrez d'abord l'URL et la clé API DocuSeal.", results: [] }
+
+    const s = await readAll()
+    const slots: { label: string; key: string; doc: DocKind; type: LeaseType | null }[] = [
+        { label: 'Bail nu', key: K.tplNu, doc: 'BAIL', type: 'NU' },
+        { label: 'Bail meublé', key: K.tplMeuble, doc: 'BAIL', type: 'MEUBLE' },
+        { label: 'Colocation', key: K.tplColoc, doc: 'BAIL', type: 'COLOCATION' },
+        { label: 'Acte de cautionnement', key: K.tplCaution, doc: 'CAUTION', type: null },
+    ]
+
+    const results: TemplateCheckResult[] = []
+    for (const slot of slots) {
+        const id = parseInt(s.get(slot.key) ?? '', 10)
+        if (!Number.isFinite(id) || id <= 0) { results.push({ label: slot.label, templateId: null }); continue }
+        try {
+            const info = await fetchTemplate(cfg, id)
+            results.push({ label: slot.label, templateId: id, analysis: analyzeTemplate(info, slot.doc, slot.type) })
+        } catch (e) {
+            results.push({ label: slot.label, templateId: id, error: e instanceof Error ? e.message : String(e) })
+        }
+    }
+    return { success: true, results }
 }
 
 /**

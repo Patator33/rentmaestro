@@ -17,7 +17,8 @@ export default function BuildingHousingFields({ building }: { building?: Bld | n
         <>
             <h2 style={{ fontSize: '0.95rem', fontWeight: 700, margin: '1.5rem 0 0.25rem' }}>Logement entier (baux)</h2>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
-                Reprises dans les baux des appartements de l'immeuble ; elles priment sur celles de l'appartement.
+                Reprises dans les baux des appartements de l'immeuble. Type d'habitat, régime et année priment toujours
+                sur l'appartement ; la surface et les pièces ne servent que pour une colocation (bail individuel d'une chambre).
             </p>
             <div className={styles.row}>
                 <div className={styles.formGroup}>
